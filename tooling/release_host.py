@@ -447,6 +447,13 @@ def verify_native(value, frozen):
     return native, refs
 
 
+def verify_immutable_payloads(files, old_files):
+    for name in sorted(FETCH_IMMUTABLE):
+        require(name in files and name in old_files
+                and files[name]["sha256"] == old_files[name]["sha256"],
+                "Signed Build171 Fetch payload/contract changed: " + name)
+
+
 def context(input_ref, stage):
     require(PROJECT == ROOT / "project", "Run the integrated project checkout, not a development worktree")
     artifact_reference(input_ref, (RELEASE,), limit=1024 * 1024)
@@ -469,6 +476,7 @@ def context(input_ref, stage):
             "Removal or generated/runtime source collision requires separate packaging review")
     require(h["manifest"](DEPENDENCIES, True) == previous["dependencyManifest"],
             "Owned stable dependency snapshot differs from its trusted contents")
+    verify_immutable_payloads(files, old_files)
     require(files["filesystem-identity.mjs"]["sha256"] ==
             old_files["filesystem-identity.mjs"]["sha256"], "Filesystem verifier changed")
     artifact_reference(cfg["closedBoundary"], (RELEASE,), limit=128 * 1024 * 1024)

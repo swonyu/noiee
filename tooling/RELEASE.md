@@ -16,6 +16,8 @@ Historical Build171 source, recipes, accepted receipts, archives and rollback ar
 
 Commit the complete integrated project first. Production release phases refuse development worktrees, dirty tracked/untracked checkout contents, source changes after freezing, or source files that do not exactly match the tracked source namespace. The freeze binds all source and tracked tooling files, including helper bytes, fixture code and builder code, to the Git commit. The current source resource namespace is flat; adding a source directory or removing an old file requires an explicit packaging change.
 
+The four existing Fetch runtime payload/contract files must retain their exact signed Build171 source hashes; this release does not replace or requalify those immutable bytes.
+
 The stable dependency copy is `/Users/saleh/Documents/Noiee/dependencies/node-26.13.0-build171`. Its complete contents must still match the trusted predecessor dependency manifest. The external Node runtime is exactly the version and executable digest declared in `source/runtime-contract.json`; an updated executable requires explicit qualification, not a silent version range.
 
 Use a fresh schema2 native receipt produced from the clean final integrated commit:

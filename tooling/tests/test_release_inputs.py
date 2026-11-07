@@ -222,6 +222,26 @@ class Inputs(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "command"):
             self.check_report(q)
 
+    def test_unchanged_fetch_payloads_pass(self):
+        old = {name: {"sha256": release.sha(name.encode())} for name in release.FETCH_IMMUTABLE}
+        release.verify_immutable_payloads(copy.deepcopy(old), old)
+
+    def test_each_changed_fetch_payload_refused(self):
+        old = {name: {"sha256": release.sha(name.encode())} for name in release.FETCH_IMMUTABLE}
+        for name in release.FETCH_IMMUTABLE:
+            with self.subTest(name=name):
+                changed = copy.deepcopy(old)
+                changed[name]["sha256"] = "b" * 64
+                with self.assertRaisesRegex(RuntimeError, "Fetch payload/contract changed"):
+                    release.verify_immutable_payloads(changed, old)
+
+    def test_missing_fetch_payload_refused(self):
+        old = {name: {"sha256": release.sha(name.encode())} for name in release.FETCH_IMMUTABLE}
+        missing = copy.deepcopy(old)
+        missing.pop(next(iter(release.FETCH_IMMUTABLE)))
+        with self.assertRaises(RuntimeError):
+            release.verify_immutable_payloads(missing, old)
+
     def test_native_exact_provenance_passes(self):
         base, receipt = self.native()
         value, refs = self.check_native(base, receipt)
