@@ -1,0 +1,15 @@
+{
+  "build": 171,
+  "sourceManifest": {
+    "path": "/Users/saleh/Documents/Noiee/release/source-manifest.json",
+    "sha256": "6d4869853f6f83fc4ce90a17b34eb23333d0659bb573aa16795dc4001989c793"
+  },
+  "sourceFiles": 181,
+  "dependencies": {
+    "path": "/Users/saleh/Documents/Noiee/dependencies/node-26.13.0-build171",
+    "entries": 5888,
+    "packageLockSHA256": "cacf8cb78acf81747f7634a435343bc4e15711de6f20b637c6e4f80426f29d35",
+    "treeSHA256": "1a733cbf76eb0103a05bbd6264db0f7ae5d3bf52516ad2cff6c1815de38875b1"
+  },
+  "notes": "Build171 frozen source and release evidence remain untouched. Dependencies are declared in source/package-lock.json."
+}

@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "kind": "required-existing-python-contract",
+  "runtimeIsStandaloneInterpreter": false,
+  "testedVersion": "3.14.8",
+  "platform": "macosx-27.0-arm64",
+  "executable": {
+    "absolutePath": "/opt/homebrew/Cellar/python@3.14/3.14.8_2/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+    "mode": 493,
+    "uid": 501,
+    "type": "file",
+    "bytes": 34640,
+    "sha256": "1b5cb11d163e5ba34e2a05fc533c0ed89574d4425f9749a9d89405f651980e0d"
+  },
+  "framework": {
+    "absolutePath": "/opt/homebrew/Cellar/python@3.14/3.14.8_2/Frameworks/Python.framework/Versions/3.14/Python",
+    "mode": 493,
+    "uid": 501,
+    "type": "file",
+    "bytes": 5467456,
+    "sha256": "ea96cfe3ee0190f17c4f907a321f8aadbca35eee47285e329ad243347be6a8b9"
+  },
+  "stdlib": "/opt/homebrew/Cellar/python@3.14/3.14.8_2/Frameworks/Python.framework/Versions/3.14/lib/python3.14",
+  "launch": {
+    "relativeCommand": "runtime/bin/python",
+    "args": [
+      "-I",
+      "-B",
+      "-m",
+      "mcp_server_fetch"
+    ],
+    "requiredPATH": "/usr/bin:/bin",
+    "privateHOMEAndTMPDIR": true
+  },
+  "semantics": "Existing trusted Homebrew interpreter and stdlib remain required; validate exact canonical executable/framework and all runtime members before enabling. Never invoke generated console scripts, activation, pip, uvx or npm."
+}

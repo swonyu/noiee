@@ -1,0 +1,1497 @@
+{
+  "version": 1,
+  "kind": "reviewed-current-worktree-handoff-admission",
+  "historicalContinuity": false,
+  "captureBootSession": "1DBF7593-0C6B-4F7C-88D1-0607CEAAECDC",
+  "dataDirectory": {
+    "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding",
+    "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+    "ino": "26838645",
+    "uid": 501
+  },
+  "evidence": {
+    "prebootCheckpointSHA256": "cb6e46f6f7ccc229d4270c3904affbf555c233d2e0b0ffd7db2a2bb9ea125aec",
+    "closedCheckpointSHA256": "183a2ea46739ee20db28aded111f1aef822194adbae2407d73c7a70d2fe535c0",
+    "observationSHA256": "c7cdf643735268ba8af3be4a6182517944b396fa28dde78e44aa4a32484b1ab8",
+    "reviewSHA256": "f771ad683eacef57fa2118e2647be3ccd0b7a10e1d92382cb613aca3ada45376"
+  },
+  "rows": [
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-12/i-want-the-app-to-work/work/native-archive-project",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "27633015"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "27633015"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-12/i-want-the-app-to-work/work/native-archive-project/.git",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "27633016"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "27633016"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-12/i-want-the-app-to-work/work/native-archive-project/.git/worktrees/a7f39a3c-722f-4287-9def-73b1bd5cb648",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "27686188"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "27686188"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-12/i-want-the-app-to-work/work/native-archive-project/.git/worktrees/a7f39a3c-722f-4287-9def-73b1bd5cb648/commondir",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "27686193"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "340ddcb67a6204f742cd1e28e5b462622dde7daaa8ee36001897196aacdc6d47",
+      "bytes": 6
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-12/i-want-the-app-to-work/work/native-archive-project/.git/worktrees/a7f39a3c-722f-4287-9def-73b1bd5cb648/gitdir",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "27686191"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "03d73d9a54f37b19260c420b48ef466cbb3a3804dd245f078f124947f27e1b4a",
+      "bytes": 111
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-12/i-want-the-app-to-work/work/native-archive-project/.git/worktrees/a7f39a3c-722f-4287-9def-73b1bd5cb648/locked",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "27686189"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "894d03fc2709b93090525a3f19b59d742547b910695f5640f917d3a4de9382b2",
+      "bytes": 61
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-12/i-want-the-app-to-work/work/native-worktree-project",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "27088036"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "27088036"
+      },
+      "mode": 16832,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-12/i-want-the-app-to-work/work/native-worktree-project/.git",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "27088037"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "27088037"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-12/i-want-the-app-to-work/work/native-worktree-project/.git/worktrees/8e4228a1-8f36-49c2-bc85-0c39c6ed9c01",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "27125962"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "27125962"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-12/i-want-the-app-to-work/work/native-worktree-project/.git/worktrees/8e4228a1-8f36-49c2-bc85-0c39c6ed9c01/commondir",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "27125967"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "340ddcb67a6204f742cd1e28e5b462622dde7daaa8ee36001897196aacdc6d47",
+      "bytes": 6
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-12/i-want-the-app-to-work/work/native-worktree-project/.git/worktrees/8e4228a1-8f36-49c2-bc85-0c39c6ed9c01/gitdir",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "27125965"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "dc5abf6f9ee4be5d46ed81d30161d07560aa1fb8c78af8420b4a5ebcbaeabe92",
+      "bytes": 111
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-12/i-want-the-app-to-work/work/native-worktree-project/.git/worktrees/8e4228a1-8f36-49c2-bc85-0c39c6ed9c01/locked",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "27125963"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "f7cbd14948e35badc124b63b63ced6c1bb4457d8b078eb3b6e208359200eb04b",
+      "bytes": 60
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build75/installed-fixture",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "38494213"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "38494213"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build75/installed-fixture/.git",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "38494217"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "38494217"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build75/installed-fixture/.git/worktrees/10af28cd-e5f0-4cec-ba47-7bf92bb0378b",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "38674394"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "38674394"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build75/installed-fixture/.git/worktrees/10af28cd-e5f0-4cec-ba47-7bf92bb0378b/commondir",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "38674399"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "340ddcb67a6204f742cd1e28e5b462622dde7daaa8ee36001897196aacdc6d47",
+      "bytes": 6
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build75/installed-fixture/.git/worktrees/10af28cd-e5f0-4cec-ba47-7bf92bb0378b/gitdir",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "38674397"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "10e69d284742b492412deeaad332f6fd2d343118ca293ced4e4c660cc96188f6",
+      "bytes": 111
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build75/installed-fixture/.git/worktrees/10af28cd-e5f0-4cec-ba47-7bf92bb0378b/locked",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "38674395"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "12ced74a0fdda4cbed4d73426c9b279dda5db0d096c479127545ea962a2e0df5",
+      "bytes": 60
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build81/installed-fixture",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "40453910"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "40453910"
+      },
+      "mode": 16832,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build81/installed-fixture/.git",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "40453911"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "40453911"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build81/installed-fixture/.git/worktrees/391e9a6f-e15a-46d4-abc8-4a4d9745cbd9",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "40690664"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "40690664"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build81/installed-fixture/.git/worktrees/391e9a6f-e15a-46d4-abc8-4a4d9745cbd9/commondir",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "40690669"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "340ddcb67a6204f742cd1e28e5b462622dde7daaa8ee36001897196aacdc6d47",
+      "bytes": 6
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build81/installed-fixture/.git/worktrees/391e9a6f-e15a-46d4-abc8-4a4d9745cbd9/gitdir",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "40690667"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "061b8f3451882be3f1796de606916bf63adeabf4d8b3cce56e631c0804fb5140",
+      "bytes": 111
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build81/installed-fixture/.git/worktrees/391e9a6f-e15a-46d4-abc8-4a4d9745cbd9/locked",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "40690665"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "b6c8bac7839a02f188639f7f8f14c0a2ac150bb4b1d0bea32c3a1b97d44b91b3",
+      "bytes": 60
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build82/installed-fixture",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "40715727"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "40715727"
+      },
+      "mode": 16832,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build82/installed-fixture/.git",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "40715730"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "40715730"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build82/installed-fixture/.git/worktrees/bdcaf90b-3a9e-4e8d-8206-f9e109378014",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "40923127"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "40923127"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build82/installed-fixture/.git/worktrees/bdcaf90b-3a9e-4e8d-8206-f9e109378014/commondir",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "40923132"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "340ddcb67a6204f742cd1e28e5b462622dde7daaa8ee36001897196aacdc6d47",
+      "bytes": 6
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build82/installed-fixture/.git/worktrees/bdcaf90b-3a9e-4e8d-8206-f9e109378014/gitdir",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "40923130"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "41ebeac6e2a6dd26ab92260dfcd4c704af815eae3769f5f14031ea70dbabed8f",
+      "bytes": 111
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build82/installed-fixture/.git/worktrees/bdcaf90b-3a9e-4e8d-8206-f9e109378014/locked",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "40923128"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "ca0d393a9dabaa2915582545a4320723770f4df36635a47660aed8d15d4d20d8",
+      "bytes": 60
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build85/installed-fixture",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "41737107"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "41737107"
+      },
+      "mode": 16832,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build85/installed-fixture/.git",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "41737110"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "41737110"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build85/installed-fixture/.git/worktrees/1ea0ee7d-f037-4537-8920-43e8d75819ca",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "42130792"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "42130792"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build85/installed-fixture/.git/worktrees/1ea0ee7d-f037-4537-8920-43e8d75819ca/commondir",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "42130797"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "340ddcb67a6204f742cd1e28e5b462622dde7daaa8ee36001897196aacdc6d47",
+      "bytes": 6
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build85/installed-fixture/.git/worktrees/1ea0ee7d-f037-4537-8920-43e8d75819ca/gitdir",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "42130795"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "7490012362e0063751fbcf56fb2acfdd01b2f29bc90abfa807bb1d911110c238",
+      "bytes": 111
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build85/installed-fixture/.git/worktrees/1ea0ee7d-f037-4537-8920-43e8d75819ca/locked",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "42130793"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "8d8b7f6a21b5511b1ca808551a65afec6f72eb9feec0429a3f4c90843556ec7b",
+      "bytes": 60
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "26838645"
+      },
+      "mode": 16832,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "27125711"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "27125711"
+      },
+      "mode": 16832,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/.archives",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "27676939"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "27676939"
+      },
+      "mode": 16832,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/.archives/07dc6069-4228-4678-98e0-f1d718944d94",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "96860086"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "96860086"
+      },
+      "mode": 16832,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/.archives/07dc6069-4228-4678-98e0-f1d718944d94/manifest.json",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "96860248"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "96860248"
+      },
+      "mode": 33152,
+      "uid": 501,
+      "type": "file",
+      "sha256": "ceda47568f7d3b1064b4eea9f105e5d2983c4c15389e847ef0cae8e41030486b",
+      "bytes": 3936
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/.archives/07dc6069-4228-4678-98e0-f1d718944d94/original-index",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "96860122"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "96860122"
+      },
+      "mode": 33152,
+      "uid": 501,
+      "type": "file",
+      "sha256": "7dff5dc8d404e1df0f677ee4381b3696a12e2780d65d1b8a19dbc7edb0003a4e",
+      "bytes": 590
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/.archives/07dc6069-4228-4678-98e0-f1d718944d94/recovery.bundle",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "96860204"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "96860204"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "a3cec09d2448366bec75f36610d9292fc8eaf1aa33e033168bf284008f8e3034",
+      "bytes": 2763
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/.archives/847c7b18-80f4-48fa-ac6f-efa813baded7",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "27686020"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "27686020"
+      },
+      "mode": 16832,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/.archives/847c7b18-80f4-48fa-ac6f-efa813baded7/manifest.json",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "27686122"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "27686122"
+      },
+      "mode": 33152,
+      "uid": 501,
+      "type": "file",
+      "sha256": "c3999360bea681c99b08ca72522c1f89ec81fcddf4d52bd810b621a35658bb8b",
+      "bytes": 1643
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/.archives/847c7b18-80f4-48fa-ac6f-efa813baded7/original-index",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "27686056"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "27686056"
+      },
+      "mode": 33152,
+      "uid": 501,
+      "type": "file",
+      "sha256": "003039182f1d299fdb48148b46d5f890cbaad5b8c5f37f63a8750fc770ca8218",
+      "bytes": 206
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/.archives/847c7b18-80f4-48fa-ac6f-efa813baded7/recovery.bundle",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "27686078"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "27686078"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "72fbea55deb5a94dc17e55525455bbbea5b489a2f7a5205ce574439f1ce54d55",
+      "bytes": 1084
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/10af28cd-e5f0-4cec-ba47-7bf92bb0378b",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "38674396"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "38674396"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/10af28cd-e5f0-4cec-ba47-7bf92bb0378b/.git",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "38674398"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "38674398"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "a6999731defb8b2eaabe493212c316052f5718f8b567f9584fa9598c72d81327",
+      "bytes": 134
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/1ea0ee7d-f037-4537-8920-43e8d75819ca",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "42130794"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "42130794"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/1ea0ee7d-f037-4537-8920-43e8d75819ca/.git",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "42130796"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "42130796"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "a2a05bb36587ae67341b37564f0897f6613a3e40c3d54c7f6a8429207882e98e",
+      "bytes": 134
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/391e9a6f-e15a-46d4-abc8-4a4d9745cbd9",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "40690666"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "40690666"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/391e9a6f-e15a-46d4-abc8-4a4d9745cbd9/.git",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "40690668"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "40690668"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "7f8eead2ba6869cc64971c6c9bab095c8d86240565df306ac18bda159d26ee58",
+      "bytes": 134
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/3dd77910-2a21-4630-8786-f7aff154e3e2",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "93148231"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "93148231"
+      },
+      "mode": 16832,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/3dd77910-2a21-4630-8786-f7aff154e3e2/.git",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "96861569"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "96861569"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "8921a42befa8739c5f434064d4fbd14eb107a35a6b91cdc83fbd6dca89273241",
+      "bytes": 150
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/5d489333-495b-4e7d-a1dd-cbd4dff5bed3",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "91516023"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "91516023"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/5d489333-495b-4e7d-a1dd-cbd4dff5bed3/.git",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "91516025"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "91516025"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "e72528b3623ddaebf5560374f4758dc43d1cbac80ec89b72d70c3c3a90307232",
+      "bytes": 150
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/8e4228a1-8f36-49c2-bc85-0c39c6ed9c01",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "27125964"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "27125964"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/8e4228a1-8f36-49c2-bc85-0c39c6ed9c01/.git",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "27125966"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "27125966"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "2be0bd0b6b8081329266c0a086d29ac7e614cdcda7857c58f9bde106c4ca01f4",
+      "bytes": 152
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/a489c1ab-ee25-4301-bc77-13ece9639ae3",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "92334945"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "92334945"
+      },
+      "mode": 16832,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/a489c1ab-ee25-4301-bc77-13ece9639ae3/.git",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "92334947"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "92334947"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "6bc129cd046df44875533e493c3345ed7891ffb78f658d8a97d97a095ff771aa",
+      "bytes": 150
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/a7f39a3c-722f-4287-9def-73b1bd5cb648",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "27676354"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "27676354"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/a7f39a3c-722f-4287-9def-73b1bd5cb648/.git",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "27686192"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "27686192"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "00d83147581ecf4a84e8f671358056adb53ee677e0b98350d478aa8cc8a80f3d",
+      "bytes": 151
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/bdcaf90b-3a9e-4e8d-8206-f9e109378014",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "40923129"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "40923129"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/bdcaf90b-3a9e-4e8d-8206-f9e109378014/.git",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "40923131"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "40923131"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "7f2260bb4c0a51ed09f2d4e99098cc7880cbe01dac05680cb1d4357a0549e2e0",
+      "bytes": 134
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/managed-worktrees.json",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "96861578"
+      },
+      "mode": 33152,
+      "uid": 501,
+      "type": "file",
+      "sha256": "a64b5437d2d4fd4003ac0bf53bca1ae371cd29a10cb677d4272240d4db512d45",
+      "bytes": 11188
+    },
+    {
+      "path": "/Users/saleh/Library/Caches/SalehParity145/candidate-8ncag0ai/installed-native-fixture145",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "90995204"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "90995204"
+      },
+      "mode": 16832,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Library/Caches/SalehParity145/candidate-8ncag0ai/installed-native-fixture145/.git",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "90995210"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "90995210"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Library/Caches/SalehParity145/candidate-8ncag0ai/installed-native-fixture145/.git/worktrees/5d489333-495b-4e7d-a1dd-cbd4dff5bed3",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "91516021"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "91516021"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Library/Caches/SalehParity145/candidate-8ncag0ai/installed-native-fixture145/.git/worktrees/5d489333-495b-4e7d-a1dd-cbd4dff5bed3/commondir",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "91516026"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "340ddcb67a6204f742cd1e28e5b462622dde7daaa8ee36001897196aacdc6d47",
+      "bytes": 6
+    },
+    {
+      "path": "/Users/saleh/Library/Caches/SalehParity145/candidate-8ncag0ai/installed-native-fixture145/.git/worktrees/5d489333-495b-4e7d-a1dd-cbd4dff5bed3/gitdir",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "91516024"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "92f8b444584ff1d4a234631df099028c4ad24f48ae081680c5dd6d862f49ee3f",
+      "bytes": 111
+    },
+    {
+      "path": "/Users/saleh/Library/Caches/SalehParity145/candidate-8ncag0ai/installed-native-fixture145/.git/worktrees/5d489333-495b-4e7d-a1dd-cbd4dff5bed3/locked",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "91516022"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "147640e202d6b0672189c2eac0b4620183d6c84cf661836db82d2241c612547e",
+      "bytes": 60
+    },
+    {
+      "path": "/Users/saleh/Library/Caches/SalehParity146/candidate-zmoikd3o/installed-native-fixture146",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "91823005"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "91823005"
+      },
+      "mode": 16832,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Library/Caches/SalehParity146/candidate-zmoikd3o/installed-native-fixture146/.git",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "91823041"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "91823041"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Library/Caches/SalehParity146/candidate-zmoikd3o/installed-native-fixture146/.git/worktrees/a489c1ab-ee25-4301-bc77-13ece9639ae3",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "92334943"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "92334943"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Library/Caches/SalehParity146/candidate-zmoikd3o/installed-native-fixture146/.git/worktrees/a489c1ab-ee25-4301-bc77-13ece9639ae3/commondir",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "92334948"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "340ddcb67a6204f742cd1e28e5b462622dde7daaa8ee36001897196aacdc6d47",
+      "bytes": 6
+    },
+    {
+      "path": "/Users/saleh/Library/Caches/SalehParity146/candidate-zmoikd3o/installed-native-fixture146/.git/worktrees/a489c1ab-ee25-4301-bc77-13ece9639ae3/gitdir",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "92334946"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "c6b76434115bdfc3dbfb2a5f85147c08297e04175dbe032513846a7ef6cdc29d",
+      "bytes": 111
+    },
+    {
+      "path": "/Users/saleh/Library/Caches/SalehParity146/candidate-zmoikd3o/installed-native-fixture146/.git/worktrees/a489c1ab-ee25-4301-bc77-13ece9639ae3/locked",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "92334944"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "6769bf6173325e43a10f29611172a38da34b0249288a2c9c744c6064c96e3fc6",
+      "bytes": 60
+    },
+    {
+      "path": "/Users/saleh/Library/Caches/SalehParity147/candidate-6f30fur_/installed-native-fixture147",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "92860459"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "92860459"
+      },
+      "mode": 16832,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Library/Caches/SalehParity147/candidate-6f30fur_/installed-native-fixture147/.git",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "92860460"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "92860460"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Library/Caches/SalehParity147/candidate-6f30fur_/installed-native-fixture147/.git/worktrees/3dd77910-2a21-4630-8786-f7aff154e3e2",
+      "historicalIdentity": {
+        "dev": "16777233",
+        "ino": "96861565"
+      },
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "96861565"
+      },
+      "mode": 16877,
+      "uid": 501,
+      "type": "directory"
+    },
+    {
+      "path": "/Users/saleh/Library/Caches/SalehParity147/candidate-6f30fur_/installed-native-fixture147/.git/worktrees/3dd77910-2a21-4630-8786-f7aff154e3e2/commondir",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "96861570"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "340ddcb67a6204f742cd1e28e5b462622dde7daaa8ee36001897196aacdc6d47",
+      "bytes": 6
+    },
+    {
+      "path": "/Users/saleh/Library/Caches/SalehParity147/candidate-6f30fur_/installed-native-fixture147/.git/worktrees/3dd77910-2a21-4630-8786-f7aff154e3e2/gitdir",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "96861568"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "f047861d90258d47801bbe6570cea516f2c98699343bd3c3211f9819f4b1988b",
+      "bytes": 111
+    },
+    {
+      "path": "/Users/saleh/Library/Caches/SalehParity147/candidate-6f30fur_/installed-native-fixture147/.git/worktrees/3dd77910-2a21-4630-8786-f7aff154e3e2/locked",
+      "historicalIdentity": null,
+      "identity": {
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+        "ino": "96861566"
+      },
+      "mode": 33188,
+      "uid": 501,
+      "type": "file",
+      "sha256": "e3ba98c9ed0a49e6d5ab4dc729b1e8a8872aa852c08a6582fd2acdef3a3389d6",
+      "bytes": 61
+    }
+  ],
+  "namespaces": [
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-12/i-want-the-app-to-work/work/native-archive-project/.git",
+      "names": [
+        ".DS_Store",
+        "COMMIT_EDITMSG",
+        "HEAD",
+        "config",
+        "description",
+        "hooks",
+        "index",
+        "info",
+        "logs",
+        "objects",
+        "refs",
+        "worktrees"
+      ]
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-12/i-want-the-app-to-work/work/native-archive-project/.git/worktrees/a7f39a3c-722f-4287-9def-73b1bd5cb648",
+      "names": [
+        "HEAD",
+        "commondir",
+        "gitdir",
+        "index",
+        "locked",
+        "logs",
+        "refs"
+      ]
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-12/i-want-the-app-to-work/work/native-worktree-project/.git",
+      "names": [
+        "COMMIT_EDITMSG",
+        "HEAD",
+        "config",
+        "description",
+        "hooks",
+        "index",
+        "info",
+        "logs",
+        "objects",
+        "refs",
+        "worktrees"
+      ]
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-12/i-want-the-app-to-work/work/native-worktree-project/.git/worktrees/8e4228a1-8f36-49c2-bc85-0c39c6ed9c01",
+      "names": [
+        "HEAD",
+        "commondir",
+        "gitdir",
+        "index",
+        "locked",
+        "logs",
+        "refs"
+      ]
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build75/installed-fixture/.git",
+      "names": [
+        ".DS_Store",
+        "COMMIT_EDITMSG",
+        "HEAD",
+        "config",
+        "description",
+        "hooks",
+        "index",
+        "info",
+        "logs",
+        "objects",
+        "refs",
+        "worktrees"
+      ]
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build75/installed-fixture/.git/worktrees/10af28cd-e5f0-4cec-ba47-7bf92bb0378b",
+      "names": [
+        "HEAD",
+        "commondir",
+        "gitdir",
+        "index",
+        "locked",
+        "logs",
+        "refs"
+      ]
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build81/installed-fixture/.git",
+      "names": [
+        ".DS_Store",
+        "COMMIT_EDITMSG",
+        "HEAD",
+        "config",
+        "description",
+        "hooks",
+        "index",
+        "info",
+        "logs",
+        "objects",
+        "refs",
+        "worktrees"
+      ]
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build81/installed-fixture/.git/worktrees/391e9a6f-e15a-46d4-abc8-4a4d9745cbd9",
+      "names": [
+        "HEAD",
+        "commondir",
+        "gitdir",
+        "index",
+        "locked",
+        "logs",
+        "refs"
+      ]
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build82/installed-fixture/.git",
+      "names": [
+        "COMMIT_EDITMSG",
+        "HEAD",
+        "config",
+        "description",
+        "hooks",
+        "index",
+        "info",
+        "logs",
+        "objects",
+        "refs",
+        "worktrees"
+      ]
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build82/installed-fixture/.git/worktrees/bdcaf90b-3a9e-4e8d-8206-f9e109378014",
+      "names": [
+        "HEAD",
+        "commondir",
+        "gitdir",
+        "index",
+        "locked",
+        "logs",
+        "refs"
+      ]
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build85/installed-fixture/.git",
+      "names": [
+        ".DS_Store",
+        "COMMIT_EDITMSG",
+        "HEAD",
+        "config",
+        "description",
+        "hooks",
+        "index",
+        "info",
+        "logs",
+        "objects",
+        "refs",
+        "worktrees"
+      ]
+    },
+    {
+      "path": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build85/installed-fixture/.git/worktrees/1ea0ee7d-f037-4537-8920-43e8d75819ca",
+      "names": [
+        "HEAD",
+        "commondir",
+        "gitdir",
+        "index",
+        "locked",
+        "logs",
+        "refs"
+      ]
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees",
+      "names": [
+        ".archives",
+        ".handoffs",
+        "10af28cd-e5f0-4cec-ba47-7bf92bb0378b",
+        "1ea0ee7d-f037-4537-8920-43e8d75819ca",
+        "391e9a6f-e15a-46d4-abc8-4a4d9745cbd9",
+        "3dd77910-2a21-4630-8786-f7aff154e3e2",
+        "5d489333-495b-4e7d-a1dd-cbd4dff5bed3",
+        "8e4228a1-8f36-49c2-bc85-0c39c6ed9c01",
+        "a489c1ab-ee25-4301-bc77-13ece9639ae3",
+        "a7f39a3c-722f-4287-9def-73b1bd5cb648",
+        "bdcaf90b-3a9e-4e8d-8206-f9e109378014"
+      ]
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/.archives",
+      "names": [
+        "07dc6069-4228-4678-98e0-f1d718944d94",
+        "847c7b18-80f4-48fa-ac6f-efa813baded7",
+        "f00b8962-cd85-431f-9810-d657f0dd9a5d"
+      ]
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/.archives/07dc6069-4228-4678-98e0-f1d718944d94",
+      "names": [
+        "manifest.json",
+        "original-index",
+        "recovery.bundle",
+        "snapshot.git",
+        "verified.git"
+      ]
+    },
+    {
+      "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding/Worktrees/.archives/847c7b18-80f4-48fa-ac6f-efa813baded7",
+      "names": [
+        "manifest.json",
+        "original-index",
+        "recovery.bundle",
+        "snapshot.git",
+        "verified.git"
+      ]
+    },
+    {
+      "path": "/Users/saleh/Library/Caches/SalehParity145/candidate-8ncag0ai/installed-native-fixture145/.git",
+      "names": [
+        "COMMIT_EDITMSG",
+        "HEAD",
+        "config",
+        "description",
+        "hooks",
+        "index",
+        "info",
+        "logs",
+        "objects",
+        "refs",
+        "worktrees"
+      ]
+    },
+    {
+      "path": "/Users/saleh/Library/Caches/SalehParity145/candidate-8ncag0ai/installed-native-fixture145/.git/worktrees/5d489333-495b-4e7d-a1dd-cbd4dff5bed3",
+      "names": [
+        "HEAD",
+        "commondir",
+        "gitdir",
+        "index",
+        "locked",
+        "logs",
+        "refs"
+      ]
+    },
+    {
+      "path": "/Users/saleh/Library/Caches/SalehParity146/candidate-zmoikd3o/installed-native-fixture146/.git",
+      "names": [
+        "COMMIT_EDITMSG",
+        "HEAD",
+        "config",
+        "description",
+        "hooks",
+        "index",
+        "info",
+        "logs",
+        "objects",
+        "refs",
+        "worktrees"
+      ]
+    },
+    {
+      "path": "/Users/saleh/Library/Caches/SalehParity146/candidate-zmoikd3o/installed-native-fixture146/.git/worktrees/a489c1ab-ee25-4301-bc77-13ece9639ae3",
+      "names": [
+        "HEAD",
+        "commondir",
+        "gitdir",
+        "index",
+        "locked",
+        "logs",
+        "refs"
+      ]
+    },
+    {
+      "path": "/Users/saleh/Library/Caches/SalehParity147/candidate-6f30fur_/installed-native-fixture147/.git",
+      "names": [
+        "COMMIT_EDITMSG",
+        "HEAD",
+        "config",
+        "description",
+        "hooks",
+        "index",
+        "info",
+        "logs",
+        "objects",
+        "refs",
+        "worktrees"
+      ]
+    },
+    {
+      "path": "/Users/saleh/Library/Caches/SalehParity147/candidate-6f30fur_/installed-native-fixture147/.git/worktrees/3dd77910-2a21-4630-8786-f7aff154e3e2",
+      "names": [
+        "HEAD",
+        "commondir",
+        "gitdir",
+        "index",
+        "locked",
+        "logs",
+        "refs"
+      ]
+    }
+  ]
+}

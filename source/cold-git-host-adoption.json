@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "kind": "reviewed-current-host-adoption-for-cold-git-exclusion",
+  "historicalHostUUIDEstablished": false,
+  "captureBootSession": "AE2DA6C4-6882-4342-9698-6DEA63D67F05",
+  "dataDirectory": {
+    "path": "/Users/saleh/Library/Application Support/Qwen Local/Coding",
+    "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+    "ino": "26838645",
+    "uid": 501
+  },
+  "evidence": {
+    "stoppedSnapshotSHA256": "77195080df554525cba7bca5becd4df383c6ef185a9a45def70acf05385c0fdd",
+    "hostObservationSHA256": "2579cb007e76418a005548eb115589e53945b22106c8170ec3fce14b4da3a7a2",
+    "reviewSHA256": "3c3f29312d758106486ee8c39a7053eb27b18f7e24ef7939825b02145e92b182",
+    "predecessorSourceManifestSHA256": "852686360c19aa6fe5feea437d3efc96f7b87a3ec4351ed4b5306a11e6e2664b"
+  },
+  "rows": [
+    {
+      "ownerId": "0dd0958d-51a4-4b72-8dc2-d23bbb0ba591",
+      "generation": "2ce7917d-cb2a-4634-958c-96a2199495ae",
+      "cwd": "/Users/saleh/Library/Caches/saleh-build43-native-no1udx1j",
+      "allocationDirectory": {
+        "path": "/Users/saleh/Library/Application Support/Saleh Uncensored Runtime/Executors/0dd0958d-51a4-4b72-8dc2-d23bbb0ba591-2ce7917d-cb2a-4634-958c-96a2199495ae",
+        "identity": {
+          "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+          "ino": "31555633"
+        }
+      },
+      "allocationSHA256": "c258ebde9bc309dfdd84988c783a35b360252df5a8db2d101a2e0a7d2de5b315",
+      "historicalHostIdentity": {
+        "dev": "16777233",
+        "ino": "31555315",
+        "mode": 16832,
+        "uid": 501
+      },
+      "currentHostIdentity": {
+        "dev": "16777232",
+        "ino": "31555315",
+        "mode": 16832,
+        "uid": 501,
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94"
+      }
+    },
+    {
+      "ownerId": "3475d914-e443-462e-8700-72a5ad4ab48c",
+      "generation": "ce986b3b-a937-4921-984b-1261f982869b",
+      "cwd": "/Users/saleh/Library/Caches/saleh-coding-pilot-0jbfhiqn",
+      "allocationDirectory": {
+        "path": "/Users/saleh/Library/Application Support/Saleh Uncensored Runtime/Executors/3475d914-e443-462e-8700-72a5ad4ab48c-ce986b3b-a937-4921-984b-1261f982869b",
+        "identity": {
+          "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+          "ino": "32544108"
+        }
+      },
+      "allocationSHA256": "3bca538c4de1a0921a71ffae0e62bc84d8c460521e85401bec704b1e0b044a0a",
+      "historicalHostIdentity": {
+        "dev": "16777233",
+        "ino": "32536734",
+        "mode": 16832,
+        "uid": 501
+      },
+      "currentHostIdentity": {
+        "dev": "16777232",
+        "ino": "32536734",
+        "mode": 16832,
+        "uid": 501,
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94"
+      }
+    },
+    {
+      "ownerId": "9b36bd26-88cc-4568-9cb4-6cd15146969b",
+      "generation": "a8de1d3c-5e4e-4b4e-8eef-8f0dd05c5520",
+      "cwd": "/Users/saleh/Library/Caches/saleh-coding-pilot57-smqzqo89",
+      "allocationDirectory": {
+        "path": "/Users/saleh/Library/Application Support/Saleh Uncensored Runtime/Executors/9b36bd26-88cc-4568-9cb4-6cd15146969b-a8de1d3c-5e4e-4b4e-8eef-8f0dd05c5520",
+        "identity": {
+          "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+          "ino": "32861417"
+        }
+      },
+      "allocationSHA256": "fbaf7b5b92751ca036b6fdd460c5c5afeae39d00cf0759aa1e26f2946a8858ae",
+      "historicalHostIdentity": {
+        "dev": "16777233",
+        "ino": "32857601",
+        "mode": 16832,
+        "uid": 501
+      },
+      "currentHostIdentity": {
+        "dev": "16777232",
+        "ino": "32857601",
+        "mode": 16832,
+        "uid": 501,
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94"
+      }
+    },
+    {
+      "ownerId": "76abfabc-4ad0-425b-9f11-4cd248f8ad64",
+      "generation": "f847a1ad-60b4-4b9f-a074-961d25b9ef1d",
+      "cwd": "/Users/saleh/Library/Caches/saleh-coding-pilot69-z_ltbc4i",
+      "allocationDirectory": {
+        "path": "/Users/saleh/Library/Application Support/Saleh Uncensored Runtime/Executors/76abfabc-4ad0-425b-9f11-4cd248f8ad64-f847a1ad-60b4-4b9f-a074-961d25b9ef1d",
+        "identity": {
+          "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94",
+          "ino": "34914732"
+        }
+      },
+      "allocationSHA256": "1e69c09e1dbf936221d70be4862bf03945eca5cb1641e4e81e9e9ab50648806f",
+      "historicalHostIdentity": {
+        "dev": "16777230",
+        "ino": "34909467",
+        "mode": 16832,
+        "uid": 501
+      },
+      "currentHostIdentity": {
+        "dev": "16777232",
+        "ino": "34909467",
+        "mode": 16832,
+        "uid": 501,
+        "volumeUUID": "DA5786BC-3563-4A7A-865E-A1E8A7805C94"
+      }
+    }
+  ]
+}

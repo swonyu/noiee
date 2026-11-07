@@ -1,0 +1,124 @@
+# Private credential and control pipe; invoke with /usr/bin/expect -N -n.
+# Upload's fixed launcher execs SSH in the same owned child, with fd4 as stdin.
+log_user 0
+exp_internal 0
+set stty_init "-echo"
+set spawned 0
+set stopping 0
+set child_pid 0
+if {$argc != 8} { exit 64 }
+lassign $argv nonce mode ip user known_hosts alias arg1 arg2
+if {![regexp {^[a-f0-9-]{36}$} $nonce]} { exit 64 }
+proc no_child {reason} { global nonce; puts stderr "GUEST_NO_CHILD $nonce $reason"; exit 64 }
+proc reap {} {
+ global spawned spawn_id child_pid
+ catch {close -i $spawn_id}
+ if {[catch {wait -i $spawn_id} row] || [llength $row] < 4 || [lindex $row 0] != $child_pid || [lindex $row 2] != 0} { return [list unknown unknown] }
+ set spawned 0
+ if {[llength $row] == 4 && [string is integer -strict [lindex $row 3]]} { return [list exit [lindex $row 3]] }
+ if {[llength $row] >= 6 && [lindex $row 4] eq "CHILDKILLED" && [regexp {^SIG[A-Z0-9]+$} [lindex $row 5]]} { return [list signal [lindex $row 5]] }
+ return [list unknown unknown]
+}
+proc stop_session {reason} {
+ global spawned stopping child_pid spawn_id nonce password
+ if {$stopping} { return }; set stopping 1
+ catch {unset password}
+ if {!$spawned} { no_child $reason }
+ # This exact, unreaped direct child is still owned (launcher or exec'd SSH).
+ catch {exec /bin/kill -KILL -- $child_pid}
+ lassign [reap] kind value
+ puts stderr "GUEST_CLOSED $nonce $child_pid $kind $value $reason"
+ if {$kind eq "unknown"} { exit 125 }
+ exit 0
+}
+trap {stop_session SIGTERM} SIGTERM
+trap {stop_session SIGINT} SIGINT
+trap {stop_session SIGHUP} SIGHUP
+proc credential_read {} {
+ global credential_buffer credential_done
+ if {[catch {read stdin [expr {49-[string length $credential_buffer]}]} chunk]} { set credential_done -1; return }
+ append credential_buffer $chunk
+ if {[string length $credential_buffer] == 49} {
+  if {[regexp {^[A-Za-z0-9_-]{48}\n$} $credential_buffer]} { set credential_done 1 } else { set credential_done -1 }
+ } elseif {[eof stdin]} { set credential_done -1 }
+}
+proc control_read {} {
+ global control
+ if {[catch {read stdin 32} chunk]} { stop_session INPUT_FAILED; return }
+ append control $chunk
+ if {$control eq "stop\n"} { stop_session STOP }
+ if {[string length $control] > 5 || [string first $control "stop\n"] != 0} { stop_session INPUT_REJECTED }
+ if {[eof stdin]} { stop_session PARENT_EOF }
+}
+if {$mode ni {command forward upload} || ![regexp {^[A-Za-z_][A-Za-z0-9_-]{0,63}$} $user]
+ || ![regexp {^[A-F0-9-]{36}$} $alias] || [file pathtype $known_hosts] ne "absolute"
+ || [regexp {[\x00-\x1f\x7f%]} $known_hosts] || [string first "\$\{" $known_hosts] >= 0} { no_child INPUT_REJECTED }
+set octets [split $ip .]
+if {[llength $octets] != 4} { no_child INPUT_REJECTED }
+foreach octet $octets {
+ if {![regexp {^(0|[1-9][0-9]{0,2})$} $octet] || $octet > 255} { no_child INPUT_REJECTED }
+}
+lassign $octets a b
+if {!($a == 10 || ($a == 172 && $b >= 16 && $b <= 31) || ($a == 192 && $b == 168))} { no_child INPUT_REJECTED }
+if {$mode eq "forward"} {
+ foreach port [list $arg1 $arg2] { if {![regexp {^[1-9][0-9]{0,4}$} $port] || $port > 65535} { no_child INPUT_REJECTED } }
+} elseif {[string length $arg1] > 65536 || [string first "\x00" $arg1] >= 0} { no_child INPUT_REJECTED }
+set credential_buffer ""; set credential_done 0
+fconfigure stdin -blocking 0 -translation binary
+fileevent stdin readable credential_read
+set timer [after 5000 {set credential_done -1}]
+vwait credential_done
+after cancel $timer; fileevent stdin readable {}
+if {$credential_done != 1} { no_child CREDENTIAL_REJECTED }
+set password [string range $credential_buffer 0 47]
+unset credential_buffer credential_done
+# Quote the option's value, since OpenSSH parses whitespace inside -o arguments.
+set pin [string map [list "\\" "\\\\" "\"" "\\\""] $known_hosts]
+set args [list /usr/bin/ssh -F none -T -e none \
+ -o IdentityAgent=none -o IdentityFile=none -o IdentitiesOnly=yes \
+ -o PubkeyAuthentication=no -o PreferredAuthentications=password \
+ -o PasswordAuthentication=yes -o KbdInteractiveAuthentication=no \
+ -o HostbasedAuthentication=no -o GSSAPIAuthentication=no -o NumberOfPasswordPrompts=1 \
+ -o ForwardAgent=no -o ForwardX11=no -o ControlMaster=no -o ControlPath=none \
+ -o ControlPersist=no -o PermitLocalCommand=no -o ConnectTimeout=5 -o ConnectionAttempts=1 \
+ -o ServerAliveInterval=3 -o ServerAliveCountMax=2 -o "UserKnownHostsFile=\"$pin\"" \
+ -o GlobalKnownHostsFile=/dev/null -o "HostKeyAlias=$alias" -o StrictHostKeyChecking=yes \
+ -o CheckHostIP=no -o VerifyHostKeyDNS=no -o UpdateHostKeys=no -o LogLevel=ERROR]
+if {$mode eq "forward"} {
+ lappend args -o ClearAllForwardings=no -o ExitOnForwardFailure=yes -N -L "127.0.0.1:$arg1:127.0.0.1:$arg2" -- "$user@$ip"
+} else { lappend args -o ClearAllForwardings=yes -- "$user@$ip" $arg1 }
+if {[catch {
+ if {$mode eq "upload"} {spawn -noecho /bin/sh -c {exec /usr/bin/ssh "$@" <&4 4<&-} guest-upload {*}[lrange $args 1 end]} else {spawn -noecho {*}$args}
+}]} { no_child SPAWN_FAILED }
+set spawned 1; set child_pid [exp_pid -i $spawn_id]
+# macOS Tcl's text codec corrupts four-byte UTF-8; preserve SSH bytes for Node.
+fconfigure $spawn_id -encoding binary -translation binary
+fconfigure stdout -encoding binary -translation binary
+puts stderr "GUEST_SPAWNED $nonce $child_pid"
+# Keep stdin alive after spawn: EOF revokes the transport if its parent dies.
+# Never close fd0 before spawn (the macOS Expect build reuses it unsafely).
+set control ""; fileevent stdin readable control_read
+match_max 1048576
+set timeout -1
+set prompted 0
+expect {
+ -nocase -re {password: *$} {
+  if {$prompted} { stop_session AUTH_REPEAT }
+  set prompted 1
+  if {[catch {send -- "$password\r"}]} { stop_session INPUT_FAILED }
+  exp_continue
+ }
+ full_buffer { stop_session OUTPUT_LIMIT }
+ eof { set output $expect_out(buffer) }
+}
+fileevent stdin readable {}
+# Trap delivery during/after wait must never signal a PID that has been reaped.
+set stopping 1
+lassign [reap] kind value
+if {[string length $output] > 1048576 || [string first $password $output] >= 0} {
+ puts stderr "GUEST_ERROR $nonce OUTPUT_REJECTED"
+} elseif {$mode ne "forward"} { puts -nonewline [string map {\r ""} $output] }
+unset password
+puts stderr "GUEST_CLOSED $nonce $child_pid $kind $value EOF"
+if {$kind eq "unknown"} { exit 125 }
+exit 0

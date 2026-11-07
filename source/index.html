@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Noiee</title><link rel="icon" href="data:,"><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/workspace.css"><script src="/work.js" defer></script><script src="/context-compaction.js" defer></script><script src="/chat-runs.js" defer></script><script src="/attachments.js" defer></script><script src="/attachment-storage.js" defer></script><script src="/chat-storage.js" defer></script><script src="/app.js" defer></script><script src="/computer.js" defer></script><script src="/tools.js" defer></script><script src="/workspace-extensions.js" defer></script><script src="/workspace.js" defer></script></head>
+<body class="workspace-chat">
+  <div id="overlay-shade" aria-hidden="true" hidden></div>
+  <aside id="sidebar" aria-label="Conversations">
+    <div class="brand"><strong>Noiee</strong><button id="close-sidebar" class="icon" aria-label="Close sidebar" title="Close sidebar"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="12" rx="2"/><path d="M8 4v12"/></svg></button></div>
+    <nav class="workspace-switcher" aria-label="Workspace"><span aria-current="page">Chat</span><button id="open-coding" type="button">Tasks</button></nav>
+    <button id="new-chat" class="new-chat"><span aria-hidden="true">＋</span> New chat <kbd>⌘ K</kbd></button>
+    <label class="search"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5"/><path d="m12 12 4.5 4.5"/></svg><input id="search" type="search" placeholder="Search chats" aria-label="Search chats"></label>
+    <div class="chat-list-heading"><p id="chat-list-label" class="section-label">Chats</p><button id="show-archived" type="button" aria-pressed="false" aria-controls="chats">Archived</button></div><nav id="chats" aria-label="Saved chats"></nav>
+    <div class="sidebar-footer">
+      <button id="workspace-extensions-open" type="button" aria-controls="workspace-extensions-panel" aria-expanded="false"><span class="workspace-nav-icon" aria-hidden="true">⊞</span>Extensions</button>
+      <button id="workspace-settings-open" type="button" aria-controls="workspace-settings" aria-expanded="false"><span class="workspace-nav-icon" aria-hidden="true">⚙</span>Settings</button>
+    </div>
+  </aside>
+  <main>
+    <header>
+      <button id="open-sidebar" class="icon" aria-label="Toggle sidebar" title="Toggle sidebar" aria-controls="sidebar"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="12" rx="2"/><path d="M8 4v12"/></svg></button>
+      <div class="breadcrumb"><strong id="title">New chat</strong><span id="archive-status" hidden>Archived</span><button id="rename-chat" class="icon" type="button" aria-label="Rename chat" title="Rename chat"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m12.5 4.5 3 3M4 16l3.5-.8L16 6.7a1.5 1.5 0 0 0 0-2.1l-.6-.6a1.5 1.5 0 0 0-2.1 0L4.8 12.5 4 16Z"/></svg></button><button id="archive-chat" class="icon" type="button" aria-label="Archive chat" title="Archive chat"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 7v9h12V7M3 4h14v3H3zM8 10h4"/></svg></button></div>
+      <button id="find-chat" class="icon" type="button" aria-label="Find in this chat" title="Find in this chat (⌘F)" aria-controls="chat-find" aria-expanded="false"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5"/><path d="m12 12 4.5 4.5"/></svg></button>
+      <button id="workspace-quick-open" class="workspace-quick-trigger" type="button" aria-label="Quick actions" title="Quick actions (⌘J)" aria-haspopup="dialog" aria-controls="workspace-quick-dialog"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m11 2-7 9h5l-1 7 8-10h-5z"/></svg><span>Quick actions</span><kbd>⌘J</kbd></button>
+      <button id="connection" title="Checking local models…" aria-label="Checking local models. Refresh local model inventory"><span class="dot"></span><span id="connection-text">Checking local models…</span></button>
+      <div class="inspector-actions" role="group" aria-label="Workspace panels"><button id="open-tools" class="context-toggle" aria-controls="context-panel" aria-expanded="false">Tools</button><button id="open-computer" class="context-toggle" aria-controls="context-panel" aria-expanded="false">Computer</button><button id="toggle-context" class="context-toggle" aria-controls="context-panel" aria-expanded="false">Context</button></div>
+    </header>
+    <div id="storage-notice" role="status" hidden></div><div id="notice" role="status" hidden></div><div id="backup-downloads" aria-label="Backup parts" hidden></div>
+    <section id="chat-background" class="banner" aria-label="Chat or Agent run" hidden><span id="chat-background-status" role="status"></span> <a id="chat-background-open" href="/">Open Chat</a> <button id="chat-background-review" type="button" hidden>Review next action</button> <button id="chat-background-stop" type="button">Stop this run</button> <button id="chat-background-receipt" type="button">View saved result</button></section>
+    <section id="chat-find" class="conversation-find" aria-label="Find in this chat" hidden>
+      <label class="sr-only" for="chat-find-query">Find message text in this chat</label><input id="chat-find-query" type="search" placeholder="Find message text…" maxlength="200" autocomplete="off" spellcheck="false" aria-describedby="chat-find-count">
+      <span id="chat-find-count" role="status" aria-live="polite" aria-atomic="true">Message text</span>
+      <div class="conversation-find-actions"><button id="chat-find-prev" type="button" aria-label="Previous matching message" title="Previous message (Shift Enter)" disabled>↑</button><button id="chat-find-next" type="button" aria-label="Next matching message" title="Next message (Enter)" disabled>↓</button><button id="chat-find-close" type="button" aria-label="Close find" title="Close find (Esc)">×</button></div>
+    </section>
+    <section id="thread" aria-label="Conversation" tabindex="0">
+      <div id="welcome"><h1>What would you like to make?</h1><p class="intro">A thought, a draft, a project. Start here.</p><div class="suggestions"><button data-prompt="Help me debug this code. I'll paste it next."><span class="suggestion-icon" aria-hidden="true">{ }</span><strong>Work through code</strong><small>Debug, explain, or refine</small></button><button data-prompt="Help me turn a rough idea into a clear plan. Ask me what I am building."><span class="suggestion-icon" aria-hidden="true">↗</span><strong>Shape an idea</strong><small>Make the next step clearer</small></button><button data-prompt="Help me improve a draft. I'll paste it next."><span class="suggestion-icon" aria-hidden="true">Aa</span><strong>Improve a draft</strong><small>Find the words that fit</small></button></div></div>
+      <section id="context-compaction" aria-label="Context compaction" hidden><p id="compaction-status" role="status" aria-atomic="true"></p><details id="compaction-details" class="tool-receipts" hidden><summary>Context summary · original history kept</summary><p id="compaction-range" dir="auto"></p><pre id="compaction-summary" dir="auto" tabindex="0"></pre><button id="compaction-originals" type="button">Show original messages</button></details><button id="compaction-apply" type="button" hidden>Apply saved summary</button></section>
+      <div id="messages"></div>
+    </section>
+    <button id="jump-latest" hidden>↓ Latest reply</button>
+    <div class="compose-area"><form id="composer">
+      <div id="draft-attachments" class="attachment-list" aria-label="Attachments for your next message"></div><input type="file" id="message-files" hidden multiple accept=".txt,.md,.json,.js,.mjs,.ts,.tsx,.jsx,.py,.csv,.css,.html,.swift,.log,.yaml,.yml,.xml,.sh,.kt,.java,.c,.h,.cpp,.rs,.go,.png,.jpg,.jpeg">
+      <div id="composer-file" hidden><span id="composer-file-name"></span><button id="composer-remove-file" type="button" aria-label="Remove attached text file" title="Remove attached text file">×</button></div>
+      <label class="sr-only" for="prompt">Message the selected model</label><textarea spellcheck="false" autocorrect="off" autocapitalize="off" id="prompt" placeholder="Message Noiee…" rows="2" maxlength="20000" dir="auto"></textarea>
+      <div class="composer-controls"><div class="compose-toolbar"><button id="composer-attach" class="icon" type="button" aria-label="Attach files or images" title="Attach up to 4 text files or PNG/JPEG images"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg></button><button id="workspace-access-chip" type="button" aria-controls="workspace-settings" aria-label="Tool access settings" title="Open tool access settings">Tool access</button><div class="composer-options"><div class="chat-model-field"><label class="sr-only" for="chat-model">Model for this chat</label><select id="chat-model" aria-describedby="model-status" disabled><option value="">Checking local models…</option></select></div><label class="sr-only" for="chat-mode">Mode</label><select id="chat-mode" title="Agent can use native tools; Chat answers without tools"><option value="agent">Agent</option><option value="chat">Chat</option></select><label class="sr-only" for="thinking">Response</label><select id="thinking" title="Fast and Long answer turn reasoning off. Deep reasoning turns it on. No fixed response token cap; model context and request limits still apply."><option value="standard">Fast</option><option value="long">Long answer</option><option value="deep">Deep reasoning</option></select><button id="send" type="submit" aria-label="Send message" title="Send message">↑</button><button id="stop" type="button" aria-label="Stop generating" hidden>■ <span>Stop</span></button></div></div></div>
+    </form><p id="model-status" role="status" aria-atomic="true">Checking available local models…</p><div class="under-composer"><span id="activity" role="status" aria-atomic="true">Local model · No computer access</span><button id="compact-context" type="button" aria-describedby="compaction-status" title="Summarize an earlier complete exchange; keep original history and your draft">Compact context</button><button id="focus-reply" type="button" hidden>Go to reply</button><span>↵ Send <span class="divider">·</span> Shift ↵ New line</span></div></div>
+  </main>
+  <aside id="context-panel" aria-label="Chat context" hidden>
+    <div class="context-heading"><strong id="inspector-title">Context</strong><button id="close-context" class="icon" aria-label="Close panel">×</button></div>
+    <div id="context-fields">
+    <p class="context-intro">Keep the brief close. The selected model uses these notes and the selected file in this chat.</p>
+    <label class="field-label" for="project-name">Project name</label><input id="project-name" maxlength="60" placeholder="Personal workspace">
+    <label class="field-label" for="notes">Working notes</label><textarea spellcheck="false" autocorrect="off" autocapitalize="off" id="notes" rows="7" maxlength="6000" placeholder="What are you building? Add goals, constraints, and preferences." dir="auto"></textarea>
+    <div class="context-file"><button class="file-button" id="add-file">＋ Add a text file</button><input hidden type="file" id="text-file" accept=".txt,.md,.json,.js,.mjs,.ts,.tsx,.jsx,.py,.csv,.css,.html,.swift,.log"><p id="file-name">UTF-8 text · up to 12,000 characters and 64 KB</p><button id="remove-file" hidden>Remove file</button></div>
+    <details class="context-summary"><summary>Model and session details</summary><dl><div><dt>Model</dt><dd class="exact-model">Checking selected model…</dd></div><div><dt>Runs on</dt><dd>This Mac</dd></div><div><dt>Loaded context</dt><dd id="loaded-context">Checking…</dd></div><div><dt>Reasoning settings</dt><dd id="reasoning-capability">Checking…</dd></div><div><dt>Mode</dt><dd id="mode-summary">Chat</dd></div><div><dt>Computer access</dt><dd>Selected tool mode and macOS permissions</dd></div></dl><p id="context-count">No context added</p></details>
+    </div>
+    <section id="tools-panel" hidden aria-label="Agent tools">
+      <h2>Tools that take action</h2>
+      <h3>Connected tools</h3><p>File tools use a folder you choose. Browser tools use an isolated Chrome session. Connect only servers you trust.</p>
+      <div class="computer-buttons"><button id="tools-files">Add folder…</button><button id="tools-browser">Add browser</button></div>
+      <div id="tool-servers"></div>
+      <div class="computer-buttons"><button id="tools-config">Edit MCP config</button><button id="tools-refresh">Refresh</button></div>
+      <h3>Project skills</h3><p>Choose a project, install a free skill, then ask Agent to read and use it for your task. Existing skill files are retained.</p>
+      <p id="skills-project">No project selected.</p><div class="computer-buttons"><button id="skills-choose">Choose project…</button><button id="skills-refresh">Refresh skills</button></div>
+      <div id="skills-catalog"></div><p id="skills-status" role="status">Three fixed skills are available through the native app.</p><pre id="skills-preview" hidden tabindex="0"></pre>
+      <h3>Fetch for Agent tools</h3><p>Read public web pages with the free official Fetch plugin. Install its fixed runtime, enable it, then choose Connect below. It requires the qualified existing Python installation. This entry is for Agent tools; Coding connections keep their existing setup.</p>
+      <div id="fetch-catalog"></div><button id="fetch-refresh">Refresh Fetch</button><p id="fetch-status" role="status">Fetch is optional. Installing or enabling does not connect it or run a request.</p>
+      <p>Agent mode inspects windows and accessible controls, acts on offered elements or screenshot coordinates, then checks the screen again. It can also open apps, run commands and request calls. Tools follow the access mode shown in Settings. Full Access skips operational confirmations; required choices and macOS permissions still apply.</p>
+      <button id="tools-share">Share screen or window…</button>
+      <details class="call-handoff"><summary>Calling someone</summary><p>Ask in Agent mode, then choose and confirm the exact person and number in the native dialog. Phone or FaceTime must be set up for calls.</p><button id="open-facetime">Open FaceTime</button></details>
+      <h3>Available tools</h3>
+      <label class="field-label" for="tools-query">Find a tool</label><input id="tools-query" maxlength="500" placeholder="e.g. browser, files, computer">
+      <div class="computer-buttons"><button id="tools-search">Search</button><button id="tools-more" hidden>Show more</button></div>
+      <p id="tools-count" role="status"></p><div id="tool-catalog"></div>
+      <p>Built-in tools use this Mac’s permissions. MCP tools work only while their provider is connected. Hosted search, image generation and cloud accounts need their own compatible provider; Codex’s private chat, usage and account tools are not inherited.</p>
+      <p id="tools-status" role="status">Native tools require the Mac app.</p>
+      <p class="computer-privacy">More MCP servers can be configured here. Connections and tool calls follow the selected access mode. Routine reads in approved bundled tools are automatic; Full Access also skips operational confirmations. No passwords, permissions or accounts are automatically granted. Stop disconnects MCP servers and clears screen access; it cannot undo an action already sent.</p>
+    </section>
+    <section id="computer-panel" hidden aria-label="Supervised computer use"><p class="muted">Computer practice uses this chat’s selected local model. It must be loaded and support images and Standard reasoning.</p>
+      <h2>Try one computer action</h2><p class="supervised-label">MANUAL PRACTICE</p>
+      <p>Choose a window and review one proposed action. For a longer task, use Agent mode in the main chat; it can observe, act and check each result.</p>
+      <p class="field-label">1 · Select a window</p><div class="computer-buttons"><button id="computer-practice">Try practice</button><button id="computer-choose">Choose window</button></div>
+      <p id="computer-target">No window shared</p>
+      <label class="field-label" for="computer-task">2 · Describe one small task</label><textarea spellcheck="false" autocorrect="off" autocapitalize="off" id="computer-task" rows="3" maxlength="2000" placeholder="e.g. Enter a short note in the selected field"></textarea>
+      <div class="computer-buttons"><button id="computer-observe">Observe & propose</button><button id="computer-stop">Stop</button></div>
+      <p id="computer-status" role="status">Available in the native Mac app.</p>
+      <img id="computer-image" alt="Latest selected-window snapshot" hidden>
+      <p id="computer-proposal" aria-label="Proposed action" hidden></p><button id="computer-apply" hidden>Review action…</button>
+      <p class="computer-privacy">Snapshots go only to local LM Studio and are not saved in chat. For external controls, enable Noiee in System Settings → Privacy & Security → Accessibility. Screen text is untrusted; review every action. Stop cancels pending work but cannot undo an action already sent.</p>
+    </section>
+  </aside>
+  <aside id="workspace-settings" class="workspace-utility-panel" aria-labelledby="workspace-settings-title" hidden>
+    <div class="workspace-panel-heading"><h2 id="workspace-settings-title">Settings</h2><button id="workspace-settings-close" class="icon" type="button" aria-label="Close settings" title="Close settings">×</button></div>
+    <div class="workspace-panel-body">
+      <section class="model-settings" aria-label="Tool access">
+        <strong>Tool access · This launch</strong>
+        <p id="tool-access-status" role="status">Checking current tool access…</p>
+        <p>Change the mode in the Noiee app menu. Changes take effect after a normal quit and relaunch. macOS permissions and required choices still apply.</p>
+        <p id="tool-access-recovery" hidden>Verified ready worktrees can open new chats. Stage, unstage, commit, local branch creation and branch switching use fresh Git checks and locks. Fresh detached worktrees can be created from a reviewed commit. Archive, restore and handoff keep their separate recovery checks for this Mac boot. For retained recovery, choose Prepare In-place Recovery in the app menu, then restart the Mac. Full Access stays selected while unrestricted tools are held. A restart alone does not complete recovery.</p>
+      </section>
+      <section class="model-settings" aria-label="Local model settings">
+        <div class="model-settings-heading"><label for="default-model">Default local model</label><button id="models-refresh" type="button" title="Refresh available local models" aria-label="Refresh available local models">↻</button></div>
+        <select id="default-model" aria-describedby="default-model-note" disabled><option value="">Checking local models…</option></select>
+        <p id="default-model-note">Local models · No API charges. New chats and schedules use your default. Existing ones keep their saved model. Selection never downloads a model.</p>
+      </section>
+      <button id="export">↓ &nbsp; Export chats</button><label class="restore-button">↑ &nbsp; Restore backup<input type="file" id="restore-file" accept=".json,application/json" aria-label="Restore chat backup" multiple></label><section class="model-settings" aria-label="Exact history recovery"><label for="recovery-selected-id">Recorded selected chat ID</label><input id="recovery-selected-id" type="text" autocomplete="off" spellcheck="false" placeholder="Required when the export omits selectedId"><p>Recover a complete export with its original IDs and run links. Existing chats and messages must remain in order and unchanged. The previous saved snapshot is retained.</p><label class="restore-button">Recover exact history<input type="file" id="recovery-file" accept=".json,application/json" aria-label="Recover exact chat history" multiple></label></section><div class="device"><span class="device-mark" aria-hidden="true">⌘</span><div>On this Mac<small>Private local history</small></div></div>
+    </div>
+  </aside>
+  <dialog id="rename-dialog" aria-labelledby="rename-heading">
+    <form id="rename-form" method="dialog"><h2 id="rename-heading">Rename chat</h2><label class="field-label" for="rename-title">Chat name</label><input id="rename-title" type="text" maxlength="120" required autocomplete="off"><div class="dialog-actions"><button id="rename-cancel" type="button">Cancel</button><button type="submit">Save</button></div></form>
+  </dialog>
+</body>
+</html>

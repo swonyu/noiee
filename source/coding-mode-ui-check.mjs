@@ -1,0 +1,67 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {dirname, resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import vm from 'node:vm';
+const directory=resolve(process.argv[2]??dirname(fileURLToPath(import.meta.url)));
+const source=readFileSync(resolve(directory,'coding.js'),'utf8');
+const extract=(from,to)=>{const a=source.indexOf(from),b=source.indexOf(to,a);assert(a>=0&&b>a);return source.slice(a,b);};
+const calls=[],nodes={'provider':{value:'local'},'execution-mode':{value:'native'}};
+const context=vm.createContext({$:id=>nodes[id],setupBlocking:()=>false,checkoutNotice:()=>null,selectedId:'old',newModel:'qwen',localModels:{},modelEligibility:()=>({ready:true}),call:async(action,input)=>{calls.push({action,...input});return{thread:{id:'new'}};},adoptStartedThread:async()=>{},preferences:{pendingThreads:{}},title:t=>t.name??'New chat',save(){}});
+vm.runInContext(extract('  async function start(cwd, selection = {}) {','  async function adoptStartedThread(')+extract('  function rememberPending(thread, provider) {','  function native(body, cancellation)'),context);
+await context.start('/fixture/project');assert.equal(calls.at(-1).executionMode,'native','New chats must send the selected native mode');
+await context.start('/fixture/project',{executionMode:'vm'});assert.equal(calls.at(-1).executionMode,'vm');
+const count=calls.length;await assert.rejects(context.start('/fixture/project',{executionMode:'invalid'}),/mode/i);assert.equal(calls.length,count);
+context.rememberPending({id:'native',cwd:'/fixture/project',executionMode:'native',model:'qwen'},'local');
+context.rememberPending({id:'legacy',cwd:'/fixture/project',model:'qwen'},'local');
+assert.equal(context.preferences.pendingThreads.native.executionMode,'native');assert.equal(context.preferences.pendingThreads.legacy.executionMode,'vm','Old pending chats retain VM mode');
+const html=readFileSync(resolve(directory,'coding.html'),'utf8');
+assert.match(html,/<label for="execution-mode">/);assert.match(html,/<select id="execution-mode"[^>]*>[\s\S]*?<option value="native">[\s\S]*?<option value="vm">/);
+assert.match(source,/executionMode: draft.executionMode === undefined \? 'vm' : draft.executionMode/);
+assert.match(source,/executionMode: metadata.executionMode \?\? 'vm'/);
+for(const id of ['new-project','new-chat']){const line=source.split('\n').find(line=>line.includes(`$('${id}').onclick`));assert(line?.includes("executionMode: $('execution-mode').value"),'Snapshot mode before native folder review: '+id);}
+nodes['thread-execution-mode']={};
+const label=source.split('\n').find(line=>line.includes("$('thread-execution-mode').textContent"));assert(label);
+for(const [thread,expected] of [[{executionMode:'native'},'Native macOS'],[{executionMode:'vm'},'Virtual machine'],[{historySource:'legacy'},'Saved history — execution unavailable']]){context.thread=thread;vm.runInContext(label,context);assert.equal(nodes['thread-execution-mode'].textContent,expected);}
+console.log('PASS native/VM selection, invalid-mode refusal, pending mode preservation and creation capture');
+
+nodes.provider.selectedOptions=[{disabled:false}];
+const opened=[],adopted=[];
+Object.assign(context,{worktreesLoaded:true,worktreesReadOnly:false,worktreeMutating:false,worktreesBusy:false,worktreeStopRequested:false,worktrees:new Map([['managed',{state:'ready'}]]),act:async fn=>fn(),worktreeCall:async(action,input)=>{opened.push({action,...input});return {thread:{id:'managed-chat',executionMode:input.executionMode}};},adoptStartedThread:async(...args)=>adopted.push(args)});
+vm.runInContext(extract('  async function openWorktree(id) {','  const scheduleDraftKey ='),context);
+await context.openWorktree('managed');assert.equal(opened.at(-1).executionMode,'native','Worktree Open must carry the selected execution mode');
+assert.equal(opened.at(-1).model,'qwen');assert.equal(adopted.at(-1)[0].executionMode,'native');
+nodes['execution-mode'].value='vm';await context.openWorktree('managed');assert.equal(opened.at(-1).executionMode,'vm');
+const beforeInvalid=opened.length;nodes['execution-mode'].value='invalid';await assert.rejects(context.openWorktree('managed'),/mode/i);assert.equal(opened.length,beforeInvalid);
+let release;const held=new Promise(resolve=>release=resolve);context.act=async fn=>{await held;return fn();};
+nodes['execution-mode'].value='native';const pendingOpen=context.openWorktree('managed');nodes['execution-mode'].value='vm';release();await pendingOpen;
+assert.equal(opened.at(-1).executionMode,'native','Worktree Open must capture mode before queued native work');
+context.act=async fn=>fn();nodes.provider.value='cloud';await context.openWorktree('managed');assert.equal(opened.at(-1).provider,'cloud');assert.equal(Object.hasOwn(opened.at(-1),'model'),false);
+assert.doesNotMatch(html,/worktree Open and scheduled tasks currently use VM mode/);
+assert.doesNotMatch(html,/Tasks with tools and scheduled tasks currently use VM mode/);
+assert.doesNotMatch(html,/Scheduled tasks currently use VM mode/);
+assert.match(html,/Scheduled tasks choose their execution mode in the schedule editor\./);
+console.log('PASS worktree Open native/VM mode, queued selection capture, invalid-mode refusal and explicit provider');
+
+// Use the same Settings selector and actual setup projection for tool-created tasks.
+nodes.provider.value='local';nodes['execution-mode'].value='native';
+vm.runInContext(extract('  function selectedSetupChoice() {','  function renderMCPSetup()'),context);
+assert.equal(context.selectedSetupChoice().executionMode,'native');
+nodes['execution-mode'].value='vm';assert.equal(context.selectedSetupChoice().executionMode,'vm');
+nodes['execution-mode'].value='invalid';assert.throws(()=>context.selectedSetupChoice(),/mode|execution/i);
+vm.runInContext(readFileSync(resolve(directory,'coding-mcp-setup.js'),'utf8'),context);
+const setup=context.SalehCodingMCPSetup,selection={cwd:'/fixture/project',provider:'local',model:'qwen',serverIds:['fixture']};
+assert.equal(setup.requestValue(selection).executionMode,'vm');
+for(const invalid of [null,false,'','other',undefined])assert.equal(setup.requestValue({...selection,executionMode:invalid}),null);
+const prepared={setupId:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',revision:1,expiresAt:60000,phase:'prepared',request:{...selection,executionMode:'native'},creation:'not-started',root:null,cleanup:'not-requested',error:null};
+const thread={id:'native-root',cwd:selection.cwd,model:selection.model,modelProvider:'saleh_local',createdAt:10,updatedAt:11,name:null,historyMode:'legacy',executionMode:'native'};
+const created={...prepared,revision:2,expiresAt:null,phase:'created',creation:'confirmed',root:{ownerId:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',generation:'cccccccc-cccc-4ccc-8ccc-cccccccccccc',thread}};
+assert(setup.status(created));
+for(const executionMode of ['vm',null,false,undefined])assert.equal(setup.status({...created,root:{...created.root,thread:{...thread,executionMode}}}),null);
+const oldThread={...thread};delete oldThread.executionMode;
+assert.equal(setup.status({...created,root:{...created.root,thread:oldThread}}),null,'Native receipt cannot use omitted-mode compatibility');
+assert(setup.status({...created,request:selection,root:{...created.root,thread:oldThread}}),'Old omitted-mode VM receipts remain readable');
+const dispatched=[],client=setup.create({request:async body=>{dispatched.push(body);return {...prepared,request:{...selection,executionMode:'vm'}};},setTimer:()=>0,clearTimer(){}});
+await client.prepare({...selection,executionMode:'native'});
+assert.equal(dispatched.length,1);assert.equal(dispatched[0].input.executionMode,'native');assert.equal(client.view().status,null,'Changed response mode must not gain review authority');assert.match(client.view().notice,/could not be verified/);client.dispose();
+console.log('PASS MCP Settings mode, omitted VM compatibility, invalid fields and receipt/response mode binding');
