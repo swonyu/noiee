@@ -6,7 +6,7 @@ Run from the final committed checkout:
 python3 -B tooling/qualify.py
 ~~~
 
-The runner executes compaction/recovery, model stabilization, startup diagnostics and build tools, presentation, Goals, submission origins, MCP/skills, Fetch, worktrees, and release input gates in order. It stops on the first failed suite, preserves the failed command and output, and emits an ineligible report. It never invokes a release phase, the installed app, original app stores or a live model.
+The runner executes compaction/recovery, model stabilization, startup diagnostics and build tools, presentation, saved Tasks catalog, Goals, submission origins, MCP/skills, Fetch, worktrees, and release input gates in order. It stops on the first failed suite, preserves the failed command and output, and emits an ineligible report. It never invokes a release phase, the installed app, original app stores or a live model.
 
 Each run has an exclusive directory under this checkout's .artifacts. qualification.json binds the final Git commit, the complete flat source namespace, source stability, actual suite commands, process exits, pass/fail counts and separate logs and execution RESULT files. Every suite RESULT retains its actual constituent command records and opaque copies of the unchanged raw reports. Logs, templates and generated fixture scripts referenced by those reports are copied into the current qualification's evidence directory when directly referenced; original execution paths remain plain provenance strings. Old reports never supply fresh pass counts.
 
@@ -33,6 +33,12 @@ Generated fixture state remains under private Caches directories where the exist
 
 
 Python workers launch the interpreter resolved from the actual `sys.orig_argv[0]` invocation identity. On macOS framework builds, `sys.executable` can name a launcher that execs a different Python.app binary; using that launcher would make an otherwise passing child report a different command. The executor keeps exact command equality and rejects a genuinely different executable or argument list. It never rewrites an older execution receipt to make its command match.
+
+## Catalog and Goal review coverage
+
+The required catalog family runs generated owner/history fixtures against the current owner manager, plus the actual list controller and exact Goal-result navigation functions with generated asynchronous replies and a fresh browser DOM. It checks bounded read overlap, retained serial ownership, failure/cancellation drain, progress without authority, progressive verified pages, incomplete/late replies and exact-turn focus without dispatch. Backend and UI commands both report strict unique assertion names and actual counts. These fixture timings do not establish native cold-start latency.
+
+Goal browser coverage includes the responsive inspector, preserved editor text and focus, explicit continuation-history expansion and exact acknowledged-turn callback binding. Installed window geometry, accessibility and cold history loading require separate acceptance.
 
 ## Goal and submission coverage
 

@@ -1,6 +1,6 @@
 # Noiee
 
-Noiee is the native macOS local AI workspace formerly named Saleh Uncensored. This checkout is the versioned development source for Build 175. The accepted Build 174 predecessor is retained at tag `noiee-build174`; the original Build 171 source and its `noiee-build171-source` baseline remain separate and unchanged.
+Noiee is the native macOS local AI workspace formerly named Saleh Uncensored. This checkout is the versioned development source for Build 176. The accepted Build 175 predecessor is retained at tag `noiee-build175`; the original Build 171 source and its `noiee-build171-source` baseline remain separate and unchanged.
 
 ## Layout
 
@@ -13,6 +13,10 @@ Noiee is the native macOS local AI workspace formerly named Saleh Uncensored. Th
 The `source/node_modules` link points to the verified owned dependency snapshot at `/Users/saleh/Documents/Noiee/dependencies/node-26.13.0-build171`. The dependency versions are pinned in `source/package-lock.json`; they have not been upgraded in this workflow release. Development commands use `--preserve-symlinks` because the copied dependency directory has a descriptive name. The signed application embeds its own dependency tree.
 
 ## Workflow improvements
+
+Build176 improves saved Tasks discovery and Goal review. Read-only history families can be verified in bounded parallel batches within an already admitted history reader; owner acquisition, persistence, conflict checks and reader closure remain guarded. The page shows checked-history progress and verified list pages while remaining pages load. This does not promise a measured cold-start speedup on every project.
+
+Goal review uses a side inspector on wide workspaces and a bounded nonmodal panel on narrower windows. View result reveals the exact acknowledged continuation turn without dispatching work; missing or truncated history stays explicit. The inspector keeps editor drafts, focus and intentional history expansion. Completed Goals explain their read-only state. Chat archive confirmations clear on switching chats while workspace errors remain visible.
 
 The shared command palette opens with Cmd+Shift+P or the existing Cmd+J shortcut. Commands call existing guarded controls and preserve drafts; Cmd+K remains New chat. The Chat composer states that tools are off, while Agent shows the current launch policy. Delegated Tasks show their own result and a verified Return to parent action. Explicit inherited-parent history is collapsed, and command execution remains separate from verification. Retained failed startups have a bounded recovery summary.
 
@@ -37,12 +41,12 @@ Tasks derives its execution context and automatic-compaction threshold from the 
 Use a clean committed checkout for a release build:
 
 ```sh
-python3 -B tooling/build_native.py --build 175
+python3 -B tooling/build_native.py --build 176
 ```
 
 This compiles all native sources and runs the built-in native checks without opening the installed app. Each run creates an exclusive receipt containing source, compiler, SDK, command, binary and log hashes. A `--development` build is explicitly ineligible for release.
 
-See [tooling/README.md](tooling/README.md) for startup checks and backup coverage inspection. See [tooling/RELEASE.md](tooling/RELEASE.md) for the complete Build 174 to Build 175 qualification, capture, signing and guarded installation process. Do not run a historic release recipe or rewrite a prior receipt.
+See [tooling/README.md](tooling/README.md) for startup checks and backup coverage inspection. See [tooling/RELEASE.md](tooling/RELEASE.md) for the complete Build 175 to Build 176 qualification, capture, signing and guarded installation process. Do not run a historic release recipe or rewrite a prior receipt.
 
 `tooling/check_live_profile.mjs` is an explicitly invoked real-model qualification harness. It uses a generated project and isolated native engine home; its result is separate from installed native UI acceptance. Live tests must run serially under the release owner. Never label generated fixtures or a compiler check as a completed user task.
 

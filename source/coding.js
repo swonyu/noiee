@@ -957,10 +957,10 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
         !familyStopping(workspaceStopTarget(selectedId)) && taskMode !== null && model.ready,
       busy:acting,blockedReason,mode:taskMode || 'build',effort:$('effort').value === 'high' ? 'high' : 'none'};
   }
-  async function viewGoalTurn(target) {
+  async function viewGoalTurn(target, {isCurrent} = {}) {
     const validId = value => typeof value === 'string' && /^[A-Za-z0-9_.-]{1,160}$/.test(value);
     const threadId = target?.threadId, turnId = target?.turnId, epoch = selectionEpoch;
-    const fresh = () => !disposed && selectedId === threadId && selectionEpoch === epoch && goalContext().canInspect;
+    const fresh = () => !disposed && selectedId === threadId && selectionEpoch === epoch && typeof isCurrent === 'function' && isCurrent() && goalContext().canInspect;
     if (!target || !['threadId','goalId','attemptId','turnId'].every(key => validId(target[key])) ||
         target.binding?.rootThreadId !== threadId || !Number.isSafeInteger(target.goalRevision) || target.goalRevision < 1 || !fresh()) {
       return {shown:false,reason:'This goal result no longer matches the selected chat. Refresh the goal before opening it.'};
