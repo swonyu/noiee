@@ -2,6 +2,7 @@ import {mkdir,lstat,realpath,readFile,open,rename,unlink,readdir,statfs} from 'n
 import {constants} from 'node:fs';
 import {setTimeout as delay} from 'node:timers/promises';
 import {CodingQueue,validateQueueBinding,normalizeQueueRequest} from './coding-queue.mjs';
+import {CodingGoals,isGoalAction,validateGoalRequest,goalPrompt} from './coding-goals.mjs';
 import {join,isAbsolute,relative,dirname,resolve} from 'node:path';
 import {spawn} from 'node:child_process';
 import {randomUUID,createHash} from 'node:crypto';
@@ -84,7 +85,7 @@ export class CodingOwners {
  #quarantineCatalog=false; #quarantines=new Map(); #unconfinedStatus;
  #followups=null; #followupPrepared=new Map(); #followupPumps=new Map(); #followupWrites=new Set(); #followupFailure=null;
  #origins=new Map(); #hostGitFailures=new Map(); #diskReviews=new Map(); #verifiedFailedReleases=new Map();
- #startupCopies=null;
+ #startupCopies=null; #goals=null;
  constructor({dataDir,openExecutor,engineFactory=options=>new CodingEngine(options),engineOptions={},assertLegacyClosed,legacyAdmission,forkFiles,executorPolicy,mcpConfigPath,handoffStatus,unconfinedStatus,managedMutationBlocked=false}={}) {
   if(typeof managedMutationBlocked!=='boolean')throw Error('Invalid trusted mutation access setting.');this.#managedMutationBlocked=managedMutationBlocked;
   if(typeof dataDir!=='string'||!isAbsolute(dataDir)||typeof openExecutor!=='function'||typeof engineFactory!=='function')throw Error('Invalid trusted coding owner configuration.');
@@ -1271,7 +1272,66 @@ export class CodingOwners {
  async #status(){
   const base=await this.#authority.handle({action:'status'}),states=await Promise.all([...this.#live.values()].filter(x=>x.engine&&!x.engine.closed&&this.#rows.some(r=>r.state==='ready'&&this.#home(r)===x.engine.dataDir)).map(x=>x.engine.handle({action:'status'})));
   const workspaceSync=[...this.#live.values()].filter(x=>x.engine&&this.#rows.some(r=>r.state==='ready'&&this.#home(r)===x.engine.dataDir)).flatMap(x=>x.engine.workspaceSyncView()),workspaceSyncCursor=this.#journal.sequence;
-  return {...base,followupQueue:!!this.#durableIdentity,workspaceSync,workspaceSyncCursor,activeTurns:states.flatMap(x=>x.activeTurns??[]),stoppingFamilies:[...new Set([...states.flatMap(x=>x.stoppingFamilies??[]),...this.#rows.filter(r=>r.rootThreadId&&this.#selectedStops.get(r.id)?.pending).map(r=>r.rootThreadId)])],terminals:states.flatMap(x=>x.terminals??[]),running:states.some(x=>x.running),busy:this.exitUnconfirmed||this.#operations.size>1||states.some(x=>x.busy),message:this.#blocked?.message??(this.#rows.some(r=>r.handoff)?'A worktree handoff needs inspection; affected chats remain fenced.':this.#legacyUncertain()?'Legacy chats are history-only; prior execution writers or reader closure remain unverified.':this.exitUnconfirmed?'Execution generation needs recovery; saved history remains available after confirmed native exit.':base.message),legacy:this.#legacy?{historyOnly:true,nativeOpen:this.#legacy.nativeOpen,execution:this.#admissionProof?'prior-boot-ended':'unknown'}:null,owners:this.#rows.map(r=>({id:r.id,rootThreadId:r.rootThreadId,executionMode:r.executionMode??'vm',state:r.state,nativeOpen:r.generation?.nativeOpen??false,execution:r.generation?.execution??'none',executorClosed:r.generation?.executorClosed??null,stopping:!!this.#selectedStops.get(r.id)?.pending,stopError:this.#selectedStops.get(r.id)?.error??null}))};
+  return {...base,goals:!!this.#durableIdentity,followupQueue:!!this.#durableIdentity,workspaceSync,workspaceSyncCursor,activeTurns:states.flatMap(x=>x.activeTurns??[]),stoppingFamilies:[...new Set([...states.flatMap(x=>x.stoppingFamilies??[]),...this.#rows.filter(r=>r.rootThreadId&&this.#selectedStops.get(r.id)?.pending).map(r=>r.rootThreadId)])],terminals:states.flatMap(x=>x.terminals??[]),running:states.some(x=>x.running),busy:this.exitUnconfirmed||this.#operations.size>1||states.some(x=>x.busy),message:this.#blocked?.message??(this.#rows.some(r=>r.handoff)?'A worktree handoff needs inspection; affected chats remain fenced.':this.#legacyUncertain()?'Legacy chats are history-only; prior execution writers or reader closure remain unverified.':this.exitUnconfirmed?'Execution generation needs recovery; saved history remains available after confirmed native exit.':base.message),legacy:this.#legacy?{historyOnly:true,nativeOpen:this.#legacy.nativeOpen,execution:this.#admissionProof?'prior-boot-ended':'unknown'}:null,owners:this.#rows.map(r=>({id:r.id,rootThreadId:r.rootThreadId,executionMode:r.executionMode??'vm',state:r.state,nativeOpen:r.generation?.nativeOpen??false,execution:r.generation?.execution??'none',executorClosed:r.generation?.executorClosed??null,stopping:!!this.#selectedStops.get(r.id)?.pending,stopError:this.#selectedStops.get(r.id)?.error??null}))};
+ }
+ #goalLedger(){
+  if(!this.#durableIdentity)throw Error('Goals require a verified durable owner home.');
+  return this.#goals??=new CodingGoals({dataDir:this.dataDir});
+ }
+ #goalRow(threadId){
+  const row=this.#rows.find(row=>row.rootThreadId===threadId);
+  if(!row)throw Error('Goals are available only on a directly owned root task. Child and legacy histories are read-only.');
+  return row;
+ }
+ #goalMatches(row,goal){
+  const b=goal?.binding;return !goal||b.ownerId===row.id&&b.rootThreadId===row.rootThreadId&&sameBinding(b.home,row.home)&&b.cwd===row.cwd&&b.provider===row.provider&&b.model===row.model&&b.executionMode===(row.executionMode??'vm');
+ }
+ #goalUsage(engine,threadId,turnId){
+  const saved=engine.tokenUsage?.get(threadId);
+  if(saved?.threadId!==threadId||saved?.turnId!==turnId||saved?.provenance?.source!=='engine-notification')return null;
+  return {source:'engine-notification',observedAt:saved.provenance.observedAt,threadId,turnId,last:structuredClone(saved.tokenUsage.last),total:structuredClone(saved.tokenUsage.total)};
+ }
+ async #inspectGoal(row,operation){
+  const ledger=this.#goalLedger();let view=await ledger.inspect(row.rootThreadId);this.#check(operation.epoch,operation);
+  const available=row.state==='ready'&&!row.quarantine&&!row.handoff&&this.#goalMatches(row,view.goal);
+  if(!available)return {...view,available:false,blockedReason:'The saved Goal owner, project, model or recovery binding is unavailable. Its retained records remain readable.'};
+  // Inspection never provisions/resumes an owner. An already-open history reader
+  // may reconcile only the exact acknowledged turn; missing history stays held.
+  const attempt=view.goal?.attempts.find(a=>['starting','running','unknown'].includes(a.status)),live=this.#live.get(row.id);
+  if(attempt?.turnId&&live&&this.#current(live)&&typeof live.engine.savedTurnPages==='function'){
+   const engine=live.engine,check=()=>{this.#check(operation.epoch,operation);this.#pin(row,engine);};check();
+   for await(const page of engine.savedTurnPages(row.rootThreadId,null,20)){
+    check();if(page.turn?.id!==attempt.turnId)continue;
+    if(['completed','failed','interrupted'].includes(page.turn.status)){
+     view=await ledger.finish(row.rootThreadId,attempt.id,{turnId:attempt.turnId,status:page.turn.status,observedUsage:this.#goalUsage(engine,row.rootThreadId,attempt.turnId),message:'Exact saved turn outcome reconciled without sending another turn.'},check);check();
+     this.#journal.push('coding/goal/updated',{threadId:row.rootThreadId});
+    }
+    break;
+   }
+  }
+  const pending=view.goal?.attempts.find(a=>['starting','running','unknown'].includes(a.status));
+  if(pending&&(!live||!this.#current(live)||live.engine.historyOnly||pending.generation!==row.generation?.id)){
+   view=structuredClone(view);const retained=view.goal.attempts.find(a=>a.id===pending.id);retained.status='unknown';retained.message='The execution owner is no longer observing this attempt. Open its saved history to reconcile the exact turn; no work will be retried.';view.goal.state='needsReview';
+  }
+  return {...view,available:true,blockedReason:''};
+ }
+ async #handleGoal(input,context){
+  input=validateGoalRequest(input);const origin=requestContext(context);
+  if(this.closed||this.#stopping)throw Error('Goals are unavailable while the owner coordinator is stopping.');
+  const operation=this.#operation(this.#epoch,origin);this.#operations.add(operation);
+  return this.#serial(async()=>{
+   await this.#load(operation);this.#check(operation.epoch,operation);const row=this.#goalRow(input.threadId);this.#bind(operation,row);await this.#verifyHome(row);this.#check(operation.epoch,operation);
+   const view=await this.#inspectGoal(row,operation);if(input.action==='goalInspect')return view;
+   if(!view.available)throw Error(view.blockedReason);this.#quarantineFence(row);
+   if(this.#legacyUncertain()||this.#authority.projectMutation||this.#hostGitFailures.has(row.id))throw busy();
+   const binding=await this.#followupBinding(row,operation);let proof;
+   if(input.action==='goalComplete'){
+    const live=this.#live.get(row.id);
+    if(live&&this.#current(live)&&!live.engine.historyOnly){proof=await live.engine.followupIdle({threadId:row.rootThreadId,cwd:row.cwd,model:row.model,modelProvider:{local:'saleh_local',cloud:'saleh_cloud'}[row.provider]});this.#check(operation.epoch,operation);this.#pin(row,live.engine);if(!proof)throw Error('Wait for this task family and workspace publication to become idle before marking its Goal complete.');}
+   }
+   const check=()=>{this.#check(operation.epoch,operation);proof?.check();};
+   const result=await this.#goalLedger().edit(input,binding,check);check();this.#journal.push('coding/goal/updated',{threadId:row.rootThreadId});return {...result,available:true,blockedReason:''};
+  }).finally(()=>this.#release(operation));
  }
  #followupLedger(){
   if(!this.#durableIdentity)throw Error('Follow-ups require a verified durable owner home. Saved chats remain available.');
@@ -1401,6 +1461,12 @@ export class CodingOwners {
  }
  async handle(input,context){return this.#handle(input,context);}
  async #handle(input,context,followup=null){
+  let goal=null;
+  if(isGoalAction(input?.action)){
+   input=validateGoalRequest(input);if(input.action!=='goalContinue')return this.#handleGoal(input,context);
+   if(followup)throw Error('A Goal continuation cannot be a queued follow-up.');
+   goal={input,claim:null,turnId:null,dispatched:false};input={action:'send',threadId:input.threadId,text:'Preparing the explicitly requested Goal turn.',mode:input.mode,effort:input.effort};
+  }
   const origin=requestContext(context);
   if(input?.action==='start'&&Object.hasOwn(input,'executionMode')){if(!['native','vm'].includes(input.executionMode))throw Error('Invalid Coding execution mode.');const {executionMode,...request}=input;validateCodingRequest(request);}else input=validateCodingRequest(input);if(this.closed)return Promise.reject(Error('Coding owner coordinator is closed.'));
   if(input.action==='mcpOutcomes'){const {threadId}=input,work=Promise.resolve().then(()=>this.#outcomes(threadId));this.#inspections.add(work);return work.finally(()=>this.#inspections.delete(work));}
@@ -1423,6 +1489,10 @@ export class CodingOwners {
   }
   const dispatch=()=>this.#serial(async()=>{
    await this.#load(operation);this.#check(epoch,operation);
+   if(goal){
+    const row=this.#goalRow(input.threadId);this.#bind(operation,row);const view=await this.#inspectGoal(row,operation);if(!view.available)throw Error(view.blockedReason);
+    goal.binding=await this.#followupBinding(row,operation);goal.record=await this.#goalLedger().prepare(input.threadId,goal.input.expectedRevision,goal.binding);this.#check(epoch,operation);input.text=goalPrompt(goal.record,goal.input);
+   }
    if(this.#engineOptions.fullAccess&&(['start','fork','send','steer','review','answer','terminalStart','terminalWrite','terminalInput','terminalResize'].includes(input.action)||input.action==='approval'&&input.decision==='accept')&&await this.#uncertain('/',null,true))throw Error('Full Access is unavailable while any retained Coding owner needs recovery. Saved history remains readable.');
    this.#check(epoch,operation);
    if(!READ.has(input.action)&&!['status','events','list'].includes(input.action))this.#quarantineFence(this.#rows.find(row=>row.threads.includes(input.threadId)));
@@ -1453,6 +1523,19 @@ export class CodingOwners {
     const idle=()=>{try{followup.proof.check();}catch(error){if(!followup.claim&&error.code==='PROJECT_BUSY')error.code='QUEUE_IDLE_CHANGED';throw error;}};
     hooks={check:()=>{check();if(followup.paused)throw Error('Follow-up dispatch was paused before turn/start.');idle();followup.dispatched=true;},beforeStart:async()=>{check();idle();if(!equal(await this.#followupBinding(row,operation),followup.binding))throw Error('Follow-up binding changed before its claim.');check();idle();followup.claim=await this.#followupLedger().claim(followup.item.id,followup.item.revision,{generation});check();idle();},onTurn:async turnId=>{receipt();followup.turnId=turnId;await this.#followupLedger().acknowledge(followup.item.id,followup.claim.id,turnId);}};
    }
+   if(goal){
+    goal.engine=engine;
+    if(row.rootThreadId!==input.threadId||!equal(goal.binding,await this.#followupBinding(row,operation)))throw Error('Goal continuation owner or project binding changed.');
+    const live=this.#live.get(row.id),life=live.life,generation=row.generation.id,home=structuredClone(row.home);
+    const receipt=()=>{if(this.#live.get(row.id)!==live||live.engine!==engine||live.life!==life||row.generation.id!==generation||!equal(row.home,home))throw Error('Goal receipt owner or generation changed.');};
+    const check=()=>{this.#check(epoch,operation);receipt();this.#pin(row,engine);};let proof;
+    hooks={beforeResume:async admission=>{check();await engine.verifyExplicitGoalContinuation(input.threadId,row.cwd,engine.epoch,admission);check();},beforeStart:async ownOperation=>{
+     check();proof=await engine.followupIdle({threadId:row.rootThreadId,cwd:row.cwd,model:row.model,modelProvider:{local:'saleh_local',cloud:'saleh_cloud'}[row.provider]},null,ownOperation);check();
+     if(!proof)throw Error('Wait for this task family, its commands and workspace publication to become idle before continuing the Goal.');
+     if(!equal(goal.binding,await this.#followupBinding(row,operation)))throw Error('Goal binding changed before dispatch.');check();proof.check();
+     goal.claim=await this.#goalLedger().claim(input.threadId,goal.input.expectedRevision,goal.binding,{generation,mode:input.mode,effort:input.effort},()=>{check();proof.check();});check();proof.check();
+    },check:()=>{check();proof.check();goal.dispatched=true;},onTurn:async turnId=>{receipt();goal.turnId=turnId;await this.#goalLedger().acknowledge(input.threadId,goal.claim.id,turnId);}};
+   }
    const result=await engine.handle(input,input.action==='answer'?()=>{this.#check(epoch,operation);this.#pin(row,engine);}:undefined,hooks);
    if(legacy){for(const t of result.threads??[]){this.#pinLegacy(legacy);await engine.resolveFamily(t.id);this.#check(epoch,operation);}this.#legacyCollision(legacy);this.#check(epoch,operation);return {...legacyView(result),...(result.thread?{thread:legacyView(result.thread)}:{}),...(result.root?{root:legacyView(result.root)}:{}),...(result.threads?{threads:result.threads.map(legacyView)}:{})};}
    if(row.handoff){
@@ -1470,7 +1553,15 @@ export class CodingOwners {
   // Keep ordinary requests in admission order; a separate housekeeping queue
   // would let a later Stop commit overtake an already admitted read.
   const work=this.#loaded&&!this.#loading&&!this.#rows.some(row=>row.handoff?.commit&&!this.#live.has(row.id))?dispatch():this.#finalizeHandoffs(epoch,operation).then(dispatch);
-  return work.finally(()=>{this.#release(operation);if(operation.stopRequest){const count=this.#stopIntents.get(input.threadId)-1;if(count)this.#stopIntents.set(input.threadId,count);else this.#stopIntents.delete(input.threadId);}});
+  const result=goal?work.then(async response=>{
+   if(!goal.claim||!goal.turnId||response.turn?.id!==goal.turnId)throw Error('Goal continuation has no matching acknowledged turn receipt.');
+   if(['completed','failed','interrupted'].includes(response.turn.status))await this.#goalLedger().finish(input.threadId,goal.claim.id,{turnId:goal.turnId,status:response.turn.status,observedUsage:this.#goalUsage(goal.engine,input.threadId,goal.turnId),message:'Exact turn/start terminal receipt retained.'});
+   const view=await this.#goalLedger().inspect(input.threadId);this.#journal.push('coding/goal/updated',{threadId:input.threadId});return {...view,available:true,blockedReason:'',turn:response.turn,turnId:goal.turnId};
+  }).catch(async error=>{
+   if(goal.claim){try{const retained=(await this.#goalLedger().inspect(input.threadId)).goal?.attempts.find(a=>a.id===goal.claim.id);await this.#goalLedger().finish(input.threadId,goal.claim.id,{turnId:retained?.turnId??null,status:goal.dispatched?'unknown':'interrupted',message:(goal.dispatched?'Dispatch outcome is unconfirmed. This attempt is held and will not be retried. ':'Stopped before turn/start; the reserved attempt is retained. ')+String(error.message).slice(0,1300)});}catch{}this.#journal.push('coding/goal/updated',{threadId:input.threadId});}
+   throw error;
+  }):work;
+  return result.finally(()=>{this.#release(operation);if(operation.stopRequest){const count=this.#stopIntents.get(input.threadId)-1;if(count)this.#stopIntents.set(input.threadId,count);else this.#stopIntents.delete(input.threadId);}});
  }
  #diskContext(allocation){return {catalog:{path:this.dataDir,identity:this.#directory},runtime:this.#executor.runtime,allocation,owner:this.#rows.find(r=>r.id===allocation.ownerId&&r.generation?.id===allocation.generation),nativeHelper:this.#engineOptions.nativeHelper};}
  #failedDiskEligible(row){const a=this.#executor?.allocations.find(a=>a.ownerId===row?.id&&a.generation===row.generation?.id);if(!a||!this.#coldCreating.has(row)||!isFailedDiskOwner(row,a)||a.diskRelease||this.#live.has(row.id)||this.#selectedStops.get(row.id)?.pending)throw Error('This failed startup has no verified closed, never-executing disk to review.');return a;}
@@ -1935,6 +2026,7 @@ export class CodingOwners {
    await this.#queue;
    try{await this.#retireAll();}catch(error){errors.push(error);}
    try{await this.#followups?.close();}catch(error){errors.push(error);}
+   try{await this.#goals?.drain();}catch(error){errors.push(error);}
    try{await this.#authority.close();}catch(error){errors.push(error);}
    if(errors.length)throw new AggregateError(errors,errors.map(error=>error.message).join('; '));
    if(this.shutdownUnconfirmed)return {stopped:false,message:'Owner physical closure is unconfirmed; exclusive lease retained.'};

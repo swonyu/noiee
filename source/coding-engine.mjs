@@ -19,6 +19,10 @@ const attachments=globalThis.SalehAttachments;
 const exec = promisify(execFile);
 const MODEL = DEFAULT_LOCAL_MODEL;
 const PROVIDER = 'saleh_local';
+// Build175's isolated native-Goal lifecycle qualification is specific to these
+// verified bytes. Updating coding-runtime-contract.json alone must not enable
+// Goal Continue: requalify cold resume and idle after an explicit completed turn.
+const GOAL_RUNTIME = Object.freeze({cliVersion:'codex-cli 0.167.0-alpha.3.2',sha256:'a636331ed87605efc4cf84028ac2884a75363f9d10ead63cffb57ea0016d486e',protocolRevision:'noiee-coding-172-v1'});
 // A single retained fork/recovery rollout is bounded at 32 MiB.
 const MAX_LINE = 40 * 1024 * 1024;
 const RESPONSE_CURSOR = Symbol('responseCursor');
@@ -95,7 +99,7 @@ function tokenUsageProvenance(p) {
   return {source:p.source,session:p.session,observedAt:p.observedAt,...(p.reportedTurnId!==undefined?{reportedTurnId:identifier(p.reportedTurnId,'reported usage turn')}:{})};
 }
 const policy = (cwd,full=false) => full?{type:'dangerFullAccess'}:({type:'workspaceWrite',writableRoots:[cwd],networkAccess:false,excludeSlashTmp:true,excludeTmpdirEnvVar:true});
-const overrides = (cwd, profile, env, full=false, context={}) => ({model:profile.model,modelProvider:profile.modelProvider,approvalPolicy:full?'never':'on-request',approvalsReviewer:'user',sandbox:full?'danger-full-access':'workspace-write',cwd,baseInstructions:HANDOFF_INSTRUCTIONS,runtimeWorkspaceRoots:[cwd],config:{...Object.fromEntries(Object.entries(env).map(([key,value])=>[`shell_environment_policy.set.${key}`,value])),'web_search':'disabled','review_model':profile.model,'sandbox_workspace_write.network_access':full,'sandbox_workspace_write.writable_roots':[cwd],'features.plugins':false,'features.default_mode_request_user_input':true,'features.multi_agent':true,'features.multi_agent_v2':AGENTS,...Object.fromEntries(FEATURES.map(k=>[`features.${k}`,false])),...context}});
+const overrides = (cwd, profile, env, full=false, context={}) => ({model:profile.model,modelProvider:profile.modelProvider,approvalPolicy:full?'never':'on-request',approvalsReviewer:'user',sandbox:full?'danger-full-access':'workspace-write',cwd,baseInstructions:HANDOFF_INSTRUCTIONS,runtimeWorkspaceRoots:[cwd],config:{...Object.fromEntries(Object.entries(env).map(([key,value])=>[`shell_environment_policy.set.${key}`,value])),'web_search':'disabled','review_model':profile.model,'sandbox_workspace_write.network_access':full,'sandbox_workspace_write.writable_roots':[cwd],'features.plugins':false,'features.goals':false,'features.default_mode_request_user_input':true,'features.multi_agent':true,'features.multi_agent_v2':AGENTS,...Object.fromEntries(FEATURES.map(k=>[`features.${k}`,false])),...context}});
 
 function compatibleSessionHeader(bytes,thread) {
   let header;try{header=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));}catch{throw new Error('Handoff session header is malformed.');}
@@ -1588,7 +1592,7 @@ export class CodingEngine {
     const env={HOME:this.#executor||this.#historyOnly?this.dataDir:homedir(),PATH:'/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',LANG:'en_US.UTF-8',CODEX_HOME:this.dataDir,ZDOTDIR:this.dataDir};
     if(this.#executor)env.CODEX_EXEC_SERVER_URL=this.#executor.url;
     // Runtime-only: retained homes keep their app-owned config bytes and hash marker.
-    const args=['app-server','--listen','stdio://','-c','features.plugins=false','-c',`features.default_mode_request_user_input=${!this.#historyOnly}`,'-c',`model_providers.saleh_local.base_url=${JSON.stringify(baseURL)}`,'-c','allow_login_shell=false','-c','features.multi_agent=true','-c','features.multi_agent_v2={enabled=true,max_concurrent_threads_per_session=3,expose_spawn_agent_model_overrides=false}','-c','model_providers.saleh_local.supports_websockets=false','-c','model_providers.saleh_local.request_max_retries=0','-c','model_providers.saleh_local.stream_max_retries=0'];
+    const args=['app-server','--listen','stdio://','-c','features.goals=false','-c','features.plugins=false','-c',`features.default_mode_request_user_input=${!this.#historyOnly}`,'-c',`model_providers.saleh_local.base_url=${JSON.stringify(baseURL)}`,'-c','allow_login_shell=false','-c','features.multi_agent=true','-c','features.multi_agent_v2={enabled=true,max_concurrent_threads_per_session=3,expose_spawn_agent_model_overrides=false}','-c','model_providers.saleh_local.supports_websockets=false','-c','model_providers.saleh_local.request_max_retries=0','-c','model_providers.saleh_local.stream_max_retries=0'];
     // Native diagnostics record provider URLs. Keep relay credentials in the
     // provider's environment-key channel and out of command environments.
     if(this.relay){env.SALEH_CODING_LOCAL_KEY=this.relay.authToken;args.push('-c','model_providers.saleh_local.env_key="SALEH_CODING_LOCAL_KEY"');}
@@ -1966,6 +1970,7 @@ export class CodingEngine {
     this.pending.delete(message.id);clearTimeout(pending.timer);
     if(message.error){
       const error=new Error(String(message.error.message??'Coding request failed.').slice(0,2000));
+      if(Number.isSafeInteger(message.error.code))error.rpcCode=message.error.code;
       if(pending.method==='thread/read'&&pending.params.includeTurns===false&&error.message==='thread not loaded: '+pending.params.threadId)Object.assign(error,{code:'CODING_THREAD_NOT_LOADED',threadId:pending.params.threadId,cursor:this.sequence});
       if(pending.method==='thread/read'&&pending.params.includeTurns&&error.message.includes('not materialized yet; includeTurns is unavailable before first user message')){
         const thread={id:pending.params.threadId,turns:[]};error.historyTruncated=this.mergeLive(thread);
@@ -2331,6 +2336,24 @@ export class CodingEngine {
   checkProcess(life) {if(!life||life!==this.processLife||life.exited||this.child!==life.child)throw new Error('Coding process changed during cancellation verification.');}
   active(threadId,turnId) {if(this.runs.get(threadId)!==turnId)throw new Error('Stale or inactive turn ID.');}
   checkEpoch(epoch) {if(epoch!==this.epoch)throw new Error('Coding action cancelled by Stop or process exit.');}
+  async verifyExplicitGoalContinuation(threadId,cwd,epoch=this.epoch,admission=null) {
+    this.#requireExecution();identifier(threadId,'Goal task');const life=this.processLife;
+    const check=()=>{this.checkEpoch(epoch);this.checkProcess(life);this.checkAdmission(admission,cwd);};check();
+    const held=message=>Object.assign(new Error(message),{code:'GOAL_NATIVE_UNCONFIRMED'}),verified=this.runtimeVerification;
+    if(!verified||verified.path!==this.binary||Object.entries(GOAL_RUNTIME).some(([key,value])=>verified[key]!==value))throw held('Goal continuation requires the exact Codex runtime qualified for disabled native Goal execution. The saved Goal remains intact; no attempt was sent.');
+    // This fence precedes thread/resume. The pinned runtime was qualified with
+    // an active persisted native Goal: goals=false suppressed cold restoration,
+    // idle continuation and Goal tools after an explicit turn. Its exact disabled
+    // API error is evidence of DISABLEMENT, never evidence that native state is
+    // absent. Present, unknown and differently failing responses stay held.
+    let configuration;try{configuration=await this.rpc('config/read',{cwd,includeLayers:false});}catch{check();throw held('The native Goal configuration could not be verified. No Goal attempt was sent.');}check();
+    if(configuration?.config?.features?.goals!==false)throw held('Goal continuation is unavailable because the native Goal lifecycle is not verified disabled.');
+    let result;
+    try{result=await this.rpc('thread/goal/get',{threadId});}
+    catch(error){check();if(error?.rpcCode===-32600&&error.message==='goals feature is disabled')return;throw held('The native Goal lifecycle could not be verified disabled. The saved Goal remains intact; no attempt was sent.');}
+    check();
+    if(!result||typeof result!=='object'||Array.isArray(result)||Object.keys(result).length!==1||!Object.hasOwn(result,'goal')||result.goal!==null)throw held('This task has existing or unknown native Goal state. The saved Noiee Goal remains intact; no attempt was sent.');
+  }
   async resume(threadId,cwd,profile,epoch,admission) {
     const life=this.processLife,check=()=>{this.checkEpoch(epoch);this.checkAdmission(admission,cwd);if(this.#codingMCP){this.#checkMCP(life);if(this.#codingMCP.isCurrent(threadId)!==true)throw new Error('Coding MCP thread owner is no longer current.');}};
     if(this.#codingMCP)await this.#requireMCP(threadId,life);check();await this.prepare(cwd);check();const env=await this.temporaryEnvironment(cwd,epoch);check();
@@ -2343,7 +2366,7 @@ export class CodingEngine {
     if(this.handoffFor(threadId))throw handoffBusy();
     if(this.runs.has(threadId))throw new Error('A turn is already active; use steer.');
     for(const target of this.stopTargets)if(this.within(target,threadId)){if(this.familyStopping(target))throw new Error('Family is still stopping; wait for its children to finish.');this.stopTargets.delete(target);}
-    if(followup){await followup.beforeStart();this.checkEpoch(epoch);this.checkAdmission(admission,params.cwd);if(this.handoffFor(threadId)||this.runs.has(threadId))throw projectBusy();followup.check();}
+    if(followup){await followup.beforeStart(admission?.operation);this.checkEpoch(epoch);this.checkAdmission(admission,params.cwd);if(this.handoffFor(threadId)||this.runs.has(threadId))throw projectBusy();followup.check();}
     admission?.planningBoundary?.check();
     if(params.collaborationMode?.mode==='plan')this.familyModes.set(threadId,'plan');else if(params.collaborationMode?.mode==='default')this.familyModes.set(threadId,'build');
     const review=method==='review/start'?{root:null,aliases:new Set(),queued:[],bytes:0}:null;if(review)this.reviewScopes.set(threadId,review);
@@ -2468,7 +2491,7 @@ export class CodingEngine {
   }
   async handle(input,checkAnswer,followup) {
     if(input?.action==='answer'?typeof checkAnswer!=='function':checkAnswer!==undefined)throw new Error('Answer requires its trusted owner check; other actions do not accept an answer context.');
-    if(followup!==undefined&&(input?.action!=='send'||!followup||typeof followup.beforeStart!=='function'||typeof followup.check!=='function'||typeof followup.onTurn!=='function'||Object.keys(followup).sort().join()!=='beforeStart,check,onTurn'))throw new Error('Invalid trusted follow-up receipt hooks.');
+    if(followup!==undefined&&(input?.action!=='send'||!followup||typeof followup.beforeStart!=='function'||typeof followup.check!=='function'||typeof followup.onTurn!=='function'||Object.keys(followup).sort().join()!==(Object.hasOwn(followup,'beforeResume')?'beforeResume,beforeStart,check,onTurn':'beforeStart,check,onTurn')||Object.hasOwn(followup??{},'beforeResume')&&typeof followup.beforeResume!=='function'))throw new Error('Invalid trusted follow-up receipt hooks.');
     if(input?.action==='terminalResults'){validateCodingRequest(input);throw new Error('Saved terminal results require the durable owner coordinator.');}
     if(this.#historyOnly&&!HISTORY_ACTIONS.has(input?.action))throw historyOnlyError();
     input=validateCodingRequest(input);
@@ -2707,6 +2730,7 @@ export class CodingEngine {
         await this.resolveModel(profile,action==='send'?input.effort??'none':'none',admission,input.attachments?.some(file=>file.kind==='image'));
         this.checkEpoch(epoch);this.checkAdmission(admission,cwd);
       }
+      if(followup?.beforeResume){await followup.beforeResume(admission);this.checkEpoch(epoch);this.checkAdmission(admission,cwd);}
       await this.resume(threadId,cwd,profile,epoch,admission);
       if(action==='review')return await this.begin(threadId,'review/start',{threadId,target:{type:'uncommittedChanges'}},epoch,admission);
       if(action==='send'){

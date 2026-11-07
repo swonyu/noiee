@@ -8,7 +8,7 @@ import CoreFoundation
     static let inspectionTimeout:TimeInterval=3
     static func canStartGuest(operation:String,action:String)->Bool {
         // Keep aligned with CodingOwners.handle cold execution admission.
-        operation=="coding" && ["start","send","steer","review","fork","rename","archive","unarchive","terminalStart","git"].contains(action)
+        operation=="coding" && ["start","send","goalContinue","steer","review","fork","rename","archive","unarchive","terminalStart","git"].contains(action)
     }
     struct Failure:LocalizedError {
         var cause:Error?=nil

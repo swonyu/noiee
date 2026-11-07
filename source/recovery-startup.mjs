@@ -9,7 +9,7 @@ export function validateToolAccess({fullAccess,unconfinedBoot,recoveryStartup=fa
 export function recoveryStartupAllows(route,input){
  if(['/api/tools/stop','/api/tools/depart','/api/tools/shutdown','/api/tools/shutdownStatus','/api/tools/disconnect'].includes(route))return true;
  if(route==='/api/tools/worktrees')return ['list','stop','prepareReconnect','commitReconnect','prepareHandoffRecovery','recoverHandoff','prepareRecoveryCopy','createRecoveryCopy','prepareArchive','archive','prepareRestore','restore'].includes(input?.action);
- if(route==='/api/tools/coding')return ['status','events','list','read','historyPage','readImage','family','mcpOutcomes','terminalResults','providerBindingInfo','approvalInfo','terminalSnapshot','interrupt','interruptFamily','terminalStop'].includes(input?.action)||input?.action==='approval'&&input.decision==='decline';
+ if(route==='/api/tools/coding')return ['goalInspect','goalPause','status','events','list','read','historyPage','readImage','family','mcpOutcomes','terminalResults','providerBindingInfo','approvalInfo','terminalSnapshot','interrupt','interruptFamily','terminalStop'].includes(input?.action)||input?.action==='approval'&&input.decision==='decline';
  if(['/api/tools/git','/api/tools/schedules'].includes(route))return input?.action==='stop';
  if(route==='/api/tools/codingQueue')return ['pause','cancel'].includes(input?.action);
  if(route==='/api/tools/codingMCP')return input?.action==='cancelSetup';

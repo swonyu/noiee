@@ -269,6 +269,11 @@ enum CodingControlPolicy {
         }
         switch action {
         case "status": return Set(input.keys)==["action"]
+        case "goalInspect": return Set(input.keys)==["action","threadId"] && id("threadId")
+        case "goalPause":
+            guard Set(input.keys)==["action","threadId","expectedRevision"], id("threadId"), let revision=input["expectedRevision"] as? NSNumber, CFGetTypeID(revision) != CFBooleanGetTypeID() else { return false }
+            let value=revision.doubleValue
+            return value>=1 && value<=9_007_199_254_740_991 && value.rounded(.towardZero)==value
         case "mcpOutcomes":
             guard Set(input.keys)==["action","threadId"], let value=input["threadId"] as? String,
                   !value.isEmpty, value.utf8.count<=160 else { return false }
@@ -305,7 +310,7 @@ enum RecoveryStartupPolicy {
         if ["departPage","cancel","cancelTools","disconnect"].contains(op) {return true}
         guard let input=body["input"] as? [String:Any],let action=input["action"] as? String else {return false}
         if op=="codingWorktrees" {return ["list","stop","reconnect","recoverHandoff","recoverCopy","archive","restore"].contains(action)}
-        if op=="coding" {return ["status","events","list","read","historyPage","readImage","family","mcpOutcomes","terminalResults","providerBindingInfo","approvalInfo","terminalSnapshot","interrupt","interruptFamily","terminalStop"].contains(action) || action=="approval" && input["decision"] as? String=="decline"}
+        if op=="coding" {return ["goalInspect","goalPause","status","events","list","read","historyPage","readImage","family","mcpOutcomes","terminalResults","providerBindingInfo","approvalInfo","terminalSnapshot","interrupt","interruptFamily","terminalStop"].contains(action) || action=="approval" && input["decision"] as? String=="decline"}
         if ["codingGit","codingSchedules"].contains(op) {return action=="stop"}
         if op=="codingQueue" {return ["pause","cancel"].contains(action)}
         if op=="codingMCP" {return action=="cancelSetup"}
@@ -1544,7 +1549,16 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
             let accepted=try await approve("Approve this coding action once?",detail:detail,button:"Approve once",expected:expected,operational:true)
             return try await request("coding",["action":"approval","id":id,"decision":accepted ? "accept":"decline"])
         }
-        if ["start","send","review","terminalStart","fork"].contains(action) {
+        if action=="goalContinue" {
+            guard Set(input.keys)==["action","threadId","expectedRevision","mode","effort"],
+                  let thread=input["threadId"] as? String, !thread.isEmpty, thread.utf8.count<=160,
+                  thread.unicodeScalars.allSatisfy({CharacterSet(charactersIn:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.-").contains($0)}),
+                  let revision=input["expectedRevision"] as? NSNumber, CFGetTypeID(revision) != CFBooleanGetTypeID(),
+                  revision.doubleValue>=1, revision.doubleValue<=9_007_199_254_740_991, revision.doubleValue.rounded(.towardZero)==revision.doubleValue,
+                  let mode=input["mode"] as? String, ["build","plan"].contains(mode),
+                  let effort=input["effort"] as? String, ["none","high"].contains(effort) else { throw ComputerError.message("Invalid Goal continuation. Review its saved revision, mode and reasoning effort again.") }
+        }
+        if ["start","send","goalContinue","review","terminalStart","fork"].contains(action) {
             var cwd=input["cwd"] as? String, provider=input["provider"] as? String ?? "local"
             var executionMode=input["executionMode"] as? String ?? "vm"
             if action=="start", input["executionMode"] != nil, !(input["executionMode"] is String) { throw ComputerError.message("Invalid Coding execution mode.") }
