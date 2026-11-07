@@ -1,6 +1,6 @@
-"""Read-only current stopped-boundary capture for Noiee Build174 to Build175.
+"""Read-only current stopped-boundary capture for Noiee Build175 to Build176.
 
-Adapted from the committed Build174 capture (d109669f); see release_helpers/PROVENANCE.json.
+Adapted from the committed Build175 capture (3057807); see release_helpers/PROVENANCE.json.
 
 This helper reads the installed predecessor and the four original data stores.
 It never opens SQLite, invokes the app/model, changes a lease, or changes data.
@@ -23,14 +23,14 @@ import types
 sys.dont_write_bytecode = True
 
 PROJECT = Path(__file__).resolve().parents[1]
-RELEASE = Path('/Users/saleh/Documents/Noiee/releases/build175')
+RELEASE = Path('/Users/saleh/Documents/Noiee/releases/build176')
 APP = Path("/Users/saleh/Applications/Saleh Uncensored.app")
-STAGE174 = Path('/Users/saleh/Library/Application Support/Saleh Uncensored Release Staging/Noiee174-jo427t7u')
+STAGE175 = Path('/Users/saleh/Library/Application Support/Saleh Uncensored Release Staging/Noiee175-o6h8s6co')
 HELPER = Path(__file__).resolve().parent / "release_helpers/build-candidate.py"
 HELPER_SHA = "185fd10cf66b9a87054db4d3a13b6cdfa82c22190ad219b6492bc9ee5528ae03"
-BUNDLE_SHA = 'fc20968988ec932273c716f7e05573900126a3eec19edef8bd8f1d0e0e038103'
-PACKAGE_SHA = 'ddd993e1ce6e29d943ae2ab0e4d16c2a5a14fc25b19b0697bfb96b243880110d'
-BINARY_SHA = 'e6c6e845350dbd10cf82c4a70fa19329d71ff27509388f1fb0aac3a967c17ced'
+BUNDLE_SHA = 'd0b6d532d1d007fc894d7a74cf27e04d6c6570d247a8a06a8340b374590d9acf'
+PACKAGE_SHA = '1d939e1de63b62a42694fdc8ac27842d440103135a973e3429a4db492fd0d82b'
+BINARY_SHA = '6abc9c36b5d093cedec20e022e6b076699b338f961900d745943afe3faae5883'
 EXTRA_SERVERS = (
     str(PROJECT / "source/server.mjs"),
     "/Users/saleh/Documents/Noiee/source/server.mjs",
@@ -128,10 +128,10 @@ def observe(h, expected_bundle):
     catalog = catalog_state(h)
     installed_requirement = h["requirement"](APP)
     bundle = h["manifest"](APP)
-    require(bundle == expected_bundle, 'Installed signed Build174 bundle differs')
+    require(bundle == expected_bundle, 'Installed signed Build175 bundle differs')
     info = plistlib.loads(regular_bytes(APP / "Contents/Info.plist", 1024 * 1024))
     require(info.get("CFBundleIdentifier") == "com.saleh.qwenlocal.chat"
-            and info.get("CFBundleVersion") == '174'
+            and info.get("CFBundleVersion") == '175'
             and info.get("CFBundleExecutable") == "QwenLocal",
             "Unexpected predecessor bundle identity/build")
     contents, identities = h["data_snapshot"]()
@@ -140,7 +140,7 @@ def observe(h, expected_bundle):
     require(catalog == catalog_state(h), "Ownership catalog changed")
     return {
         "bootSession": boot_before,
-        "installedBuild": '174',
+        "installedBuild": '175',
         "bundleIdentifier": info["CFBundleIdentifier"],
         "bundlePath": str(APP),
         "designatedRequirement": installed_requirement,
@@ -169,13 +169,13 @@ def main():
             and not stat.S_IMODE(release_info.st_mode) & 0o077,
             "Release directory must be owned and private")
     h = helpers()
-    package = json.loads(regular_bytes(STAGE174 / "candidate-receipt.json",
+    package = json.loads(regular_bytes(STAGE175 / "candidate-receipt.json",
                                       1024 * 1024, PACKAGE_SHA))
     expected_bundle = json.loads(regular_bytes(
-        STAGE174 / "candidate-bundle-manifest.json", 4 * 1024 * 1024, BUNDLE_SHA))
-    require(package.get("build") == 174
+        STAGE175 / "candidate-bundle-manifest.json", 4 * 1024 * 1024, BUNDLE_SHA))
+    require(package.get("build") == 175
             and package.get("candidateBundleManifest") == {
-                "path": str(STAGE174 / "candidate-bundle-manifest.json"), "sha256": BUNDLE_SHA}
+                "path": str(STAGE175 / "candidate-bundle-manifest.json"), "sha256": BUNDLE_SHA}
             and package.get("binarySHA256") == BINARY_SHA
             and expected_bundle["Contents/MacOS/QwenLocal"]["sha256"] == BINARY_SHA
             and all(package.get(k) is True for k in (
@@ -199,7 +199,7 @@ def main():
         },
         "pinnedGuards": {"path": str(HELPER), "sha256": HELPER_SHA},
         "predecessorPackage": {
-            "path": str(STAGE174 / "candidate-receipt.json"),
+            "path": str(STAGE175 / "candidate-receipt.json"),
             "sha256": PACKAGE_SHA,
         },
         "twoCompleteObservationsEqual": True,

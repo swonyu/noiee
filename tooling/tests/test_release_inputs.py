@@ -115,7 +115,7 @@ class Inputs(unittest.TestCase):
             command.extend(["-framework", framework])
         command.extend([str(self.source / "App.swift"), "-o", binary["path"]])
         return base, {
-            "fixtureOnly": True, "schemaVersion": 2, "build": 175,
+            "fixtureOnly": True, "schemaVersion": 2, "build": 176,
             "sourceDirectory": str(self.source), "sourceCommit": self.frozen["gitCommit"],
             "sourceManifest": self.files, "nativeFiles": {"App.swift": self.files["App.swift"]["sha256"]},
             "gitStatus": "", "sourceStableDuringBuild": True, "releaseEligible": True, "development": False,
@@ -260,13 +260,13 @@ class Inputs(unittest.TestCase):
 
     def test_previous_build_native_receipt_refused(self):
         base, receipt = self.native()
-        receipt["build"] = 174
+        receipt["build"] = 175
         with self.assertRaisesRegex(RuntimeError, "Release-eligible"):
             self.check_native(base, receipt)
 
     def test_capture_and_adapter_bind_the_same_predecessor(self):
         self.assertEqual(hashlib.sha256(CAPTURE.read_bytes()).hexdigest(), release.CAPTURE_SHA)
-        self.assertEqual(release.OLD, capture.STAGE174)
+        self.assertEqual(release.OLD, capture.STAGE175)
         self.assertEqual(release.RELEASE, capture.RELEASE)
         self.assertEqual(release.OLD_PINS["candidate-receipt.json"], capture.PACKAGE_SHA)
         self.assertEqual(release.OLD_PINS["candidate-bundle-manifest.json"], capture.BUNDLE_SHA)
@@ -292,14 +292,14 @@ class Inputs(unittest.TestCase):
                 snapshot.assert_not_called()
                 raise
 
-    def test_capture_observes_build174_fixture(self):
-        value, snapshot = self.capture_fixture('174')
-        self.assertEqual(value["installedBuild"], '174')
+    def test_capture_observes_build175_fixture(self):
+        value, snapshot = self.capture_fixture('175')
+        self.assertEqual(value["installedBuild"], '175')
         self.assertEqual(value["dataManifests"], {"generated-store": None})
         snapshot.assert_called_once_with()
 
     def test_capture_refuses_wrong_build_before_store_observation(self):
-        for build in ('172', '173', '175', "unknown"):
+        for build in ('172', '173', '174', '176', "unknown"):
             with self.subTest(build=build), self.assertRaisesRegex(RuntimeError, "Unexpected predecessor"):
                 self.capture_fixture(build)
 
@@ -366,27 +366,33 @@ class WorkflowResults(unittest.TestCase):
         return json.dumps(value)
 
     def test_new_workflow_suites_are_required_by_runner_and_adapter(self):
-        for name in ("goals", "submission-origin"):
+        for name in ("catalog", "goals", "submission-origin"):
             self.assertIn(name, qualify.SUITES)
             self.assertIn(name, release.REQUIRED_SUITES)
             self.assertIn(name, qualify.SCOPES)
 
     def test_named_result_retains_actual_assertions(self):
-        count, extra = qualify.named_check_result("generated fixture output\n" + self.named(), "coding-goals")
-        self.assertEqual(count, 2)
-        self.assertEqual(extra["assertions"], ["generated create", "generated pause"])
+        for name in ("coding-goals", "coding-catalog", "coding-catalog-ui"):
+            with self.subTest(name=name):
+                count, extra = qualify.named_check_result(
+                    "generated fixture output\n" + self.named(name=name), name)
+                self.assertEqual(count, 2)
+                self.assertEqual(extra["assertions"], ["generated create", "generated pause"])
 
     def test_named_result_refuses_missing_or_duplicate_execution(self):
-        for text in (self.named(name="unrelated"), self.named() + "\n" + self.named()):
-            with self.subTest(text=text), self.assertRaises(RuntimeError):
-                qualify.named_check_result(text, "coding-goals")
+        for name in ("coding-goals", "coding-catalog", "coding-catalog-ui"):
+            for text in (self.named(name="unrelated"),
+                         self.named(name=name) + "\n" + self.named(name=name)):
+                with self.subTest(name=name, text=text), self.assertRaises(RuntimeError):
+                    qualify.named_check_result(text, name)
 
     def test_named_result_refuses_incomplete_or_invalid_assertions(self):
-        for changes in ({"passed": True}, {"passed": 1}, {"failed": 1}, {"failed": False},
-                        {"schemaVersion": True}, {"checks": []}, {"checks": ["repeat", "repeat"]},
-                        {"checks": ["generated create", " "]}, {"checks": ["generated create", {}]}):
-            with self.subTest(changes=changes), self.assertRaises(RuntimeError):
-                qualify.named_check_result(self.named(**changes), "coding-goals")
+        for name in ("coding-goals", "coding-catalog", "coding-catalog-ui"):
+            for changes in ({"passed": True}, {"passed": 1}, {"failed": 1}, {"failed": False},
+                            {"schemaVersion": True}, {"checks": []}, {"checks": ["repeat", "repeat"]},
+                            {"checks": ["generated create", " "]}, {"checks": ["generated create", {}]}):
+                with self.subTest(name=name, changes=changes), self.assertRaises(RuntimeError):
+                    qualify.named_check_result(self.named(name=name, **changes), name)
 
     def engine(self, **changes):
         checks = ["generated guarded dispatch", "coding-engine checks passed",

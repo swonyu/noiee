@@ -25,7 +25,7 @@ SELF = Path(__file__).resolve()
 DEFAULT_PROJECT = SELF.parents[1]
 CHROME_LAUNCHER = Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
 SUITES = ("compaction-recovery", "model-stabilization", "startup-diagnostics",
-          "presentation", "goals", "submission-origin", "mcp-skills", "fetch",
+          "presentation", "catalog", "goals", "submission-origin", "mcp-skills", "fetch",
           "worktrees", "release-inputs")
 SCOPES = {
     "release-inputs": "Generated release-adapter input gates only. No release phase, app, model, installed bundle or original data is opened.",
@@ -33,6 +33,7 @@ SCOPES = {
     "model-stabilization": "Generated inventories, in-memory model/engine routing and real headless browser pages with every request and native call faked. No live model.",
     "startup-diagnostics": "Compiled current startup diagnostics with generated processes, configuration and sockets; generated build and backup-inventory fixtures.",
     "presentation": "Current Chat/Tasks rendering, shared command palette, tool-authority labels and delegated-result views in fresh headless browsers, plus generated receipt/state cases. Requests and native calls are faked; no inference or original browser profile.",
+    "catalog": "Generated saved Tasks catalog, refresh and retained-history fixtures plus actual page-controller loading and result-navigation checks. Temporary owner/history data and injected callbacks only; no installed app, live Codex, model, native UI or original stores.",
     "goals": "Generated durable Goal state, full shared-engine regression and guarded dispatch cases, plus fresh headless Tasks UI fixtures. Fake engine callbacks and requests; no live Codex, model or original stores.",
     "submission-origin": "Generated Chat receipt checks and headless browser input-origin, composition and duplicate-submit cases with fake streaming upstream. Temporary receipts and IndexedDB only; no installed app, native accessibility or live model.",
     "mcp-skills": "Fresh generated MCP lifecycle/recovery and project-skills native, Agent and UI checks. Fake transports; no original stores.",
@@ -250,7 +251,7 @@ class Suite:
         self.evidence = output / "evidence"
         self.evidence.mkdir(mode=0o700)
         caches = (Path.home() / "Library/Caches").resolve(strict=True)
-        self.cache = Path(tempfile.mkdtemp(prefix="NoieeQualification175-", dir=caches))
+        self.cache = Path(tempfile.mkdtemp(prefix="NoieeQualification176-", dir=caches))
         (self.cache / "tmp").mkdir(mode=0o700)
         self.env = {key: os.environ[key] for key in ("HOME", "USER", "LOGNAME") if key in os.environ}
         self.env.update(PATH="/opt/homebrew/bin:/usr/bin:/bin", LANG="C",
@@ -477,6 +478,11 @@ class Suite:
                 return len(checks), {"assertions": checks, "preservedExpected": 26}
             self.case("coding-parity", node("source/coding-ui-check.mjs") + ["--coding-parity-only"],
                       coding_parity)
+        elif name == "catalog":
+            self.case("coding-catalog", node("source/coding-catalog-check.mjs"),
+                      lambda text: named_check_result(text, "coding-catalog"))
+            self.case("coding-catalog-ui", node("source/coding-catalog-ui-check.mjs"),
+                      lambda text: named_check_result(text, "coding-catalog-ui"))
         elif name == "goals":
             self.case("coding-engine-regressions", node("source/coding-engine-check.mjs"),
                       engine_check_result)
