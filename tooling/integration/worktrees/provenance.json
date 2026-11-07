@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "files": [
+    {
+      "file": "check-v3-view.mjs",
+      "sha256": "0445baf92dcc75ef121a6bfa9cca2e5d02e65b0c9c6dcf74a2a327fc7bf2c32c",
+      "reviewedOriginal": {
+        "path": "/Users/saleh/Documents/Noiee/checks/worktrees/check-v3-view.mjs",
+        "sha256": "dc1a831a9ab1b473045b1f23515d83a7d295c4914f2b9362fca22526080e0a46"
+      },
+      "adaptations": [
+        {
+          "old": "import {join,dirname} from 'node:path';",
+          "new": "import {join,dirname} from 'node:path';\nimport {homedir} from 'node:os';"
+        },
+        {
+          "old": "if(!base||!base.startsWith('/Users/saleh/Library/Caches/NoieeWorktreeChecks-'))throw Error('Fresh isolated Noiee worktree fixture root required');",
+          "new": "if(!base||!base.startsWith(join(homedir(),'Library/Caches/NoieeWorktreeChecks-'))||dirname(base)!==join(homedir(),'Library/Caches'))throw Error('Fresh isolated Noiee worktree fixture root required');"
+        },
+        {
+          "old": "const selected=process.argv.includes('--red')?baseline:'/Users/saleh/Documents/Noiee/source';",
+          "new": "const selected=process.argv.includes('--red')?baseline:process.env.NOIEE_WORKTREE_SOURCE;\nif(!selected||!selected.startsWith('/'))throw Error('Explicit selected source is required');"
+        }
+      ],
+      "assertionsChanged": false
+    },
+    {
+      "file": "test_map_pure.py",
+      "sha256": "f9d21c249b40a272da52073735cb6e00bfa06bef3b03419af8584efb59fbe2a0",
+      "reviewedOriginal": {
+        "path": "/Users/saleh/Documents/Noiee/checks/worktrees/test_map_pure.py",
+        "sha256": "f9d21c249b40a272da52073735cb6e00bfa06bef3b03419af8584efb59fbe2a0"
+      },
+      "adaptations": [],
+      "assertionsChanged": false
+    },
+    {
+      "file": "capture-v1-map-disabled.py",
+      "sha256": "bb9e5878bd95a7bd1243244324a0e897e4e6f40f9da23360262c3e37311348b8",
+      "reviewedOriginal": {
+        "path": "/Users/saleh/Documents/Noiee/checks/worktrees/capture-v1-map-disabled.py",
+        "sha256": "bb9e5878bd95a7bd1243244324a0e897e4e6f40f9da23360262c3e37311348b8"
+      },
+      "adaptations": [],
+      "assertionsChanged": false
+    },
+    {
+      "file": "check-authentic-map.py",
+      "sha256": "f83a7c1a0db237eb7d6b8334bebe0cc9e558954eaed725afe439f2301502aeb0",
+      "reviewedOriginal": {
+        "path": "/Users/saleh/Documents/Noiee/checks/worktrees/check-authentic-map.py",
+        "sha256": "f59aaea751565a778bcfccb33d7fa9f3906eb0f0955511cbb7e03959ddbe67bb"
+      },
+      "adaptations": [
+        {
+          "old": "SOURCE=Path('/Users/saleh/Documents/Noiee/source')",
+          "new": "SOURCE=Path(os.environ['NOIEE_WORKTREE_SOURCE'])"
+        }
+      ],
+      "assertionsChanged": false
+    }
+  ],
+  "legacyProvenance": {
+    "file": "legacy-provenance.json",
+    "sha256": "557e44874ef5d6a348d6a542c1381b385e5dce985eeac34ce407728b0308e8ee"
+  },
+  "historicalEvidence": "The disabled producer, pure tests and authentic-map checker require the exact pinned saved proof archives named in their source. They never capture or authenticate the current original store.",
+  "assertionsChanged": false
+}

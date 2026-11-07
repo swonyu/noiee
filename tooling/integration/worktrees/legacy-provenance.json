@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "sourceDirectory": "/Users/saleh/Documents/Noiee/source",
+  "files": [
+    {
+      "originalPath": "/Users/saleh/Library/Caches/SalehWorktreeReadOnly171/v3-bundle-mode-1tomu59a/check-v3-view.mjs",
+      "originalSHA256": "a2fe03dc65492699ed88f8cbef2d1fc0e4ee1af8ee98f0b29d09921905a0f1b9",
+      "copiedPath": "/Users/saleh/Documents/Noiee/checks/worktrees/check-v3-view.mjs",
+      "copiedSHA256": "dc1a831a9ab1b473045b1f23515d83a7d295c4914f2b9362fca22526080e0a46",
+      "adaptations": [
+        "fresh generated fixture root from environment",
+        "new Noiee source path"
+      ],
+      "assertionsChanged": false
+    },
+    {
+      "originalPath": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build171-parity-integration/worktree-map-root-v3/test_map_pure.py",
+      "originalSHA256": "f9d21c249b40a272da52073735cb6e00bfa06bef3b03419af8584efb59fbe2a0",
+      "copiedPath": "/Users/saleh/Documents/Noiee/checks/worktrees/test_map_pure.py",
+      "copiedSHA256": "f9d21c249b40a272da52073735cb6e00bfa06bef3b03419af8584efb59fbe2a0",
+      "adaptations": [],
+      "assertionsChanged": false
+    },
+    {
+      "originalPath": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build171-parity-integration/worktree-map-root-v3/capture-v1-map-disabled.py",
+      "originalSHA256": "bb9e5878bd95a7bd1243244324a0e897e4e6f40f9da23360262c3e37311348b8",
+      "copiedPath": "/Users/saleh/Documents/Noiee/checks/worktrees/capture-v1-map-disabled.py",
+      "copiedSHA256": "bb9e5878bd95a7bd1243244324a0e897e4e6f40f9da23360262c3e37311348b8",
+      "adaptations": [],
+      "assertionsChanged": false
+    }
+  ],
+  "rules": [
+    [
+      "const base=dirname(fileURLToPath(import.meta.url));",
+      "const base=process.env.NOIEE_WORKTREE_FIXTURE_ROOT;\nif(!base||!base.startsWith('/Users/saleh/Library/Caches/NoieeWorktreeChecks-'))throw Error('Fresh isolated Noiee worktree fixture root required');"
+    ],
+    [
+      "const selected=process.argv.includes('--red')?baseline:join(base,'source');",
+      "const selected=process.argv.includes('--red')?baseline:'/Users/saleh/Documents/Noiee/source';"
+    ]
+  ]
+}
