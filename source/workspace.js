@@ -33,7 +33,23 @@
     return {refresh, pinned: (scope, id) => state[field(scope)].includes(id), collapsed: path => state.collapsedProjects.includes(path),
       togglePin: (scope, id) => mutate(field(scope), id), remapPin: (scope, oldId, newId) => mutate(field(scope), oldId, newId), toggleProject: path => mutate('collapsedProjects', path)};
   }
-  globalThis.SalehWorkspaceState = Object.freeze({normalize, createStore, key});
+  // Presentation of this launch's existing policy; this never grants authority.
+  function toolAuthority(mode, access, nativeTools = true) {
+    const policy = access?.mode === 'full' ? 'Full Access' : access?.mode === 'reviewed' ? 'Ask Before Tools' : 'Access unconfirmed';
+    if (mode === 'chat') return {label:'Chat · tools off', state:'off', notice:false,
+      detail:'The next message uses your conversation and supplied context without calling tools. ' + policy + ' applies only to modes that use tools.'};
+    if (mode !== 'agent') return {label:access?.recoveryStartup ? 'Full access · Recovery' : policy, state:access?.mode || 'unknown', notice:false,
+      detail:access?.recoveryStartup ? 'Recovery startup holds unrestricted tools.' : access?.mode === 'full' ? 'Operational tools run without app approval. Required choices and macOS permissions still apply.' : access?.mode === 'reviewed' ? 'Tool actions follow native review. Approved routine reads can run automatically.' : 'Current tool access could not be checked.'};
+    if (!nativeTools) return {label:'Agent · Mac app required', state:'unknown', notice:true,
+      detail:'Agent tools require the native Noiee app. Chat can answer without tools.'};
+    if (!access) return {label:'Agent · access unconfirmed', state:'unknown', notice:true,
+      detail:'Current tool access could not be checked. Review this launch in tool access settings before requesting tools.'};
+    if (access.recoveryStartup) return {label:'Agent · recovery hold', state:'held', notice:true,
+      detail:'Recovery startup holds unrestricted tools. Saved history and explicit recovery remain available.'};
+    return {label:'Agent · ' + policy, state:access.mode, notice:false,
+      detail:access.mode === 'full' ? 'For the next message, Agent may use enabled tools without operational approval. Required choices and macOS permissions still apply.' : 'For the next message, Agent may use enabled tools through native review. Approved routine reads can run automatically.'};
+  }
+  globalThis.SalehWorkspaceState = Object.freeze({normalize, createStore, toolAuthority, key});
   if (typeof document === 'undefined') return;
   const $ = id => document.getElementById(id);
   // Explicit modal isolation keeps Tasks dialogs accessible after asynchronous hydration.
@@ -105,23 +121,44 @@
   document.addEventListener('toggle', event => {if (activeDialog?.dialog === event.target && !event.target.matches(':popover-open')) closeDialog(event.target);}, true);
   window.addEventListener('pagehide', () => {if (activeDialog) closeDialog(activeDialog.dialog, false);});
 
+  let currentAccess = null;
+  function renderToolAuthority() {
+    const chip=$('workspace-access-chip'),mode=$('chat-mode')?.value;
+    const view=toolAuthority(mode,currentAccess,!!window.webkit?.messageHandlers?.tools);
+    if(chip){
+      chip.textContent=view.label;chip.dataset.mode=view.state;
+      chip.title=view.detail+' Open tool access settings.';
+      chip.setAttribute('aria-label',view.label+'. Open tool access settings.');
+    }
+    const detail=$('composer-authority-detail');
+    if(detail){detail.textContent=view.detail;detail.hidden=!view.notice;}
+    const welcome=$('welcome-authority');
+    if(welcome)welcome.textContent=mode==='agent'
+      ? 'Agent can use enabled tools. Its access policy is shown beside the message field.'
+      : 'Chat answers with the context you share. Use Agent for tools, or Tasks for a project.';
+  }
   async function showToolAccess() {
-    const status=$('tool-access-status'),recovery=$('tool-access-recovery'),chip=$('workspace-access-chip');
+    const status=$('tool-access-status'),recovery=$('tool-access-recovery');
     if(!status||!recovery)return;
     try {
       const response=await fetch('/api/access',{cache:'no-store'}),value=await response.json();
       const held=value?.recoveryStartup??false;
       if(!response.ok||!['full','reviewed'].includes(value?.mode)||typeof value.managedChangesBlocked!=='boolean'||typeof held!=='boolean'||held&&(value.mode!=='full'||value.managedChangesBlocked)||value.mode==='full'&&!value.managedChangesBlocked&&!held)throw Error('Invalid access status');
+      currentAccess=Object.freeze({mode:value.mode,managedChangesBlocked:value.managedChangesBlocked,recoveryStartup:held});
       status.textContent=held?'Full Access · Recovery startup. Unrestricted tools are held; saved history, text chat and explicit recovery remain available.':value.mode==='full'?'Full Access · Operational tools run without app approval.':'Ask Before Tools · Tool actions follow native review. Approved routine reads can run automatically.';
       recovery.hidden=!value.managedChangesBlocked&&!held;
       if(held)recovery.textContent='Finish the retained recovery before releasing unrestricted tools. Canceling recovery startup in the app menu takes effect only after normal quit and relaunch.';
-      if(chip){chip.textContent=held?'Full access · Recovery':value.mode==='full'?'Full access':'Ask before tools';chip.dataset.mode=value.mode;chip.title=status.textContent;}
     } catch {
+      currentAccess=null;
       status.textContent='Current tool access could not be checked. Check the app window title for the running mode.';
       recovery.hidden=true;
-      if(chip){chip.textContent='Check tool access';chip.dataset.mode='unknown';chip.title=status.textContent;}
     }
+    renderToolAuthority();
   }
+  $('chat-mode')?.addEventListener('change',renderToolAuthority);
+  window.addEventListener('chat-selection-change',renderToolAuthority);
+  window.addEventListener('chat-busy',renderToolAuthority);
+  renderToolAuthority();
   void showToolAccess();
   function feedback(text) {
     let node = $('workspace-feedback');
@@ -205,79 +242,157 @@
       closeSettings(false); globalThis.SalehExtensions?.close();
     }
   }, true);
-  // Navigation only: existing controllers retain saving, admission and access checks.
+  // Commands dispatch existing controls. Their controllers retain saving,
+  // admission, model selection and tool authority; the palette grants none.
   const quick = document.createElement('dialog'); quick.id = 'workspace-quick-dialog';
   quick.setAttribute('aria-labelledby', 'workspace-quick-title');
-  quick.innerHTML = `<div class="workspace-quick-heading"><h2 id="workspace-quick-title">Quick actions</h2><button id="workspace-quick-close" type="button" aria-label="Close quick actions">×</button></div><label class="sr-only" for="workspace-quick-query">Find an action</label><input id="workspace-quick-query" type="search" placeholder="Go to…" autocomplete="off" spellcheck="false" maxlength="120"><div id="workspace-quick-results" aria-label="Actions"></div><p id="workspace-quick-empty" role="status" hidden>No actions found. Try search, settings, or history.</p><p class="workspace-quick-hint">↑ ↓ Navigate <span>↵ Open</span><span>Esc Close</span></p>`;
+  quick.innerHTML = '<div class="workspace-quick-heading"><div><h2 id="workspace-quick-title">Command palette</h2><p id="workspace-quick-scope"></p></div><button id="workspace-quick-close" type="button" aria-label="Close command palette">×</button></div><label class="sr-only" for="workspace-quick-query">Find a command</label><input id="workspace-quick-query" type="search" role="combobox" aria-autocomplete="list" aria-expanded="true" aria-controls="workspace-quick-results" aria-describedby="workspace-quick-count" placeholder="Search commands…" autocomplete="off" spellcheck="false" maxlength="120"><p id="workspace-quick-count" role="status" aria-live="polite" aria-atomic="true"></p><div id="workspace-quick-results" role="listbox" aria-label="Commands"></div><p id="workspace-quick-empty" hidden>No matching commands. Try “project”, “history”, “tools”, or “settings”.</p><p class="workspace-quick-hint">↑ ↓ Choose <span>↵ Run command</span><span>Esc Close</span></p>';
   document.body.append(quick);
+  const command = (id,label,detail,group,keywords='',shortcut='',unavailable='Unavailable in the current workspace state.') => ({id,label,detail,group,keywords,shortcut,unavailable});
   const quickActions = [
-    ['New chat', 'Start a new chat in this workspace', 'new-chat'],
-    ['Write a message', 'Return to the composer', 'prompt'],
-    ['Search chats', 'Find a saved conversation', 'search'],
-    ['Find in this chat', 'Find matching text in the current conversation', 'find-chat'],
-    ['Settings', 'Models and workspace preferences', 'workspace-settings-open'],
-    ['Extensions', 'Browse tools and skills', 'workspace-extensions-open'],
-    ['Tools', 'Open connected tools and the tool catalog', 'open-tools'],
-    ['Computer', 'Open computer controls', 'open-computer'],
-    ['Context', 'Open working notes and attached context', 'toggle-context'],
-    ['Search task history', 'Search saved messages across tasks', 'history-search-open'],
-    ['Browse saved history', 'Read older turns in this task', 'browse-history'],
-    ['Toggle changes', 'Inspect the current project changes', 'changes-toggle'],
-    ['Toggle terminal', 'View the project terminal', 'terminal-toggle'],
-    ['Open Tasks', 'Continue in your project workspace', 'open-coding'],
-    ['Open Chat', 'Return to your conversations', 'back-chat'],
-  ].filter(([, , id]) => $(id));
-  function quickTarget(id) {
-    const target = $(id);
-    if (!target || target.disabled || dialogInert(target)) return null;
-    for (let ancestor = target.parentElement; ancestor; ancestor = ancestor.parentElement) {
-      if (!dialogInert(ancestor)) continue;
-      // Collapsed sidebar actions remain available through the palette.
-      if (ancestor.id === 'sidebar' && ($('sidebar-toggle') || $('open-sidebar'))?.getAttribute('aria-expanded') === 'false') continue;
-      return null;
+    command('new-chat','New chat','Start a chat without replacing the current draft','Workspace','create conversation','⌘K','Wait for workspace saving or recovery to finish.'),
+    command('new-project','New project…','Choose a project through the existing project dialog','Tasks','folder directory create'),
+    command('prompt','Write a message','Focus the current composer and keep its text','Conversation','focus draft input','', 'This conversation is read-only or the composer is unavailable.'),
+    command('search','Search chats','Find a conversation in the sidebar','Workspace','filter title'),
+    command('find-chat','Find in this chat','Find text in the current conversation','Chat','search message','⌘F'),
+    command('history-search-open','Search task history','Search saved messages across tasks','Tasks','find older conversation'),
+    command('browse-history','Browse saved history','Read older turns in this task','Tasks','past previous messages'),
+    command('return-to-parent','Return to parent chat','Continue from this agent’s parent conversation','Tasks','child agent back','', 'The current parent binding must be verified first.'),
+    command('session-overview','Session overview','Inspect this project’s current session','Tasks','run status'),
+    command('workspace-settings-open','Settings','Review models and this launch’s tool policy','Workspace','preferences permissions approval access','⌘,'),
+    command('workspace-extensions-open','Extensions','Browse tools and skills','Workspace','plugins mcp install'),
+    command('open-tools','Tools','Inspect connected tools and the tool catalog','Chat','mcp skills permissions'),
+    command('open-computer','Computer controls','Open the existing computer practice panel','Chat','screen window'),
+    command('toggle-context','Working context','Open notes and attached context','Chat','project file brief instructions'),
+    command('rename-chat','Rename chat','Edit this conversation’s title','Chat','name title'),
+    command('show-archived','Show archived chats','Switch the sidebar’s saved-chat filter','Workspace','archive history'),
+    command('compact-context','Compact context','Summarize earlier context using the existing compaction flow','Chat','summary memory','', 'Wait for current work or storage checks, or review a stale summary.'),
+    command('compaction-full-history','Use full history','Keep saved summaries while using original messages','Chat','summary originals reset'),
+    command('compaction-rebuild','Rebuild context summary','Create a new summary from the original history','Chat','compact stale memory'),
+    command('changes-toggle','Project changes','Inspect changes in the current project','Project','git diff review'),
+    command('terminal-toggle','Project terminal','Open the current project’s terminal panel','Project','shell console'),
+    command('worktrees-toggle','Worktrees','Inspect managed project copies and retained recovery','Project','git branches handoff restore'),
+    command('schedules-toggle','Schedules','Inspect this project’s scheduled work','Project','automation recurring'),
+    command('failed-startups','Review failed task startups…','Inspect retained startup recovery through native review','Recovery','failed incomplete project continuation'),
+    command('stop','Stop current work','Use this conversation’s existing Stop control','Conversation','cancel interrupt'),
+    command('refresh','Refresh Tasks','Refresh the existing task view','Tasks','reload update'),
+    command('open-coding','Open Tasks','Continue in your project workspace','Workspace','coding code project'),
+    command('back-chat','Open Chat','Return to your conversations','Workspace','home messages'),
+  ];
+  const hiddenNavigation = new Set(['open-coding','back-chat']);
+  let quickActive = null, quickRows = [], quickObserver = null;
+  function commandState(action) {
+    const target=$(action.id);if(!target)return null;
+    const toggle=$('sidebar-toggle')||$('open-sidebar');
+    const collapsed=target.closest('#sidebar')&&toggle?.getAttribute('aria-expanded')==='false';
+    for(let node=target;node;node=node.parentElement){
+      if(node.hidden && !(node.id==='sidebar'&&collapsed))return null;
+      if(dialogInert(node)&&!(node.id==='sidebar'&&collapsed))return {target,available:false,reason:'Wait for the current dialog or workspace transition.'};
     }
-    return target;
+    if(!target.getClientRects().length&&!collapsed&&!hiddenNavigation.has(action.id)&&!target.closest('details:not([open])'))return null;
+    const available=!target.disabled&&target.getAttribute('aria-disabled')!=='true'&&!(collapsed&&toggle.disabled);
+    return {target,available,reason:available?'':target.dataset.commandDisabledReason||action.unavailable};
   }
-  function activateWorkspaceAction(id) {
-    const target = quickTarget(id); if (!target) {renderQuickActions(); return;}
-    closeQuickActions(false);
-    if (id === 'search') {
-      const toggle = $('sidebar-toggle') || $('open-sidebar');
-      if (toggle.getAttribute('aria-expanded') !== 'true') toggle.click();
-      target.focus();
-    } else if (id === 'prompt') target.focus();
-    else target.click();
+  function quickTarget(id) {
+    const action=quickActions.find(row=>row.id===id)||{id,unavailable:'Unavailable.'};
+    const state=commandState(action);
+    return state?.available&&!document.body.inert?state.target:null;
   }
-  function renderQuickActions() {
-    const query = $('workspace-quick-query').value.trim().toLocaleLowerCase();
-    const rows = quickActions.filter(([label, detail]) => `${label} ${detail}`.toLocaleLowerCase().includes(query));
-    $('workspace-quick-results').replaceChildren(); $('workspace-quick-empty').hidden = rows.length > 0;
-    for (const [label, detail, id] of rows) {
-      const button = document.createElement('button'), title = document.createElement('strong'), hint = document.createElement('small');
-      button.type = 'button'; button.disabled = !quickTarget(id); title.textContent = label; hint.textContent = detail; button.append(title, hint);
-      button.onclick = () => activateWorkspaceAction(id);
+  function commandLabel(action) {
+    if(action.id==='show-archived')return $('show-archived')?.getAttribute('aria-pressed')==='true'?'Show active chats':'Show archived chats';
+    return action.label;
+  }
+  function selectQuickAction(id) {
+    quickActive=id;
+    for(const button of $('workspace-quick-results').querySelectorAll('[role="option"]')){
+      const selected=button.dataset.command===id;button.setAttribute('aria-selected',String(selected));
+      if(selected){$('workspace-quick-query').setAttribute('aria-activedescendant',button.id);button.scrollIntoView({block:'nearest'});}
+    }
+    if(!id)$('workspace-quick-query').removeAttribute('aria-activedescendant');
+  }
+  function watchQuickTargets() {
+    quickObserver?.disconnect();
+    if(!quick.open)return;
+    quickObserver??=new MutationObserver(()=>{if(quick.open)renderQuickActions(true);});
+    const watched=new Set();
+    for(const action of quickActions)for(let node=$(action.id);node&&node!==document.documentElement;node=node.parentElement){
+      if(watched.has(node))continue;watched.add(node);
+      quickObserver.observe(node,{attributes:true,attributeFilter:['disabled','hidden','inert','aria-disabled','aria-pressed','data-command-disabled-reason']});
+    }
+  }
+  function renderQuickActions(preserve=false) {
+    const query=$('workspace-quick-query').value.trim().replace(/^>\s*/,'').toLocaleLowerCase(),terms=query.split(/\s+/).filter(Boolean);
+    const rows=quickActions.flatMap(action=>{
+      const state=commandState(action);if(!state)return [];
+      const label=commandLabel(action),text=[label,action.detail,action.group,action.keywords].join(' ').toLocaleLowerCase();
+      if(!terms.every(term=>text.includes(term)))return [];
+      return [{...action,label,...state,score:query&&label.toLocaleLowerCase().startsWith(query)?2:terms.length&&terms.every(term=>label.toLocaleLowerCase().includes(term))?1:0}];
+    }).sort((a,b)=>b.score-a.score);
+    quickRows=rows;
+    $('workspace-quick-results').replaceChildren();$('workspace-quick-empty').hidden=rows.length>0;
+    const available=rows.filter(row=>row.available);
+    $('workspace-quick-count').textContent=rows.length+' command'+(rows.length===1?'':'s')+(rows.length>available.length?' · '+(rows.length-available.length)+' unavailable':'');
+    const task=document.body.classList.contains('workspace-coding');
+    const title=(task?$('thread-title')||$('title'):$('title'))?.textContent?.trim();
+    $('workspace-quick-scope').textContent=(task?'Tasks':'Chat')+(title?' · '+title.slice(0,160):'');
+    for(const row of rows){
+      const button=document.createElement('button'),text=document.createElement('span'),label=document.createElement('strong'),detail=document.createElement('small'),group=document.createElement('span');
+      button.type='button';button.id='workspace-command-'+row.id;button.dataset.command=row.id;button.tabIndex=-1;
+      button.setAttribute('role','option');button.setAttribute('aria-disabled',String(!row.available));button.disabled=!row.available;
+      button.setAttribute('aria-label',row.label+'. '+(row.available?row.detail:'Unavailable. '+row.reason));
+      label.textContent=row.label;detail.textContent=row.available?row.detail:'Unavailable · '+row.reason;group.className='workspace-command-group';group.textContent=row.group;
+      text.className='workspace-command-text';text.append(label,detail);button.append(text,group);
+      if(row.shortcut){const shortcut=document.createElement('kbd');shortcut.textContent=row.shortcut;button.append(shortcut);}
+      button.onclick=()=>activateWorkspaceAction(row.id);
       $('workspace-quick-results').append(button);
     }
+    selectQuickAction(preserve&&available.some(row=>row.id===quickActive)?quickActive:available[0]?.id||null);
+    watchQuickTargets();
+  }
+  function activateWorkspaceAction(id) {
+    let target=quickTarget(id);if(!target){if(quick.open)renderQuickActions(true);return;}
+    closeQuickActions(false);
+    // Closing a dialog can change controller state. Recheck before dispatch.
+    target=quickTarget(id);if(!target){feedback('The command became unavailable. No action was taken.');return;}
+    if(id==='search'){
+      const toggle=$('sidebar-toggle')||$('open-sidebar');
+      if(toggle?.getAttribute('aria-expanded')!=='true')toggle?.click();
+      target.focus();
+    }else if(id==='prompt')target.focus();
+    else target.click();
   }
   function openQuickActions() {
-    if (document.body.inert || document.querySelector('dialog[open]') || $('mcp-setup') && !$('mcp-setup').hidden) return;
-    closeOtherPanels(); closeSettings(false); globalThis.SalehExtensions?.close();
-    $('workspace-quick-query').value = ''; renderQuickActions(); openDialog(quick); $('workspace-quick-query').focus();
+    if(document.body.inert||document.querySelector('dialog[open]')||$('mcp-setup')&&!$('mcp-setup').hidden)return;
+    const opener=document.activeElement;
+    closeOtherPanels();closeSettings(false);globalThis.SalehExtensions?.close();
+    $('workspace-quick-query').value='';renderQuickActions();openDialog(quick,opener);$('workspace-quick-query').focus();watchQuickTargets();
   }
-  function closeQuickActions(restore=true) {closeDialog(quick, restore);}
-  $('workspace-quick-open')?.addEventListener('click', openQuickActions);
-  $('workspace-quick-close').onclick = () => closeQuickActions();
-  $('workspace-quick-query').oninput = renderQuickActions;
+  function closeQuickActions(restore=true) {quickObserver?.disconnect();closeDialog(quick,restore);}
+  const quickTrigger=$('workspace-quick-open');
+  if(quickTrigger){
+    quickTrigger.setAttribute('aria-label','Command palette');quickTrigger.setAttribute('aria-keyshortcuts','Meta+Shift+P Control+Shift+P Meta+J Control+J');
+    quickTrigger.title='Command palette (⌘⇧P · also ⌘J)';
+    const label=quickTrigger.querySelector('span'),shortcut=quickTrigger.querySelector('kbd');
+    if(label)label.textContent='Commands';if(shortcut)shortcut.textContent='⌘⇧P';
+    quickTrigger.addEventListener('click',openQuickActions);
+  }
+  $('workspace-quick-close').onclick=()=>closeQuickActions();
+  $('workspace-quick-query').oninput=()=>renderQuickActions();
   quick.addEventListener('cancel',event=>{event.preventDefault();closeQuickActions();});
-  quick.addEventListener('keydown', event => {
-    event.stopPropagation(); // Keep Chat shortcuts out; native Tab still works.
-    if (event.isComposing) return;
-    if (event.key === 'Escape') {event.preventDefault(); closeQuickActions(); return;}
-    const buttons = [...$('workspace-quick-results').querySelectorAll('button:not(:disabled)')];
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-      event.preventDefault(); const index = buttons.indexOf(document.activeElement), next = event.key === 'ArrowDown' ? index + 1 : index < 0 ? buttons.length - 1 : index - 1;
-      buttons[(next + buttons.length) % buttons.length]?.focus();
-    } else if (event.key === 'Enter' && document.activeElement === $('workspace-quick-query')) {event.preventDefault(); buttons[0]?.click();}
+  quick.addEventListener('close',()=>quickObserver?.disconnect());
+  quick.addEventListener('keydown',event=>{
+    event.stopPropagation();
+    if(event.isComposing)return;
+    if(event.key==='Escape'){event.preventDefault();closeQuickActions();return;}
+    if(['ArrowDown','ArrowUp','PageDown','PageUp'].includes(event.key)){
+      event.preventDefault();renderQuickActions(true);
+      const rows=quickRows.filter(row=>row.available);if(!rows.length)return;
+      const current=rows.findIndex(row=>row.id===quickActive),step=event.key==='PageDown'?5:event.key==='PageUp'?-5:event.key==='ArrowDown'?1:-1;
+      selectQuickAction(rows[(Math.max(0,current)+step%rows.length+rows.length)%rows.length].id);
+      $('workspace-quick-query').focus();
+    }else if(event.key==='Enter'&&document.activeElement===$('workspace-quick-query')){
+      event.preventDefault();if(quickActive)activateWorkspaceAction(quickActive);
+    }
   });
   // The rail and palette share existing button dispatch, including draft guards.
   const rail = document.createElement('nav'); rail.id = 'workspace-rail'; rail.setAttribute('aria-label', 'Workspaces');
@@ -311,9 +426,11 @@
   $('workspace-access-chip')?.addEventListener('click', () => $('workspace-settings-open')?.click());
   $('welcome-project')?.addEventListener('click', () => $('new-project')?.click());
   $('welcome-history')?.addEventListener('click', () => $('history-search-open')?.click());
+  $('welcome-commands')?.addEventListener('click',openQuickActions);
+  $('welcome-tasks')?.addEventListener('click',()=>activateWorkspaceAction('open-coding'));
   document.addEventListener('keydown', event => {
     if (event.defaultPrevented || event.isComposing) return;
-    if ((event.metaKey || event.ctrlKey) && !event.altKey && event.key.toLowerCase() === 'j') {event.preventDefault(); event.stopPropagation(); if (quick.open) closeQuickActions(); else openQuickActions(); return;}
+    if ((event.metaKey || event.ctrlKey) && !event.altKey && (event.key.toLowerCase() === 'j' || event.shiftKey && event.key.toLowerCase() === 'p')) {event.preventDefault(); event.stopPropagation(); if (quick.open) closeQuickActions(); else openQuickActions(); return;}
     if (document.querySelector('dialog[open]')) return;
     if (event.key === 'Escape' && !$('workspace-settings')?.hidden && $('workspace-settings')?.contains(document.activeElement)) {
       event.preventDefault(); event.stopPropagation(); closeSettings(); return;
