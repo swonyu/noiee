@@ -1,0 +1,14 @@
+export class BoundedStdioTransport {
+ constructor(params){this.params=params;this.closed=false;}
+ async close(){this.closed=true;await globalThis.mcpFixture.closeGate;}
+}
+export const StreamableHTTPClientTransport=BoundedStdioTransport;
+export const ToolListChangedNotificationSchema={},ListToolsResultSchema={};
+export const boundedResponse=()=>{throw Error('Unexpected HTTP peer');};
+export class Client {
+ setNotificationHandler(_schema,fn){this.changed=fn;}
+ async connect(transport,options){this.transport=transport;globalThis.mcpFixture.initializes++;if(globalThis.mcpFixture.connectGate)await Promise.race([globalThis.mcpFixture.connectGate,new Promise((_,reject)=>options.signal.addEventListener('abort',()=>reject(Error('Fixture cancelled')),{once:true}))]);options.signal.throwIfAborted();}
+ async listTools(){globalThis.mcpFixture.catalogs++;return{tools:structuredClone(globalThis.mcpFixture.catalog),...(globalThis.mcpFixture.truncated?{nextCursor:'again'}:{})};}
+ async request(){return this.listTools();}
+ async callTool(){globalThis.mcpFixture.calls++;throw Error('A tool call must never replay');}
+}

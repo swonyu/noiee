@@ -1,0 +1,44 @@
+import vm from 'node:vm';
+import fs from 'node:fs';
+import fsp from 'node:fs/promises';
+import net from 'node:net';
+import http from 'node:http';
+import https from 'node:https';
+import cp from 'node:child_process';
+import {Readable} from 'node:stream';
+import {EventEmitter} from 'node:events';
+import assert from 'node:assert/strict';
+import {createRequire,registerHooks,syncBuiltinESMExports,isBuiltin} from 'node:module';
+import {fileURLToPath,pathToFileURL} from 'node:url';
+import {createHash,randomUUID} from 'node:crypto';
+const HERE=fileURLToPath(new URL('.',import.meta.url)).replace(/\/$/,''),SOURCE=fileURLToPath(new URL('../../source/',import.meta.url)).replace(/\/$/,''),FROZEN=SOURCE;
+const effects={network:0,childProcess:0,originalStore:0},deny=key=>()=>{effects[key]++;throw Error('Recovery guard: '+key);};
+for(const [target,names]of [[net,['connect','createConnection','createServer']],[http,['request','get']],[https,['request','get']],[cp,['spawn','spawnSync','exec','execSync','execFile','execFileSync','fork']]])for(const name of names)target[name]=deny(target===cp?'childProcess':'network');
+net.Socket.prototype.connect=deny('network');net.Server.prototype.listen=deny('network');globalThis.fetch=deny('network');
+const originalPrefixes=['/Users/saleh/Applications/','/Users/saleh/Library/Application Support/Qwen Local','/Users/saleh/Library/WebKit/','/Users/saleh/Library/HTTPStorages/','/Users/saleh/Library/Preferences/'];
+for(const [target,names]of [[fs,['readFileSync','openSync']],[fsp,['open','readFile','writeFile','mkdir','rename']]])for(const name of names){const old=target[name].bind(target);target[name]=(p,...args)=>{if(originalPrefixes.some(prefix=>String(p).startsWith(prefix)))return deny('originalStore')();return old(p,...args);};}syncBuiltinESMExports();
+const require=createRequire(HERE+'/dependency-anchor.cjs'),shared=pathToFileURL(fs.realpathSync(FROZEN+'/node_modules')+'/').href,fake=pathToFileURL(HERE+'/fake-mcp.mjs').href;
+registerHooks({resolve(specifier,context,next){if(context.parentURL===pathToFileURL(SOURCE+'/mcp.mjs').href&&(specifier.startsWith('@modelcontextprotocol/')||specifier==='./mcp-transport.mjs'))return{url:fake,shortCircuit:true};if((context.parentURL?.startsWith(pathToFileURL(SOURCE+'/').href)||context.parentURL?.startsWith(shared))&&!specifier.startsWith('.')&&!specifier.startsWith('/')&&!isBuiltin(specifier))return{url:pathToFileURL(require.resolve(specifier,{paths:[SOURCE]})).href,shortCircuit:true};return next(specifier,context);}});
+globalThis.mcpFixture={initializes:0,catalogs:0,calls:0,catalog:[{name:'echo',description:'Generated harmless catalog',inputSchema:{type:'object'}}],connectGate:null,closeGate:null,truncated:false};
+const {MCPHub}=await import(SOURCE+'/mcp.mjs');
+const rows=[],roots=[],observations=[];
+function check(name,fn){try{fn();rows.push({name,passed:true});console.log('PASS '+name);}catch(error){rows.push({name,passed:false,error:error.message});console.log('RED '+name+' · '+error.message);}}
+class Element{constructor(){this.children=[];this.value='';this.textContent='';}append(...items){this.children.push(...items);}replaceChildren(...items){this.children=[...items];}}
+async function render(hub){
+ const nodes=new Map(),node=id=>{if(!nodes.has(id))nodes.set(id,new Element());return nodes.get(id);},calls=[];
+ const context=vm.createContext({document:{getElementById:node,createElement:()=>new Element()},window:{webkit:{messageHandlers:{tools:{async postMessage(input){calls.push(input.op);if(input.op==='describe')return hub.describe();if(input.op==='catalog')return{...await hub.tools(),builtins:[]};throw Error('Connect/native actions are forbidden in this fixture');}}}},addEventListener(){}},setContext(){},Promise,Error},{codeGeneration:{strings:false,wasm:false}});
+ vm.runInContext(await fsp.readFile(SOURCE+'/tools.js','utf8'),context,{timeout:1000});await node('tools-refresh').onclick();await node('tools-refresh').onclick();return{nodes,calls,status:node('tools-status').textContent,detail:node('tool-servers').children[0]?.children[1]?.textContent};
+}
+for(const fault of ['unsafe','malformed','unfinished']){
+ const root=await fsp.mkdtemp(process.env.NOIEE_TOOLS_FIXTURE_ROOT+'/unavailable-');roots.push(root);const config=root+'/mcp.json',directory=root+'/remember';await fsp.writeFile(config,JSON.stringify({mcpServers:{fixture:{command:'/generated/not-executed',args:[]}}}),{mode:0o600});const warm=new MCPHub(config,{recoveryDirectory:directory}),first=(await warm.describe()).servers[0];await warm.connect(first.id,first.configHash);await warm.close();const file=directory+'/state.json',saved=JSON.parse(await fsp.readFile(file,'utf8')),canary='DO_NOT_EXPOSE_RECOVERY_STATE';
+ if(fault==='unsafe')await fsp.chmod(file,0o644);if(fault==='malformed')await fsp.writeFile(file,'{"privateCanary":"'+canary+'",');if(fault==='unfinished')await fsp.writeFile(directory+'/retained.tmp',canary,{mode:0o600});
+ const raw=await fsp.readFile(file),cold=new MCPHub(config,{recoveryDirectory:directory}),before=mcpFixture.initializes;await assert.rejects(cold.recover(async()=>{}));const described=await cold.describe(),view=await render(cold);observations.push({fault,globalUnavailable:described.recoveryUnavailable??false,status:view.status,detail:view.detail,initializesAfterFailure:mcpFixture.initializes-before});
+ check(fault+' record failure has a coarse global describe state',()=>assert.equal(described.recoveryUnavailable,true));
+ check(fault+' record failure stays visible after actual Tools refresh',()=>{assert.match(view.status,/Automatic MCP recovery is unavailable/);assert.equal(view.status.split('Automatic MCP recovery is unavailable').length-1,1);});
+ check(fault+' state remains fail-closed and does not expose private text or fabricate per-ID status',()=>{assert.equal(mcpFixture.initializes,before);assert.equal(described.servers[0].connected,false);assert(!Object.hasOwn(described.servers[0],'recoveryState'));assert.equal(view.detail,'Not connected');assert(view.calls.every(op=>['describe','catalog'].includes(op)));const publicText=JSON.stringify(described)+' '+view.status;for(const value of [canary,saved.salt,saved.servers[0].config,saved.servers[0].catalog])assert(!publicText.includes(value));});
+ assert.deepEqual(await fsp.readFile(file),raw);
+}
+const root=await fsp.mkdtemp(process.env.NOIEE_TOOLS_FIXTURE_ROOT+'/healthy-');roots.push(root);const config=root+'/mcp.json';await fsp.writeFile(config,JSON.stringify({mcpServers:{fixture:{command:'/generated/not-executed',args:[]}}}),{mode:0o600});const plain=new MCPHub(config),description=await plain.describe(),view=await render(plain);
+check('ordinary non-opted-in hub keeps existing describe shape and no unavailable notice',()=>{assert(!Object.hasOwn(description,'recoveryUnavailable'));assert(!view.status.includes('Automatic MCP recovery is unavailable'));assert.equal(view.detail,'Not connected');});await plain.close();
+assert.deepEqual(effects,{network:0,childProcess:0,originalStore:0});assert.equal(mcpFixture.calls,0);
+console.log(JSON.stringify({passed:rows.filter(row=>row.passed).length,failed:rows.filter(row=>!row.passed).length,rows,observations,...effects,toolCalls:0,generatedRoots:roots,source:SOURCE,sourcePins:Object.fromEntries(['mcp.mjs','tools.js','mcp-recovery.mjs'].map(name=>[name,createHash('sha256').update(fs.readFileSync(SOURCE+'/'+name)).digest('hex')]))}));if(rows.some(row=>!row.passed))process.exitCode=1;

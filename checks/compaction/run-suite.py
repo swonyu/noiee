@@ -45,6 +45,7 @@ for name,expected in specs:
  if not ok:print((result.stdout+result.stderr)[-5000:],flush=True)
 after=source_pins()
 report={"schemaVersion":1,"root":str(ROOT),"source":str(ROOT/"source"),"node":{"path":str(node),"version":subprocess.check_output([str(node),"--version"],text=True).strip(),"sha256":sha(node)},"nodeModulesRealPath":str((ROOT/"source/node_modules").resolve()),"sourcePins":before,"sourceUnchanged":before==after,"checks":rows,"passed":sum(row["passed"] for row in rows),"failed":sum(0 if row["qualified"] else 1 for row in rows)+(before!=after),"limitations":["Fake inference only; no live-model quality/performance claim.","Swift recovery method is compiled with fake dialogs/transports; integrated native build remains a release gate.","Browser data/profile use a unique Caches directory to avoid macOS provenance metadata writes in Documents. Logs, reports and screenshots remain under .artifacts.","24,000-byte whole-exchange summary input limit and 64 retained summary-attempt limit remain explicit. No automatic or partial-exchange compaction."]}
+report["exitCode"]=0 if report["failed"]==0 else 1
 path=OUT/"RESULT.json";path.write_text(json.dumps(report,indent=2)+"\n")
 print(json.dumps({"report":str(path),"sha256":sha(path),"passed":report["passed"],"failed":report["failed"],"sourceUnchanged":report["sourceUnchanged"]}),flush=True)
 raise SystemExit(0 if report["failed"]==0 else 1)

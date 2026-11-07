@@ -1,0 +1,164 @@
+import Foundation
+import Darwin
+
+@main struct ProjectSkillsHarness {
+    struct Failure:Error {let message:String}
+    static func waitFor(_ signal:DispatchSemaphore) async {
+        await withCheckedContinuation {continuation in DispatchQueue.global().async {signal.wait();continuation.resume()}}
+    }
+    @MainActor static func main() async throws {
+        let base=URL(fileURLWithPath:CommandLine.arguments[1],isDirectory:true).resolvingSymlinksInPath()
+        try FileManager.default.createDirectory(at:base,withIntermediateDirectories:true,attributes:[.posixPermissions:0o700])
+        var cases=[String]()
+        func require(_ condition:@autoclosure () throws -> Bool,_ name:String) throws {guard try condition() else {throw Failure(message:name)}}
+        func project(_ name:String) throws -> String {
+            let path=base.appendingPathComponent(name,isDirectory:true)
+            try FileManager.default.createDirectory(at:path,withIntermediateDirectories:false,attributes:[.posixPermissions:0o700])
+            return path.path
+        }
+        func rejects(_ name:String,_ body:()throws->Void) throws {
+            do {try body()} catch {cases.append(name);return}
+            throw Failure(message:"Accepted invalid "+name)
+        }
+        let entries=try ProjectSkillCatalog.entries()
+        try require(entries.map(\.id)==ProjectSkillCatalog.ids,"fixed catalog identities")
+        try require(entries.allSatisfy{(try? CodingSkills.validateSkill($0.data).name)==$0.id && HandoffFiles.hash($0.data)==$0.sha256},"fixed catalog bytes validate")
+        cases.append("three exact catalog bytes share CodingSkills validation")
+        let emptyCatalog=try await ProjectSkillsSession().perform(["action":"catalog"])
+        try require(emptyCatalog["scope"] is NSNull && JSONSerialization.isValidJSONObject(emptyCatalog),"catalog without project is serializable and grants no scope")
+        cases.append("catalog before project choice exposes no implicit home or project scope")
+        let entry=entries[0],p=try project("success"),scope=try CodingSkills.projectScope(p),operation=UUID().uuidString.lowercased()
+        let config=URL(fileURLWithPath:p).appendingPathComponent("mcp.json"),configBytes=Data("{\"mcpServers\":{},\"unknown\":\"FIXTURE_PRIVATE_VALUE\"}".utf8)
+        try configBytes.write(to:config)
+        let result=try CodingSkills.installSkill(scope,id:entry.id,data:entry.data,sha256:entry.sha256,operationId:operation,check:{_ in})
+        try require(result["installed"] as? Bool==true && result["durable"] as? Bool==true,"installed result")
+        let file=URL(fileURLWithPath:p).appendingPathComponent(".agents/skills/"+entry.id+"/SKILL.md")
+        try require(Data(contentsOf:file)==entry.data,"published exact skill")
+        let attributes=try FileManager.default.attributesOfItem(atPath:file.path)
+        try require((attributes[.posixPermissions] as? NSNumber)?.intValue==0o600,"non-executable private file")
+        let read=try CodingSkills.installedSkill(scope,id:entry.id,sha256:entry.sha256,includeText:true)
+        try require(read["text"] as? String==String(data:entry.data,encoding:.utf8),"installed skill read")
+        let snapshot=try CodingSkills.inventory(project:p)
+        try require(snapshot.skills.count==1 && !snapshot.truncated,"existing scanner reads installed skill")
+        try require(CodingSkills.preview(snapshot,skillID:snapshot.skills[0].id).text==String(data:entry.data,encoding:.utf8),"existing preview reads exact skill")
+        try require(Data(contentsOf:config)==configBytes,"MCP config byte preservation")
+        cases.append("exclusive publication, durable receipt, scanner/preview/read and unchanged MCP config")
+        let receipt=file.deletingLastPathComponent().appendingPathComponent(".saleh-install.json"),beforeReceipt=try Data(contentsOf:receipt)
+        try rejects("duplicate primitive retains exact original content and receipt") {
+            _ = try CodingSkills.installSkill(scope,id:entry.id,data:entry.data,sha256:entry.sha256,operationId:UUID().uuidString.lowercased(),check:{_ in})
+        }
+        try require(Data(contentsOf:receipt)==beforeReceipt && Data(contentsOf:file)==entry.data,"duplicate retained bytes")
+        let session=ProjectSkillsSession(),selection=try await session.choose(p)
+        let scopeId=(selection["scope"] as! [String:Any])["scopeId"] as! String
+        let duplicate=try await session.perform(["action":"install","scopeId":scopeId,"id":entry.id])
+        try require(duplicate["newInstall"] as? Bool==false,"session duplicate is inspection")
+        let loaded=try await session.perform(["action":"read","scopeId":scopeId,"id":entry.id])
+        try require(loaded["sha256"] as? String==entry.sha256,"reselected project keeps stable receipt binding")
+        cases.append("UI/model session reselect and idempotent exact managed revision")
+        for invalid:[String:Any] in [["action":"install","scopeId":scopeId,"id":"../escape"],["action":"catalog","path":p],["action":"remove","scopeId":scopeId,"id":entry.id],["action":"list","scopeId":"unknown"]] {
+            try rejects("exact request refuses "+String(describing:invalid["action"])) {_ = try ProjectSkillRequest.parse(invalid)}
+        }
+        do {_ = try await session.perform(["action":"read","scopeId":UUID().uuidString.lowercased(),"id":entry.id]);throw Failure(message:"stale scope accepted")} catch let error as Failure {throw error} catch {cases.append("opaque stale scope rejected")}
+        session.invalidate();await session.drain()
+        let catalog=try await session.perform(["action":"catalog"])
+        let renewed=(catalog["scope"] as! [String:Any])["scopeId"] as! String
+        try require(renewed != scopeId && !session.active,"Stop rotates scope and drains worker")
+        do {_ = try await session.perform(["action":"list","scopeId":scopeId]);throw Failure(message:"revoked scope accepted")} catch let error as Failure {throw error} catch {}
+        _ = try await session.perform(["action":"list","scopeId":renewed])
+        cases.append("Stop revokes old scope, drains worker and preserves checked project choice")
+        let wrong=try project("wrong-hash"),wrongScope=try CodingSkills.projectScope(wrong)
+        try rejects("changed bundled bytes refuse before directory creation") {_ = try CodingSkills.installSkill(wrongScope,id:entry.id,data:entry.data+Data([10]),sha256:entry.sha256,operationId:UUID().uuidString.lowercased(),check:{_ in})}
+        try require(!FileManager.default.fileExists(atPath:wrong+"/.agents"),"hash drift has no side effect")
+        let symlink=try project("symlink"),outside=try project("outside-sentinel"),outsideFile=URL(fileURLWithPath:outside).appendingPathComponent("sentinel")
+        try Data("KEEP".utf8).write(to:outsideFile)
+        try FileManager.default.createSymbolicLink(atPath:symlink+"/.agents",withDestinationPath:outside)
+        let linkScope=try CodingSkills.projectScope(symlink)
+        try rejects("symbolic ancestor refused without outside write") {_ = try CodingSkills.installSkill(linkScope,id:entry.id,data:entry.data,sha256:entry.sha256,operationId:UUID().uuidString.lowercased(),check:{_ in})}
+        try require(Data(contentsOf:outsideFile)==Data("KEEP".utf8) && !FileManager.default.fileExists(atPath:outside+"/skills"),"outside sentinel retained")
+        let changed=try project("replaced-root"),changedScope=try CodingSkills.projectScope(changed)
+        try FileManager.default.moveItem(atPath:changed,toPath:changed+"-old")
+        try FileManager.default.createDirectory(atPath:changed,withIntermediateDirectories:false,attributes:[.posixPermissions:0o700])
+        try rejects("replaced native-selected root refused") {_ = try CodingSkills.installSkill(changedScope,id:entry.id,data:entry.data,sha256:entry.sha256,operationId:UUID().uuidString.lowercased(),check:{_ in})}
+        try require(!FileManager.default.fileExists(atPath:changed+"/.agents"),"replacement untouched")
+        let race=try project("concurrent-target"),raceScope=try CodingSkills.projectScope(race)
+        try rejects("concurrent target publication never overwrites") {
+            _ = try CodingSkills.installSkill(raceScope,id:entry.id,data:entry.data,sha256:entry.sha256,operationId:UUID().uuidString.lowercased(),check:{phase in
+                if phase=="beforePublish" {try FileManager.default.createDirectory(atPath:race+"/.agents/skills/"+entry.id,withIntermediateDirectories:false,attributes:[.posixPermissions:0o700]);try Data("USER".utf8).write(to:URL(fileURLWithPath:race+"/.agents/skills/"+entry.id+"/SKILL.md"))}
+            })
+        }
+        try require(Data(contentsOf:URL(fileURLWithPath:race+"/.agents/skills/"+entry.id+"/SKILL.md"))==Data("USER".utf8),"concurrent user bytes retained")
+        let stop=try project("cancel-before-publish"),stopScope=try CodingSkills.projectScope(stop),stopId=UUID().uuidString.lowercased()
+        try rejects("cancellation before publication retains explicit owned stage") {_ = try CodingSkills.installSkill(stopScope,id:entry.id,data:entry.data,sha256:entry.sha256,operationId:stopId,check:{if $0=="beforePublish" {throw CancellationError()}})}
+        try require(!FileManager.default.fileExists(atPath:stop+"/.agents/skills/"+entry.id) && FileManager.default.fileExists(atPath:stop+"/.agents/.saleh-skill-stage-"+stopId+"/.saleh-install.json"),"cancelled stage retained")
+        let after=try project("cancel-after-publish"),afterScope=try CodingSkills.projectScope(after)
+        try rejects("cancellation after publication reports uncertainty and retains receipt") {_ = try CodingSkills.installSkill(afterScope,id:entry.id,data:entry.data,sha256:entry.sha256,operationId:UUID().uuidString.lowercased(),check:{if $0=="afterPublish" {throw CancellationError()}})}
+        try require(CodingSkills.installedSkill(afterScope,id:entry.id,sha256:entry.sha256)["installed"] as? Bool==true,"published uncertain bytes remain inspectable")
+        let hardlink=URL(fileURLWithPath:p).appendingPathComponent("alias")
+        try FileManager.default.linkItem(at:file,to:hardlink)
+        try rejects("hardlink skill aliases are not loaded") {_ = try CodingSkills.installedSkill(scope,id:entry.id,sha256:entry.sha256,includeText:true)}
+        let blocked=try project("other-writable"),blockedScope=try CodingSkills.projectScope(blocked)
+        try FileManager.default.createDirectory(atPath:blocked+"/.agents",withIntermediateDirectories:false,attributes:[.posixPermissions:0o700])
+        _ = chmod(blocked+"/.agents",0o777)
+        try rejects("other-writable skill ancestor refuses mutation") {_ = try CodingSkills.installSkill(blockedScope,id:entry.id,data:entry.data,sha256:entry.sha256,operationId:UUID().uuidString.lowercased(),check:{_ in})}
+        try require(!FileManager.default.fileExists(atPath:blocked+"/.agents/skills"),"unsafe ancestor untouched")
+        let permission=try project("root-permission-drift"),permissionScope=try CodingSkills.projectScope(permission)
+        try rejects("root ownership policy is rechecked immediately before publication") {_ = try CodingSkills.installSkill(permissionScope,id:entry.id,data:entry.data,sha256:entry.sha256,operationId:UUID().uuidString.lowercased(),check:{if $0=="beforePublish" {_ = chmod(permission,0o777)}})}
+        try require(!FileManager.default.fileExists(atPath:permission+"/.agents/skills/"+entry.id),"changed root did not publish")
+        let stageDrift=try project("stage-content-drift"),stageScope=try CodingSkills.projectScope(stageDrift),stageOp=UUID().uuidString.lowercased()
+        try rejects("stage byte drift is refused before publication") {_ = try CodingSkills.installSkill(stageScope,id:entry.id,data:entry.data,sha256:entry.sha256,operationId:stageOp,check:{if $0=="beforePublish" {try Data("CONCURRENT_EDIT".utf8).write(to:URL(fileURLWithPath:stageDrift+"/.agents/.saleh-skill-stage-"+stageOp+"/SKILL.md"))}})}
+        try require(!FileManager.default.fileExists(atPath:stageDrift+"/.agents/skills/"+entry.id),"drifted stage retained")
+        let edited=try project("user-edited"),editedScope=try CodingSkills.projectScope(edited)
+        _ = try CodingSkills.installSkill(editedScope,id:entry.id,data:entry.data,sha256:entry.sha256,operationId:UUID().uuidString.lowercased(),check:{_ in})
+        let editedFile=URL(fileURLWithPath:edited+"/.agents/skills/"+entry.id+"/SKILL.md"),editedBytes=Data("USER_EDITED_TEXT".utf8)
+        try editedBytes.write(to:editedFile)
+        try require(CodingSkills.installedSkill(editedScope,id:entry.id,sha256:entry.sha256)["state"] as? String=="changed","edited skill state")
+        try rejects("user-edited installed file is never overwritten") {_ = try CodingSkills.installSkill(editedScope,id:entry.id,data:entry.data,sha256:entry.sha256,operationId:UUID().uuidString.lowercased(),check:{_ in})}
+        try require(Data(contentsOf:editedFile)==editedBytes,"user edit retained")
+        let badReceipt=try project("receipt-bool"),badScope=try CodingSkills.projectScope(badReceipt)
+        _ = try CodingSkills.installSkill(badScope,id:entry.id,data:entry.data,sha256:entry.sha256,operationId:UUID().uuidString.lowercased(),check:{_ in})
+        let badFile=URL(fileURLWithPath:badReceipt+"/.agents/skills/"+entry.id+"/.saleh-install.json")
+        var bad=try JSONSerialization.jsonObject(with:Data(contentsOf:badFile)) as! [String:Any];bad["version"]=true;try HandoffFiles.json(bad).write(to:badFile)
+        try rejects("receipt Boolean is not accepted as a version integer") {_ = try CodingSkills.installedSkill(badScope,id:entry.id,sha256:entry.sha256,includeText:true)}
+        // Hold the actual detached worker at publication. Stop must revoke it,
+        // and drain must remain pending until the held worker has returned.
+        let heldProject=try project("session-stop-worker"),seen=DispatchSemaphore(value:0),release=DispatchSemaphore(value:0)
+        let held=ProjectSkillsSession(phaseCheck:{if $0=="beforePublish" {seen.signal();release.wait()}})
+        let heldChoice=try await held.choose(heldProject),heldId=(heldChoice["scope"] as! [String:Any])["scopeId"] as! String
+        let heldInstall=Task {try await held.perform(["action":"install","scopeId":heldId,"id":entry.id])}
+        await waitFor(seen)
+        held.invalidate();var drained=false
+        let draining=Task {await held.drain();drained=true}
+        try await Task.sleep(nanoseconds:10_000_000)
+        try require(held.active && !drained,"Stop cannot acknowledge a held worker")
+        release.signal()
+        if case .success = await heldInstall.result {throw Failure(message:"stopped worker returned success")}
+        await draining.value
+        try require(drained && !held.active && !FileManager.default.fileExists(atPath:heldProject+"/.agents/skills/"+entry.id),"actual stopped worker has no publication")
+        cases.append("actual session Stop cancels publication and drain waits for worker completion")
+        let oldProject=try project("session-old-project"),newProject=try project("session-new-project"),oldSeen=DispatchSemaphore(value:0),oldRelease=DispatchSemaphore(value:0)
+        let changing=ProjectSkillsSession(phaseCheck:{if $0=="beforePublish" {oldSeen.signal();oldRelease.wait()}})
+        let oldChoice=try await changing.choose(oldProject),oldId=(oldChoice["scope"] as! [String:Any])["scopeId"] as! String
+        let oldInstall=Task {try await changing.perform(["action":"install","scopeId":oldId,"id":entry.id])}
+        await waitFor(oldSeen)
+        var choiceFinished=false
+        let choiceTask=Task {let value=try await changing.choose(newProject);choiceFinished=true;return value}
+        try await Task.sleep(nanoseconds:10_000_000)
+        try require(!choiceFinished,"scope change drains an old worker before selection")
+        oldRelease.signal();_ = try await choiceTask.value
+        if case .success = await oldInstall.result {throw Failure(message:"old-scope worker returned success")}
+        try require(!FileManager.default.fileExists(atPath:oldProject+"/.agents/skills/"+entry.id) && changing.scopeView?["project"] as? String==newProject,"old project was not published after scope change")
+        cases.append("scope change revokes and drains stale publication before adopting new selection")
+        let readSeen=DispatchSemaphore(value:0),readRelease=DispatchSemaphore(value:0)
+        let reading=ProjectSkillsSession(phaseCheck:{if $0=="beforeRead" {readSeen.signal();readRelease.wait()}})
+        let readChoice=try await reading.choose(after),readId=(readChoice["scope"] as! [String:Any])["scopeId"] as! String
+        let pendingRead=Task {try await reading.perform(["action":"read","scopeId":readId,"id":entry.id])}
+        await waitFor(readSeen)
+        reading.invalidate();readRelease.signal()
+        if case .success = await pendingRead.result {throw Failure(message:"stopped read returned content")}
+        await reading.drain()
+        try require(!reading.active,"read worker drained")
+        cases.append("stopped pending read withholds content and does not replay")
+        let output:[String:Any]=["passed":true,"checks":cases.count,"cases":cases,"scope":"private generated native filesystem/session fixtures; no AppDelegate/UI/model/provider","fixtureRoot":base.path]
+        FileHandle.standardOutput.write(try JSONSerialization.data(withJSONObject:output,options:[.prettyPrinted,.sortedKeys]));FileHandle.standardOutput.write(Data([10]))
+    }
+}

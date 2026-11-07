@@ -1,0 +1,120 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {AGENT_TOOLS,validateAgentMessages,validateProjectSkillRequest,toolRoutes,nativeSignature} from '../../source/agent.mjs';
+import {ChatRuns,chatRunDigest} from '../../source/chat-runs.mjs';
+import {mkdtemp,mkdir,readFile,realpath,lstat} from 'node:fs/promises';
+import {join,dirname} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {randomUUID,createHash} from 'node:crypto';
+import {Readable} from 'node:stream';
+import {EventEmitter,once} from 'node:events';
+import {spawn} from 'node:child_process';
+import {createInterface} from 'node:readline';
+import {setTimeout as delay} from 'node:timers/promises';
+import {homedir} from 'node:os';
+
+const fixtureBase=process.env.SALEH_SKILLS_FIXTURE_ROOT??join(homedir(),'Library','Caches','SalehProjectSkills171');
+await mkdir(fixtureBase,{recursive:true,mode:0o700});const fixtureInfo=await lstat(fixtureBase);
+assert(fixtureInfo.isDirectory()&&fixtureInfo.uid===process.getuid()&&!(fixtureInfo.mode&0o077)&&await realpath(fixtureBase)===fixtureBase,'Private canonical fixture root required');
+const root=await realpath(await mkdtemp(join(fixtureBase,'agent-fixtures-')));
+const blockedFetch=async()=>{throw Error('Model/network calls are forbidden in this offline fixture.');};
+globalThis.fetch=blockedFetch;
+const uuid=()=>randomUUID(),scopeId=uuid(),hash=bytes=>createHash('sha256').update(bytes).digest('hex');
+const gate=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve};};
+async function until(fn,label){const deadline=Date.now()+5000;while(!await fn()){if(Date.now()>deadline)throw Error('Timed out: '+label);await delay(5);}}
+class ResponseFixture extends EventEmitter {
+ destroyed=false;writableEnded=false;statusCode=0;body=null;
+ end(){this.writableEnded=true;}
+}
+function fixture({worktreeCheck=async()=>{},codingCheck=async()=>{},recovery=false}={}){
+ const checks=[],token=uuid(),inert={stop:async()=>({stopped:true}),close:async()=>({stopped:true})};
+ const coding={...inert,assertUnconfinedAccess:async()=>{checks.push('coding');await codingCheck();}},worktrees={...inert,assertUnconfinedAccess:async()=>{checks.push('worktrees');await worktreeCheck();}};
+ const handler=toolRoutes({instanceToken:token,upstream:'http://127.0.0.1:1',hub:{...inert},coding,worktrees,gitWorkflow:{...inert},localModels:{upstream:'http://127.0.0.1:1',fetchImpl:blockedFetch,resolve:blockedFetch},fetchImpl:blockedFetch,fullAccess:true,unconfinedBoot:!recovery,recoveryStartup:recovery});
+ async function request(input,{signed=true,aborted=false,route='/api/tools/projectSkills'}={}){
+  const body=JSON.stringify(input),nonce=uuid(),time=String(Date.now()),req=Readable.from([Buffer.from(body)]),res=new ResponseFixture();
+  Object.assign(req,{method:'POST',aborted,headers:{'content-type':'application/json',...(signed?{'x-qwen-nonce':nonce,'x-qwen-time':time,'x-qwen-permit':nativeSignature(token,route,nonce,time,body)}:{})}});
+  await handler(req,res,route,(code,value)=>{res.statusCode=code;res.body=value;res.end();});return res;
+ }
+ return {handler,request,checks};
+}
+async function nativeClient(project){
+ await mkdir(project,{mode:0o700});
+ const child=spawn(join(dirname(fileURLToPath(import.meta.url)),'project-skills-native-client-fixture'),[project],{stdio:['pipe','pipe','pipe']});
+ let stderr='';child.stderr.setEncoding('utf8').on('data',s=>stderr+=s);
+ const lines=createInterface({input:child.stdout})[Symbol.asyncIterator]();
+ async function next(){let timer;try{const row=await Promise.race([lines.next(),new Promise((_,reject)=>timer=setTimeout(()=>reject(Error('Native fixture timeout: '+stderr)),5000))]);assert(!row.done,'Native fixture closed early: '+stderr);return JSON.parse(row.value);}finally{clearTimeout(timer);}}
+ const selected=await next();
+ return {scopeId:selected.scope.scopeId,async call(input){child.stdin.write(JSON.stringify(input)+'\n');return next();},async close(){const done=once(child,'close');child.stdin.end();const [code]=await done;assert.equal(code,0,stderr);}};
+}
+
+test('Agent exposes the fixed project-skill installation/read tool',()=>{
+ const entry=AGENT_TOOLS.find(x=>x.function.name==='project_skills');
+ assert(entry,'The model has no first-class project_skills tool');
+ assert.deepEqual(entry.function.parameters.properties.action.enum,['catalog','list','install','read']);
+ const messages=[{role:'assistant',content:null,tool_calls:[{id:'skill_fixture',type:'function',function:{name:'project_skills',arguments:'{"action":"catalog"}'}}]},{role:'tool',tool_call_id:'skill_fixture',content:'fixture only'}];
+ assert.equal(validateAgentMessages(messages)[0].tool_calls[0].function.name,'project_skills');
+});
+
+test('exact fixed request schema refuses unsupported IDs and arbitrary sources',()=>{
+ for(const input of [{action:'install',scopeId,id:'../outside'},{action:'catalog',path:'/private/arbitrary'},{action:'install',scopeId,id:'patch-verify',command:'ignored'},{action:'read',scopeId:'bad',id:'patch-verify'},{action:'remove',scopeId,id:'patch-verify'}])assert.throws(()=>validateProjectSkillRequest(input),/Invalid fixed/);
+ for(const input of [{action:'catalog'},{action:'list',scopeId},{action:'install',scopeId,id:'patch-verify'},{action:'read',scopeId,id:'public-research'}])assert.equal(validateProjectSkillRequest(input),input);
+});
+
+test('signed UI/Agent admission retains both Full Access identity checks',async t=>{
+ const f=fixture();t.after(()=>f.handler.close());
+ for(const input of [{action:'catalog'},{action:'list',scopeId},{action:'install',scopeId,id:'patch-verify'},{action:'read',scopeId,id:'public-research'}])assert.deepEqual((await f.request(input)).body,{admitted:true});
+ assert.deepEqual(f.checks,Array(4).fill(['worktrees','coding']).flat());
+ const unsigned=await f.request({action:'catalog'},{signed:false});assert.equal(unsigned.statusCode,403);
+ const bad=await f.request({action:'catalog',path:'/arbitrary'});assert.equal(bad.statusCode,400);assert.match(bad.body.error,/Invalid fixed/);
+});
+
+test('worktree/owner drift, recovery startup and pre-aborted requests never admit native work',async t=>{
+ for(const key of ['worktreeCheck','codingCheck']){
+  const f=fixture({[key]:async()=>{throw Error('Fixture owner/root identity changed.');}});t.after(()=>f.handler.close());
+  const result=await f.request({action:'install',scopeId,id:'patch-verify'});assert.equal(result.body.isError,true);assert.equal(result.body.admitted,undefined);assert.match(result.body.message,/identity changed/);
+ }
+ const recovery=fixture({recovery:true});t.after(()=>recovery.handler.close());assert.equal((await recovery.request({action:'catalog'})).statusCode,409);assert.deepEqual(recovery.checks,[]);
+ const aborted=fixture();t.after(()=>aborted.handler.close());assert.equal((await aborted.request({action:'install',scopeId,id:'patch-verify'},{aborted:true})).body,null);assert.deepEqual(aborted.checks,[]);
+});
+
+test('Stop during an awaited identity check refuses the late admission',async t=>{
+ const waiting=gate(),entered=gate(),f=fixture({worktreeCheck:async()=>{entered.resolve();await waiting.promise;}});t.after(()=>f.handler.close());
+ const pending=f.request({action:'install',scopeId,id:'patch-verify'});await entered.promise;
+ const stopped=await f.request({coding:false},{route:'/api/tools/stop'});assert.equal(stopped.body.stopped,true);
+ waiting.resolve();const result=await pending;assert.equal(result.body.admitted,undefined);assert.equal(result.body.isError,true);assert.match(result.body.message,/cancelled|Stop/i);
+});
+
+async function durableFixture(t,name,{fault}={}){
+ const directory=join(root,name+'-receipts'),project=join(root,name+'-project');await mkdir(directory,{mode:0o700});const f=fixture();t.after(()=>f.handler.close());const native=await nativeClient(project);t.after(()=>native.close());
+ let replies=0;
+ const input={runId:uuid(),chatId:uuid(),userMessageId:uuid(),assistantMessageId:uuid(),messages:[{role:'user',content:'Install the fixed patch skill in the selected fixture project.'}],model:'qwen3.8-27b-uncensored-hauhaucs-aggressive-mtp',thinking:'standard',kind:'agent',sources:[]};
+ const args={action:'install',scopeId:native.scopeId,id:'patch-verify'};
+ const store=new ChatRuns({directory,admissionGeneration:f.handler.admissionGeneration,beginInference:f.handler.beginInference,prepare:()=>{throw Error('Text preparation forbidden.');},fetchImpl:blockedFetch,upstream:'http://127.0.0.1:1',fault,agentReply:async request=>{replies++;assert.equal(request.model,input.model);return {model:request.model,message:replies===1?{role:'assistant',content:null,tool_calls:[{id:'skill_install',type:'function',function:{name:'project_skills',arguments:JSON.stringify(args)}}]}:{role:'assistant',content:'The fixture skill installation returned its actual receipt.'}};}});
+ f.handler.setDurableRuns(store);const generation=f.handler.admissionGeneration(),ticket=store.prepareAdmission({runId:input.runId,inputDigest:chatRunDigest(input),generation});await store.start(input,{generation,ticket:ticket.ticket});
+ let pending;await until(async()=>{const v=await store.inspect(input.runId);pending=v.run.pendingStep;return pending?.state==='pending'&&v.persistence==='saved';},'saved skill intent');
+ const seen=await store.agentStep({action:'inspect',runId:input.runId,stepId:pending.stepId}),claimId=uuid();await store.agentStep({action:'claim',runId:input.runId,stepId:seen.stepId,stepDigest:seen.stepDigest,generation:seen.generation,claimId});
+ return {...f,native,store,input,args,pending,claimId,directory,project,replies:()=>replies,binding:{runId:input.runId,stepId:pending.stepId,claimId}};
+}
+
+test('actual native fixture publication is acknowledged by the exact durable Agent receipt',async t=>{
+ const f=await durableFixture(t,'native-success');
+ const mismatch=await f.request({...f.args,id:'public-research',agentClaim:f.binding});assert.equal(mismatch.statusCode,400);assert.match(mismatch.body.error,/differs/);
+ assert.deepEqual((await f.request({...f.args,agentClaim:f.binding})).body,{admitted:true});
+ const replay=await f.request({...f.args,agentClaim:f.binding});assert.equal(replay.statusCode,400);assert.match(replay.body.error,/already dispatched/);
+ const result=await f.native.call(f.args);assert.equal(result.installed,true);assert.equal(result.newInstall,true);assert.equal(result.durable,true);
+ const bytes=await readFile(result.path),receipt=await readFile(join(dirname(result.path),'.saleh-install.json'));assert.equal(hash(bytes),result.sha256);assert.equal(hash(receipt),result.receiptSHA256);
+ const completed=await f.store.agentStep({action:'complete',runId:f.input.runId,stepId:f.pending.stepId,claimId:f.claimId,outcome:{kind:'returned',result}});assert.equal(completed.persistence,'saved');assert.equal(completed.run.receipts[0].status,'returned');
+ await until(async()=>{const value=await f.store.inspect(f.input.runId);return value.run.status==='complete'&&value.persistence==='saved'&&value.durableRevision>=value.run.revision;},'saved final Agent result');
+ const disk=JSON.parse(await readFile(join(f.directory,f.input.runId+'.json')));assert.equal(disk.status,'complete');assert.match(disk.receipts[0].output,new RegExp(result.receiptSHA256));assert.equal(f.replies(),2);
+ const read=await f.native.call({action:'read',scopeId:f.native.scopeId,id:'patch-verify'});assert.equal(read.text,bytes.toString());
+});
+
+test('failed completion persistence retains the claimed intent and never retries the native install',async t=>{
+ let fail=false;const f=await durableFixture(t,'native-completion-failure',{fault:async(_stage,row)=>{if(fail&&row.pendingStep===null)throw Error('Fixture completion persistence failed.');}});
+ assert.deepEqual((await f.request({...f.args,agentClaim:f.binding})).body,{admitted:true});const result=await f.native.call(f.args);assert.equal(result.installed,true);fail=true;
+ await assert.rejects(f.store.agentStep({action:'complete',runId:f.input.runId,stepId:f.pending.stepId,claimId:f.claimId,outcome:{kind:'returned',result}}),/saving is unconfirmed/);
+ await until(async()=>!(await f.store.inspect(f.input.runId)).live,'failed finalizer');
+ const disk=JSON.parse(await readFile(join(f.directory,f.input.runId+'.json')));assert.equal(disk.pendingStep.state,'claimed');assert.equal(disk.receipts[0].status,'pending');assert.equal(hash(await readFile(result.path)),result.sha256);assert.equal(f.replies(),1);
+ const cold=new ChatRuns({directory:f.directory,admissionGeneration:()=>uuid(),beginInference:()=>{throw Error('No cold replay.');},prepare:()=>{throw Error('No cold preparation.');},fetchImpl:blockedFetch,upstream:'http://127.0.0.1:1',agentReply:()=>{throw Error('No cold model replay.');}});
+ assert.equal((await cold.inspect(f.input.runId)).run.status,'unconfirmed');assert.equal(f.replies(),1);
+});

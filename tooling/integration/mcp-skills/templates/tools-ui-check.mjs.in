@@ -1,0 +1,17 @@
+// Actual tools.js in a DOM/bridge-only VM. No browser/native/network capability.
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {fileURLToPath} from 'node:url';
+const source=fileURLToPath(new URL('../../source/tools.js',import.meta.url)),code=fs.readFileSync(source,'utf8');
+class Element{constructor(){this.children=[];this.value='';this.textContent='';}append(...items){this.children.push(...items);}replaceChildren(...items){this.children=[...items];}}
+let passed=0;
+for(const [state,connected,label]of [['reconnecting',false,'Cancel reconnect'],['checking',false,'Cancel reconnect'],['awaiting native Connect',false,'Connect…'],['blocked; use explicit Connect',false,'Connect…'],['verified',true,'Disconnect']]){
+ const nodes=new Map(),node=id=>{if(!nodes.has(id))nodes.set(id,new Element());return nodes.get(id);},calls=[];let observed={id:'fixture',connected,recoveryState:state};
+ const context=vm.createContext({document:{getElementById:node,createElement:()=>new Element()},window:{webkit:{messageHandlers:{tools:{async postMessage(input){calls.push(input);if(input.op==='describe')return{servers:[observed]};if(input.op==='catalog')return{tools:[],builtins:[],total:0};if(input.op==='disconnect'){observed={...observed,connected:false,recoveryState:'stopped'};return{connected:false};}throw Error('Unexpected native operation');}}}},addEventListener(){}},setContext(){},Promise,Error},{codeGeneration:{strings:false,wasm:false}});
+ vm.runInContext(code,context,{timeout:1000});await node('tools-refresh').onclick();const row=node('tool-servers').children[0],detail=row.children[1],button=row.children[2];assert.equal(button.textContent,label);assert.equal(detail.textContent,connected?'Connected':state);assert(!calls.some(row=>row.op==='connect'||row.op==='disconnect'));
+ if(label==='Cancel reconnect'){await button.onclick();assert(calls.some(row=>row.op==='disconnect'));assert(!calls.some(row=>row.op==='connect'));}
+ passed++;
+}
+console.log(JSON.stringify({passed,failed:0,network:0,native:0,productImports:0,actualToolsSource:source,sha256:createHash('sha256').update(code).digest('hex')}));

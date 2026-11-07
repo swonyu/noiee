@@ -1,0 +1,115 @@
+import fs from 'node:fs';
+import fsp from 'node:fs/promises';
+import net from 'node:net';
+import http from 'node:http';
+import https from 'node:https';
+import cp from 'node:child_process';
+import {Readable} from 'node:stream';
+import {EventEmitter} from 'node:events';
+import assert from 'node:assert/strict';
+import {createRequire,registerHooks,syncBuiltinESMExports,isBuiltin} from 'node:module';
+import {fileURLToPath,pathToFileURL} from 'node:url';
+import {createHash,randomUUID} from 'node:crypto';
+const HERE=fileURLToPath(new URL('.',import.meta.url)).replace(/\/$/,''),SOURCE=fileURLToPath(new URL('../../source/',import.meta.url)).replace(/\/$/,''),FROZEN=SOURCE;
+const effects={network:0,childProcess:0,originalStore:0},deny=key=>()=>{effects[key]++;throw Error('Recovery guard: '+key);};
+for(const [target,names]of [[net,['connect','createConnection','createServer']],[http,['request','get']],[https,['request','get']],[cp,['spawn','spawnSync','exec','execSync','execFile','execFileSync','fork']]])for(const name of names)target[name]=deny(target===cp?'childProcess':'network');
+net.Socket.prototype.connect=deny('network');net.Server.prototype.listen=deny('network');globalThis.fetch=deny('network');
+const originalPrefixes=['/Users/saleh/Applications/','/Users/saleh/Library/Application Support/Qwen Local','/Users/saleh/Library/WebKit/','/Users/saleh/Library/HTTPStorages/','/Users/saleh/Library/Preferences/'];
+for(const [target,names]of [[fs,['readFileSync','openSync']],[fsp,['open','readFile','writeFile','mkdir','rename']]])for(const name of names){const old=target[name].bind(target);target[name]=(p,...args)=>{if(originalPrefixes.some(prefix=>String(p).startsWith(prefix)))return deny('originalStore')();return old(p,...args);};}syncBuiltinESMExports();
+const require=createRequire(HERE+'/dependency-anchor.cjs'),shared=pathToFileURL(fs.realpathSync(FROZEN+'/node_modules')+'/').href,fake=pathToFileURL(HERE+'/fake-mcp.mjs').href;
+registerHooks({resolve(specifier,context,next){if(context.parentURL===pathToFileURL(SOURCE+'/mcp.mjs').href&&(specifier.startsWith('@modelcontextprotocol/')||specifier==='./mcp-transport.mjs'))return{url:fake,shortCircuit:true};if((context.parentURL?.startsWith(pathToFileURL(SOURCE+'/').href)||context.parentURL?.startsWith(shared))&&!specifier.startsWith('.')&&!specifier.startsWith('/')&&!isBuiltin(specifier))return{url:pathToFileURL(require.resolve(specifier,{paths:[SOURCE]})).href,shortCircuit:true};return next(specifier,context);}});
+globalThis.mcpFixture={initializes:0,catalogs:0,calls:0,catalog:[{name:'echo',description:'Generated harmless catalog',inputSchema:{type:'object'}}],connectGate:null,closeGate:null,truncated:false};
+const {MCPHub}=await import(SOURCE+'/mcp.mjs');
+const roots=[],passed=[];const test=async(name,fn)=>{await fn();passed.push(name);console.log('PASS '+name);};
+async function fixture(options={}){const root=await fsp.mkdtemp(process.env.NOIEE_TOOLS_FIXTURE_ROOT+'/recovery-');roots.push(root);const config=root+'/mcp.json',directory=root+'/remember';await fsp.writeFile(config,JSON.stringify({mcpServers:{fixture:{command:'/generated/not-executed',args:[],env:{FAKE_SECRET:'private-generated-value'}}}}),{mode:0o600});return{root,config,directory,hub:new MCPHub(config,{recoveryDirectory:directory,...options})};}
+async function connect(hub){const row=(await hub.describe()).servers[0];return hub.connect(row.id,row.configHash);}
+const cold=f=>new MCPHub(f.config,{recoveryDirectory:f.directory});
+const defer=()=>{let resolve;const promise=new Promise(r=>resolve=r);return{promise,resolve};};
+const until=async fn=>{for(let n=0;n<1000;n++){if(await fn())return;await new Promise(r=>setTimeout(r,2));}throw Error('Fixture did not reach the expected state');};
+await test('explicit success, clean close and fresh startup reconnect exactly once without a tool call',async()=>{
+ const f=await fixture(),before=mcpFixture.initializes;await connect(f.hub);await f.hub.close();const cold=new MCPHub(f.config,{recoveryDirectory:f.directory});await cold.recover(async()=>{});await cold.recover(async()=>{throw Error('Duplicate startup');});assert.equal((await cold.describe()).servers[0].connected,true);assert.equal(mcpFixture.initializes,before+2);assert.equal(mcpFixture.calls,0);await cold.close();
+});
+for(const reason of ['page-departure','shutdown-drain'])await test(reason+' preserves desire while owner Stop/disconnect suppress it',async()=>{
+ const f=await fixture();await connect(f.hub);await f.hub.stop(reason);await f.hub.close();const a=cold(f),before=mcpFixture.initializes;await a.recover(async()=>{});assert.equal(mcpFixture.initializes,before+1);await a.stop();await a.close();const b=cold(f);await b.recover(async()=>{});assert.equal(mcpFixture.initializes,before+1);await b.close();
+});
+await test('explicit disconnect of a cold remembered ID prevents recovery and later close cannot restore it',async()=>{
+ const f=await fixture();await connect(f.hub);await f.hub.close();const a=cold(f),before=mcpFixture.initializes;await a.disconnect('fixture');await a.recover(async()=>{});await a.close();const b=cold(f);await b.recover(async()=>{});assert.equal(mcpFixture.initializes,before);await b.close();
+});
+await test('owner Stop before startup cannot recover stale rows from the boot snapshot',async()=>{
+ const f=await fixture();await connect(f.hub);await f.hub.close();const a=cold(f),before=mcpFixture.initializes;await a.stop();await a.recover(async()=>{});assert.equal(mcpFixture.initializes,before);await a.close();
+});
+await test('canonical key order matches but changed private configuration refuses before handshake',async()=>{
+ const f=await fixture();await connect(f.hub);await f.hub.close();const config=JSON.parse(await fsp.readFile(f.config,'utf8')),value=config.mcpServers.fixture;await fsp.writeFile(f.config,JSON.stringify({mcpServers:{fixture:{env:value.env,args:value.args,command:value.command}}}));const a=cold(f),before=mcpFixture.initializes;await a.recover(async()=>{});assert.equal(mcpFixture.initializes,before+1);await a.close();config.mcpServers.fixture.env.FAKE_SECRET='changed-private-value';await fsp.writeFile(f.config,JSON.stringify(config));const b=cold(f);await b.recover(async()=>{});assert.equal(mcpFixture.initializes,before+1);assert.equal((await b.describe()).servers[0].connected,false);await b.close();
+});
+await test('unknown configuration fields are part of the exact durable binding',async()=>{
+ const f=await fixture();await connect(f.hub);await f.hub.close();const value=JSON.parse(await fsp.readFile(f.config,'utf8'));value.mcpServers.fixture.disabled=true;await fsp.writeFile(f.config,JSON.stringify(value));const a=cold(f),before=mcpFixture.initializes;await a.recover(async()=>{});assert.equal(mcpFixture.initializes,before);await a.close();
+});
+await test('removed remembered ID dispatches nothing and stays visible for explicit forgetting',async()=>{
+ const f=await fixture();await connect(f.hub);await f.hub.close();await fsp.writeFile(f.config,JSON.stringify({mcpServers:{}}));const a=cold(f),before=mcpFixture.initializes;await a.recover(async()=>{});assert.equal(mcpFixture.initializes,before);const rows=(await a.describe()).servers;assert.equal(rows[0].id,'fixture');assert.equal(rows[0].connected,false);assert.equal(rows[0].configRemoved,true);await a.disconnect('fixture');await a.close();const b=cold(f);await b.recover(async()=>{});assert.equal((await b.describe()).servers.length,0);await b.close();
+});
+await test('changed catalog negotiates once but never becomes available or replays a call',async()=>{
+ const f=await fixture();await connect(f.hub);await f.hub.close();const old=mcpFixture.catalog;mcpFixture.catalog=[...old,{name:'extra',inputSchema:{type:'object'}}];const a=cold(f),before=mcpFixture.initializes;try{await a.recover(async()=>{});assert.equal(mcpFixture.initializes,before+1);assert.equal((await a.describe()).servers[0].connected,false);assert.equal((await a.tools()).tools.length,0);assert.equal(mcpFixture.calls,0);}finally{await a.close();mcpFixture.catalog=old;}
+});
+await test('Ask mode and failed current readiness dispatch no transport',async()=>{
+ const f=await fixture();await connect(f.hub);await f.hub.close();const before=mcpFixture.initializes,a=cold(f);await a.recover(async()=>{throw Error('Must not run');},{automatic:false});assert.equal(mcpFixture.initializes,before);await a.close();const b=cold(f);await b.recover(async()=>{throw Error('Retained owner is blocked');});assert.equal(mcpFixture.initializes,before);await b.close();
+});
+await test('owner Stop during automatic handshake drains it and durably clears desire',async()=>{
+ const f=await fixture();await connect(f.hub);await f.hub.close();const a=cold(f),gate=defer(),before=mcpFixture.initializes;mcpFixture.connectGate=gate.promise;const recovering=a.recover(async()=>{});await until(()=>mcpFixture.initializes===before+1);await a.stop();gate.resolve();mcpFixture.connectGate=null;await recovering;await a.close();const b=cold(f);await b.recover(async()=>{});assert.equal(mcpFixture.initializes,before+1);await b.close();
+});
+await test('Stop fences a delayed remembered write so late explicit success cannot resurrect desire',async()=>{
+ const gate=defer(),entered=defer();let hold=true;const f=await fixture({fault:async(stage,value)=>{if(hold&&stage==='before-publish'&&value.servers.length){entered.resolve();await gate.promise;}}});const pending=connect(f.hub);const observed=pending.catch(error=>error);await entered.promise;let stopped=false;const stopping=f.hub.stop().then(()=>{stopped=true;});await new Promise(r=>setTimeout(r,10));assert.equal(stopped,false);hold=false;gate.resolve();await stopping;assert(await observed instanceof Error);await f.hub.close();const a=cold(f),before=mcpFixture.initializes;await a.recover(async()=>{});assert.equal(mcpFixture.initializes,before);await a.close();
+});
+await test('dirty prior boot stays blocked across a clean close until explicit connection is reviewed',async()=>{
+ const f=await fixture();await connect(f.hub);await f.hub.stop('page-departure');const before=mcpFixture.initializes,a=cold(f);await a.recover(async()=>{});assert.equal(mcpFixture.initializes,before);await a.close();const b=cold(f);await b.recover(async()=>{});assert.equal(mcpFixture.initializes,before);await connect(b);await b.close();const c=cold(f);await c.recover(async()=>{});assert.equal(mcpFixture.initializes,before+2);await c.close();
+});
+await test('private record contains no configuration values and no durable fingerprint is public',async()=>{
+ const f=await fixture();await connect(f.hub);const raw=await fsp.readFile(f.directory+'/state.json','utf8'),saved=JSON.parse(raw),description=JSON.stringify(await f.hub.describe());assert(!raw.includes('private-generated-value'));assert(!raw.includes('/generated/not-executed'));for(const value of [saved.salt,saved.servers[0].config,saved.servers[0].catalog])assert(!description.includes(value));assert.equal((await fsp.stat(f.directory+'/state.json')).mode&0o777,0o600);await f.hub.close();
+});
+await test('unsafe leaf mode and retained partial evidence refuse recovery without overwriting bytes',async()=>{
+ const f=await fixture();await connect(f.hub);await f.hub.close();const file=f.directory+'/state.json',raw=await fsp.readFile(file),before=mcpFixture.initializes;await fsp.chmod(file,0o644);await assert.rejects(cold(f).recover(async()=>{}),/Unsafe/);assert.deepEqual(await fsp.readFile(file),raw);await fsp.chmod(file,0o600);await fsp.writeFile(f.directory+'/retained.tmp','generated unfinished evidence',{mode:0o600});await assert.rejects(cold(f).recover(async()=>{}),/Unfinished/);assert.equal(mcpFixture.initializes,before);assert.deepEqual(await fsp.readFile(file),raw);
+});
+await test('malformed private JSON is retained and cannot leak private fingerprints in errors',async()=>{
+ const f=await fixture();await connect(f.hub);await f.hub.close();const file=f.directory+'/state.json',raw='{"salt":"PRIVATE_FINGERPRINT_CANARY",';await fsp.writeFile(file,raw);const error=await cold(f).recover(async()=>{}).catch(value=>value);assert(error instanceof Error);assert(!error.message.includes('PRIVATE_FINGERPRINT_CANARY'));assert.equal(await fsp.readFile(file,'utf8'),raw);
+});
+await test('non-opted-in Coding-style hub writes no recovery state and never recovers',async()=>{
+ const f=await fixture(),a=new MCPHub(f.config),before=mcpFixture.initializes;await connect(a);await a.close();assert.deepEqual(await fsp.readdir(f.root),['mcp.json']);await a.recover(async()=>{});assert.equal(mcpFixture.initializes,before+1);assert(!Object.hasOwn((await a.describe()).servers[0],'recoveryState'));
+});
+await test('symlink and hard-linked private records are rejected without touching their bytes',async()=>{
+ for(const kind of ['symlink','hardlink']){const f=await fixture();await connect(f.hub);await f.hub.close();const file=f.directory+'/state.json',backup=f.root+'/preserved.json',raw=await fsp.readFile(file),before=mcpFixture.initializes;if(kind==='symlink'){await fsp.rename(file,backup);await fsp.symlink(backup,file);}else await fsp.link(file,backup);await assert.rejects(cold(f).recover(async()=>{}),/Unsafe/);assert.equal(mcpFixture.initializes,before);assert.deepEqual(await fsp.readFile(backup),raw);}
+});
+await test('failed desire persistence retains unfinished evidence and makes closure unconfirmed',async()=>{
+ const f=await fixture({fault:async(stage,value)=>{if(stage==='before-publish'&&value.servers.length)throw Error('Generated fsync/publication failure');}});await assert.rejects(connect(f.hub));await assert.rejects(f.hub.close());const files=await fsp.readdir(f.directory);assert(files.some(name=>name.endsWith('.tmp')));const before=mcpFixture.initializes;await assert.rejects(cold(f).recover(async()=>{}),/Unfinished/);assert.equal(mcpFixture.initializes,before);
+});
+await test('normal closure waits for the currently owned transport drain before marking clean',async()=>{
+ const f=await fixture();await connect(f.hub);const gate=defer();mcpFixture.closeGate=gate.promise;let done=false;const closing=f.hub.close().then(()=>{done=true;});await new Promise(r=>setTimeout(r,10));assert.equal(done,false);assert.equal(JSON.parse(await fsp.readFile(f.directory+'/state.json','utf8')).clean,false);gate.resolve();mcpFixture.closeGate=null;await closing;assert.equal(JSON.parse(await fsp.readFile(f.directory+'/state.json','utf8')).clean,true);
+});
+
+const {createServer}=await import(SOURCE+'/server.mjs'),{nativeSignature}=await import(SOURCE+'/agent.mjs');
+class Reply extends EventEmitter{parts=[];headers={};statusCode=200;destroyed=false;writableEnded=false;setHeader(k,v){this.headers[k]=v;}writeHead(n,h={}){this.statusCode=n;Object.assign(this.headers,h);this.headersSent=true;}write(v){this.parts.push(Buffer.from(v));}end(v){if(v!==undefined)this.write(v);this.writableEnded=true;}}
+async function routed(f,flags={fullAccess:true,unconfinedBoot:true}){
+ const token=randomUUID(),dataDir=f.root+'/Coding';await fsp.mkdir(dataDir,{mode:0o700});let readiness=0;
+ const idle={async stop(){return{stopped:true};},async close(){return{stopped:true};},async assertUnconfinedAccess(){readiness++;}};
+ const server=createServer({instanceToken:token,...flags,hub:f.hub,coding:{...idle,dataDir,disposal:Promise.resolve()},worktrees:{...idle},gitWorkflow:{...idle},schedules:{...idle,start(){}},localModels:{upstream:'http://127.0.0.1:9',async resolve(){throw Error('No model invocation allowed');}},fetchImpl:deny('network')});
+ return{server,start(){const start=server.listeners('listening').find(fn=>fn.toString().includes('agentRoute.start'));assert(start,'Select only the actual product startup hook, never Node internal listening hooks');return start();},get readiness(){return readiness;},async request(operation,input={},signed=true){const route='/api/tools/'+operation,body=Buffer.from(JSON.stringify(input)),nonce=randomUUID(),time=String(Date.now()),headers={'content-type':'application/json',host:'127.0.0.1:8787',...(signed?{'x-qwen-nonce':nonce,'x-qwen-time':time,'x-qwen-permit':nativeSignature(token,route,nonce,time,body)}:{})},req=Readable.from([body]);Object.assign(req,{url:route,method:'POST',headers,socket:{localPort:8787}});const res=new Reply();await server.listeners('request')[0](req,res);return{status:res.statusCode,value:JSON.parse(Buffer.concat(res.parts).toString())};}};
+}
+await test('authenticated pending-native-Quit drain reason preserves desire and all seven closure results',async()=>{
+ const f=await fixture();await connect(f.hub);const r=await routed(f),before=mcpFixture.initializes;
+ const swift=await fsp.readFile(SOURCE+'/Tools.swift','utf8'),a=swift.indexOf('    func shutdown() async throws {'),b=swift.indexOf('    func departPage()',a),body=swift.slice(a,b);assert(body.includes('self.request("stop",["reason":"shutdown-drain"])'));assert(body.indexOf('let stopping=Task')<body.indexOf('_ = await pending.result'));assert(body.indexOf('_ = await pending.result')<body.indexOf('request("shutdown",[:])'));
+ assert.equal((await r.request('stop',{reason:'shutdown-drain'})).value.stopped,true);const closed=await r.request('shutdown');assert.equal(closed.status,200);assert.equal(closed.value.stopped,true);assert.deepEqual(Object.keys(closed.value.results).sort(),['coding','command','git','inference','schedules','tools','worktrees']);const aHub=cold(f);await aHub.recover(async()=>{});assert.equal(mcpFixture.initializes,before+1);await aHub.close();
+});
+await test('unauthenticated/model/unknown reason selectors refuse; actual owner Stop followed by close stays suppressed',async()=>{
+ const f=await fixture();await connect(f.hub);const r=await routed(f),before=mcpFixture.initializes;assert.equal((await r.request('stop',{reason:'shutdown-drain'},false)).status,403);
+ for(const body of [{reason:'other'},{reason:'shutdown-drain',coding:false},{reason:'shutdown-drain',agentClaim:{}},{coding:'false'},{reason:'shutdown-close'}])assert.equal((await r.request('stop',body)).status,400);
+ assert.equal((await f.hub.describe()).servers[0].connected,true);assert.equal((await r.request('stop')).value.stopped,true);assert.equal((await r.request('shutdown')).value.stopped,true);const a=cold(f);await a.recover(async()=>{});assert.equal(mcpFixture.initializes,before);await a.close();
+});
+await test('authenticated page departure preserves intent without rearming current-boot recovery',async()=>{
+ const f=await fixture();await connect(f.hub);const r=await routed(f),before=mcpFixture.initializes;assert.equal((await r.request('depart')).value.stopped,true);await r.start();assert.equal(mcpFixture.initializes,before);assert.equal((await r.request('shutdown')).value.stopped,true);const a=cold(f);await a.recover(async()=>{});assert.equal(mcpFixture.initializes,before+1);await a.close();
+});
+await test('actual startup hook checks both current owners in Full Access and starts no model or Coding thread',async()=>{
+ const f=await fixture();await connect(f.hub);await f.hub.close();f.hub=cold(f);const r=await routed(f),before=mcpFixture.initializes;await r.start();assert.equal(mcpFixture.initializes,before+1);assert.equal(r.readiness,2);assert.equal((await r.request('shutdown')).value.stopped,true);
+});
+await test('an actual owner Stop arriving during normal closure still clears future desire',async()=>{
+ const f=await fixture();await connect(f.hub);const r=await routed(f),before=mcpFixture.initializes,gate=defer();mcpFixture.closeGate=gate.promise;const closing=r.request('shutdown');await until(async()=>!(await f.hub.describe()).servers[0].connected);const stopping=r.request('stop');await new Promise(resolve=>setTimeout(resolve,10));gate.resolve();mcpFixture.closeGate=null;assert.equal((await closing).value.stopped,true);assert.equal((await stopping).value.stopped,true);const a=cold(f);await a.recover(async()=>{});assert.equal(mcpFixture.initializes,before);await a.close();
+});
+assert.deepEqual(effects,{network:0,childProcess:0,originalStore:0});assert.equal(mcpFixture.calls,0);
+console.log(JSON.stringify({passed:passed.length,failed:0,...effects,toolCalls:mcpFixture.calls,generatedRoots:roots,source:SOURCE}));

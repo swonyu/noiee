@@ -17,6 +17,8 @@ for(const [target,names]of [[net,['connect','createConnection','createServer']],
 net.Socket.prototype.connect=deny('network');globalThis.fetch=deny('network');
 const read=fs.readFileSync.bind(fs);fs.readFileSync=(path,...rest)=>{if(!String(path).startsWith(SOURCE+'/'))return deny('originalStore')();return read(path,...rest);};syncBuiltinESMExports();
 const app=fs.readFileSync(SOURCE+'/app.js','utf8'),helper=fs.readFileSync(SOURCE+'/context-compaction.js','utf8'),work=fs.readFileSync(SOURCE+'/work.js','utf8');
+const modelHelperNames=['model-policy.js','model-picker.js'].filter(name=>fs.existsSync(SOURCE+'/'+name)),modelHelpers=modelHelperNames.map(name=>fs.readFileSync(SOURCE+'/'+name,'utf8')).join('\n');
+assert(!app.includes('globalThis.NoieeModelPolicy.contextProfile')||modelHelperNames.length===2,'Actual model helpers are required by the integrated outbound handler');
 const extract=(start,end)=>{const a=app.indexOf(start),b=app.indexOf(end,a);assert(a>=0&&b>a,start);return app.slice(a,b);};
 const generation=extract('async function generateRun(', 'async function readBackupSelection('),form=extract("$('composer').onsubmit =", "window.addEventListener('computer-busy'"),modelChange=extract("$('chat-model').onchange =", "$('default-model').onchange"),modeChange=extract("$('chat-mode').onchange=", "$('thinking').onchange");
 const stopHandler=extract("$('stop').onclick =", "$('open-coding').onclick"),retryStart=app.indexOf('retry.onclick ='),retryEnd=app.indexOf('; actions.append(retry)',retryStart),retryHandler=app.slice(retryStart,retryEnd+1);assert(retryStart>=0&&retryEnd>retryStart);
@@ -28,14 +30,14 @@ async function fixture({activeSummary=true}={}){
  const crypto={randomUUID,subtle:{digest:async(...args)=>{if(delayed){digestWaits++;await gate;}return webcrypto.subtle.digest(...args);}}};
  const chat=chatFixture(),elements=new Map(),element=id=>{if(!elements.has(id))elements.set(id,{value:'',hidden:false,disabled:false});return elements.get(id);};
  const context=vm.createContext({console,TextEncoder,TextDecoder,structuredClone,crypto,chat,element,notices,document:{body:{}},location:{href:'http://fixture.invalid/'},setTimeout,clearTimeout});
- vm.runInContext(work+'\n'+helper,context,{timeout:2000});
+ vm.runInContext(modelHelpers+'\n'+work+'\n'+helper,context,{timeout:2000});
  context.contextCompaction=context.SalehContextCompaction;
  if(activeSummary){const compact=context.contextCompaction,source=await compact.capture(chat,{revision:1,commitId:randomUUID()}),job=compact.create(source);job.inputDigest='a'.repeat(64);job.status='complete';job.revision=3;job.summary='Retain the Riyadh decision. Unknown actions stay unknown.';job.summaryHash=await compact.digest(job.summary);chat.contextCompactions={version:1,activeId:job.id,records:[job]};}
  context.window={SalehChatRuns:{generation:async()=> '10000000-0000-4000-8000-000000000001',digest:async input=>createHash('sha256').update(JSON.stringify(input)).digest('hex'),metadata:value=>value,request:async input=>{calls.push(structuredClone(input));if(input.action==='prepare')await beforePrepare?.();return input.action==='prepare'?{...input,ticket:'10000000-0000-4000-8000-000000000002'}:{run:null};},receive(){},watch:async()=>{},refresh:async()=>{},stop:async()=>({run:null}),allowAgentReview(){}}};
  vm.runInContext(`
  const $=element,current=()=>chat,chats=[chat];
  let storageHydrating=false,storageBlocked=false,restoring=false,structuralPending=false,computerBusy=false,textRunsReady=true,pageDisposed=false,textRunGeneration=null;
- const deletingChats=new Set(),attachmentReads=new Map(),activeRuns=new Map(),textInspections=new Map();
+ const deletingChats=new Set(),attachmentReads=new Map(),activeRuns=new Map(),textInspections=new Map(),pendingModelDefaults=new WeakSet();
  const activeFor=chat=>[...activeRuns.values()].find(row=>row.chatId===chat.id);
  const parallelTextChat=()=>true,runBlocked=chat=>!!activeFor(chat)||activeRuns.size>=2;
  const controls=()=>{},notice=text=>notices.push(text),save=async()=>true,render=()=>{},renderSidebar=()=>{},refreshReply=()=>{},messageRoom=()=>true,chatModelState=()=>({ready:true,entry:{contextLength:65536}});
@@ -109,5 +111,5 @@ await test('oversized uncertain raw suffix refuses instead of being silently tri
  const f=await fixture({activeSummary:false});f.chat.messages[3].state='unconfirmed';f.chat.messages[3].content='UNCONFIRMED RAW BOUNDARY '+ 'x'.repeat(42000);f.chat.messages[4].content='Later original request '+ 'y'.repeat(28000);f.chat.draft='  latest draft الرياض😀\n ';const original=structuredClone(f.chat.messages);f.context.submit();await f.settle();assert.equal(f.calls.filter(row=>row.action==='start').length,0);assert(f.notices.some(text=>/Unsettled original history.*omission/.test(text)),f.notices.join('\n'));assert.equal(f.chat.draft,'  latest draft الرياض😀\n ');assert.deepEqual(f.chat.messages.slice(0,original.length),original);
 });
 assert.deepEqual(effects,{network:0,childProcess:0,originalStore:0,productImports:0});
-console.log(JSON.stringify({passed:rows.length-failures.length,failed:failures.length,rows,observations,...effects,source:SOURCE,sourcePins:Object.fromEntries(['app.js','context-compaction.js','work.js'].map(name=>[name,createHash('sha256').update(fs.readFileSync(SOURCE+'/'+name)).digest('hex')]))}));
+console.log(JSON.stringify({passed:rows.length-failures.length,failed:failures.length,rows,observations,...effects,source:SOURCE,sourcePins:Object.fromEntries(['app.js','context-compaction.js','work.js',...modelHelperNames].map(name=>[name,createHash('sha256').update(fs.readFileSync(SOURCE+'/'+name)).digest('hex')]))}));
 if(failures.length)process.exitCode=1;

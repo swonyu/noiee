@@ -1,0 +1,17 @@
+import Foundation
+
+// Disposable test process only; this is not an app entry point or provider.
+@main struct ProjectSkillsClientFixture {
+    @MainActor static func main() async throws {
+        func emit(_ value:[String:Any]) throws {FileHandle.standardOutput.write(try JSONSerialization.data(withJSONObject:value,options:[.sortedKeys]));FileHandle.standardOutput.write(Data([10]))}
+        let session=ProjectSkillsSession()
+        try emit(try await session.choose(CommandLine.arguments[1]))
+        while let line=readLine() {
+            do {
+                guard let data=line.data(using:.utf8),let input=try JSONSerialization.jsonObject(with:data) as? [String:Any] else {throw CodingTemporary.fail("Invalid fixture input")}
+                try emit(try await session.perform(input))
+            } catch {try emit(["isError":true,"message":error.localizedDescription])}
+        }
+        session.invalidate();await session.drain()
+    }
+}

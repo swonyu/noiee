@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "assertionsChanged": false,
+  "files": [
+    {
+      "template": "fake-mcp.mjs.in",
+      "sha256": "b27f10401029ab5fa3335c4ed0b73a4f129237baf6f00691470326e921be9e3f",
+      "origin": "/Users/saleh/Documents/Noiee/checks/tools/fake-mcp.mjs",
+      "originSHA256": "b27f10401029ab5fa3335c4ed0b73a4f129237baf6f00691470326e921be9e3f"
+    },
+    {
+      "template": "recovery-check.mjs.in",
+      "sha256": "43e95d450ead231e87a018af1b45d3f2c4d4ab4e8baf9f59a48cd6b92a56562b",
+      "origin": "/Users/saleh/Documents/Noiee/checks/tools/recovery-check.mjs",
+      "originSHA256": "43e95d450ead231e87a018af1b45d3f2c4d4ab4e8baf9f59a48cd6b92a56562b"
+    },
+    {
+      "template": "unavailable-check.mjs.in",
+      "sha256": "987c1e2e12e8eb05904c953b08a925300a65100225c85136ba2474452dd53bac",
+      "origin": "/Users/saleh/Documents/Noiee/checks/tools/unavailable-check.mjs",
+      "originSHA256": "987c1e2e12e8eb05904c953b08a925300a65100225c85136ba2474452dd53bac"
+    },
+    {
+      "template": "tools-ui-check.mjs.in",
+      "sha256": "481abc6b98af5671d88df320b2d4be5fd1db8a65a21d47044b77de22dd1c15cf",
+      "origin": "/Users/saleh/Documents/Noiee/checks/tools/tools-ui-check.mjs",
+      "originSHA256": "481abc6b98af5671d88df320b2d4be5fd1db8a65a21d47044b77de22dd1c15cf"
+    },
+    {
+      "template": "ProjectSkillsHarness.swift.in",
+      "sha256": "4254c716156a83348861a37810f030c1a5c42c713d1b50e9ca9a2f6398ce168f",
+      "origin": "/Users/saleh/Documents/Noiee/checks/tools/ProjectSkillsHarness.swift",
+      "originSHA256": "4254c716156a83348861a37810f030c1a5c42c713d1b50e9ca9a2f6398ce168f"
+    },
+    {
+      "template": "ProjectSkillsClientFixture.swift.in",
+      "sha256": "2e58ef6657e043babf24667ec5846237bae9a79ef6ee10cfabb6d2bb0cda9969",
+      "origin": "/Users/saleh/Documents/Noiee/checks/tools/ProjectSkillsClientFixture.swift",
+      "originSHA256": "2e58ef6657e043babf24667ec5846237bae9a79ef6ee10cfabb6d2bb0cda9969"
+    },
+    {
+      "template": "project-skills-agent-check.mjs.in",
+      "sha256": "6e77e80686e94d7470dd6062191896e89d14a01aa46a3ceaf603c9a8f47ad2d1",
+      "origin": "/Users/saleh/Documents/Noiee/checks/tools/project-skills-agent-check.mjs",
+      "originSHA256": "6e77e80686e94d7470dd6062191896e89d14a01aa46a3ceaf603c9a8f47ad2d1"
+    },
+    {
+      "template": "project-skills-ui-check.mjs.in",
+      "sha256": "7c7803598a69cf6f9422ab669e73aadaad0229f4607923dcbfd1b32bc978cbdc",
+      "origin": "/Users/saleh/Documents/Noiee/checks/tools/project-skills-ui-check.mjs",
+      "originSHA256": "7c7803598a69cf6f9422ab669e73aadaad0229f4607923dcbfd1b32bc978cbdc"
+    }
+  ]
+}

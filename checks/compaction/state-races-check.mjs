@@ -21,7 +21,7 @@ async function fixture({active=true}={}){
  const element=id=>{if(!elements.has(id))elements.set(id,{hidden:false,disabled:false,textContent:'',title:'',dataset:{},children:[],value:''});return elements.get(id);};
  const crypto={randomUUID,subtle:{digest:async(...args)=>{digestCalls++;if(delayed)await gate;return webcrypto.subtle.digest(...args);}}};
  const context=vm.createContext({TextEncoder,structuredClone,crypto,console,chat,element,notices,writes,requests,document:{body:{}},location:{href:'http://fixture.invalid/'},setTimeout,clearTimeout});
- vm.runInContext(helper,context,{timeout:2000});const compact=context.SalehContextCompaction;
+ const modelHelpers=['model-policy.js','model-picker.js'].filter(name=>fs.existsSync(SOURCE+'/'+name)).map(name=>fs.readFileSync(SOURCE+'/'+name,'utf8')).join('\n');vm.runInContext(modelHelpers+'\n'+helper,context,{timeout:2000});const compact=context.SalehContextCompaction;
  const source=await compact.capture(chat,{revision:1,commitId:randomUUID()}),job=compact.create(source);
  job.status='complete';job.inputDigest='a'.repeat(64);job.revision=3;job.summary='Verified historical fixture summary';job.summaryHash=await compact.digest(job.summary);
  chat.contextCompactions={version:1,activeId:active?job.id:null,records:[job],unknownDerived:{keep:true}};
