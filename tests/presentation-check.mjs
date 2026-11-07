@@ -8,7 +8,7 @@ import {chromium} from '../source/node_modules/playwright/index.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const out=path.join(root,'.artifacts','presentation-'+new Date().toISOString().replaceAll(':','-'));
 fs.mkdirSync(out,{recursive:true});
-const sources=Object.fromEntries(['app.js','coding.js','style.css','workspace.css'].map(name=>[name,fs.readFileSync(path.join(root,'source',name),'utf8')]));
+const sources=Object.fromEntries(['app.js','coding.js','style.css','workspace.css','index.html','model-policy.js'].map(name=>[name,fs.readFileSync(path.join(root,'source',name),'utf8')]));
 const slice=(text,start,end)=>{const a=text.indexOf(start),b=text.indexOf(end,a);assert.ok(a>=0&&b>a,start);return text.slice(a,b);};
 const chat=slice(sources['app.js'],'function inlineText','function appendReasoning')+slice(sources['app.js'],'function renderReasoning','// CHAT FIND BEGIN');
 const task=slice(sources['coding.js'],'function inlineText','function receipt');
@@ -25,7 +25,8 @@ try{
     window.chatRenderer=new Function(chat+'\nreturn {formatContent,renderReasoning};')();
     window.taskRenderer=new Function('const element=(tag,cls="",text)=>{const n=document.createElement(tag);n.className=cls;if(text!==undefined)n.textContent=text;return n;};\n'+task+'\nreturn {formatContent};')();
   },{chat,task});
-  const actual=await page.evaluate(()=>{
+  await page.addScriptTag({content:sources['model-policy.js']});
+  const actual=await page.evaluate(indexHTML=>{
     window.injected=false;
     const fence=String.fromCharCode(96).repeat(3);
     const fixture=['Answer text.','','| Item | Result |','| --- | --- |','| **check** | <img src=x onerror="window.injected=true"> |','| link | [docs](https://example.com/docs) |','','> A quoted observation.','','---','',fence+'html','<script>window.injected=true</script>',fence,'','[unsafe](javascript:window.injected=true)','[file](file:///Users/saleh/private.txt)'].join('\n');
@@ -52,12 +53,23 @@ try{
     window.chatRenderer.renderReasoning(old,{reasoning:'Previously opened detail',reasoningOpen:true,state:'complete'});
     result.reasoning={collapsedByDefault:details.open===false,afterAnswer:answer.nextElementSibling===details,honestNote:details.querySelector('.reasoning-note').textContent.includes('Recorded tool activity'),preservesExplicitOpen:old.querySelector('details').open===true};
     result.security={noScriptExecution:window.injected===false};
+    const selector=new DOMParser().parseFromString(indexHTML,'text/html').querySelector('#thinking');
+    host.prepend(selector);
+    const options=[...selector.options],policy=window.NoieeModelPolicy;
+    result.responseControls={
+      preservedValues:options.map(option=>option.value).join(',')==='standard,long,deep',
+      conciseLabelMatchesPolicy:options[0].textContent==='Concise'&&policy.responseStyleInstructions({mode:'chat',effort:'none'}).startsWith('Response style: Concise.'),
+      detailedLabelMatchesPolicy:options[1].textContent==='Detailed'&&policy.responseStyleInstructions({mode:'chat',effort:'none',longOutput:true}).startsWith('Response style: Detailed.'),
+      deepLabelMatchesPolicy:options[2].textContent==='Deep reasoning'&&policy.responseStyleInstructions({mode:'chat',effort:'high'}).startsWith('Reason carefully'),
+      tooltipMatchesStyles:selector.title.includes('Concise and Detailed turn reasoning off.')&&selector.title.includes('Deep reasoning turns it on.')&&!/Fast|Long answer/.test(selector.title),
+      honestOutputLimit:selector.title.includes('No fixed response token cap; model context and request limits still apply.')
+    };
     return result;
-  });
+  },sources['index.html']);
   const checks=[];
   for(const [group,values] of Object.entries(actual))for(const [key,value]of Object.entries(values)){assert.equal(value,true,group+'.'+key);checks.push(group+'.'+key);}
   await page.screenshot({path:path.join(out,'presentation.png'),fullPage:true});
-  const report={status:'passed',checkedAt:new Date().toISOString(),checks:checks.length,names:checks,scope:'Actual current renderer functions in isolated headless Chrome. No app backend, native bridge, inference or original browser profile.',sourceHashes:Object.fromEntries(Object.entries(sources).map(([name,value])=>[name,crypto.createHash('sha256').update(value).digest('hex')]))};
+  const report={status:'passed',checkedAt:new Date().toISOString(),checks:checks.length,names:checks,scope:'Actual current renderer functions and response selector/policy in isolated headless Chrome. No app backend, native bridge, inference or original browser profile.',sourceHashes:Object.fromEntries(Object.entries(sources).map(([name,value])=>[name,crypto.createHash('sha256').update(value).digest('hex')]))};
   fs.writeFileSync(path.join(out,'RESULT.json'),JSON.stringify(report,null,2)+'\n');
   console.log(JSON.stringify({status:report.status,checks:checks.length,report:path.join(out,'RESULT.json'),screenshot:path.join(out,'presentation.png')}));
 }finally{await browser.close();}
