@@ -5,7 +5,7 @@ import {Readable} from 'node:stream';
 import {mkdtemp,mkdir,readFile,writeFile,readdir,realpath} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {randomUUID} from 'node:crypto';
+import {createHash,randomUUID} from 'node:crypto';
 import {setTimeout as delay} from 'node:timers/promises';
 import {createServer} from './server.mjs';
 import {nativeSignature} from './agent.mjs';
@@ -268,4 +268,54 @@ await test('concurrent identical starts consume once; consumed ticket only reads
   const recovered=await f.request(payload);assert.equal(recovered.statusCode,200);assert.equal(recovered.json.live,false);assert.equal(recovered.json.run.status,'stopped');assert.equal(f.requests.length,1);
  }finally{await f.close();}
 });
+
+const submissionFixture=extra=>({version:1,attemptId:randomUUID(),path:'send-button',eventType:'click',isTrusted:false,observedAt:1,documentFocused:true,visibility:'visible',activeControl:'send',submitter:'send',retryOfUserMessageId:null,...extra});
+await test('submission observations canonically bind input while omitted legacy digests stay exact',async()=>{
+ const f=await fixture();try{
+  const input=f.input(),legacy=createHash('sha256').update(JSON.stringify({chatId:input.chatId,userMessageId:input.userMessageId,assistantMessageId:input.assistantMessageId,messages:input.messages,model:input.model,thinking:input.thinking})).digest('hex');assert.equal(chatRunDigest(input),legacy);
+  const submission=submissionFixture(),observed={...input,submission};assert.notEqual(chatRunDigest(observed),legacy);
+  assert.equal(chatRunDigest({...observed,submission:Object.fromEntries(Object.entries(submission).reverse())}),chatRunDigest(observed),'Object insertion order is not evidence');
+  for(const changed of [{isTrusted:true},{observedAt:2},{attemptId:randomUUID()},{documentFocused:false},{visibility:'hidden'},{activeControl:'other'}])assert.notEqual(chatRunDigest({...observed,submission:{...submission,...changed}}),chatRunDigest(observed));
+  assert.notEqual(chatRunDigest({...observed,messages:[{role:'user',content:'different prompt'}]}),chatRunDigest(observed));
+  assert.throws(()=>chatRunDigest({...observed,purpose:'compact',sourceDigest:'a'.repeat(64)}),/compaction/i);
+ }finally{await f.close();}
+});
+await test('submission receipt persists, retries deduplicate, and changed observations cannot reuse tickets',async()=>{
+ const f=await fixture();try{
+  const input={...f.input(),submission:submissionFixture()},generation=(await f.request({action:'list'})).json.generation;
+  const prepared=(await f.request({action:'prepare',runId:input.runId,inputDigest:chatRunDigest(input),generation})).json,payload={...input,ticket:prepared.ticket,generation};
+  assert.equal((await f.request({...payload,submission:{...input.submission,isTrusted:true}})).statusCode,400);assert.equal(f.requests.length,0,'A changed observation cannot consume the prepared input');
+  const first=await f.request(payload);assert.equal(first.statusCode,200);assert.deepEqual(first.json.run.submission,input.submission);await until(()=>f.requests.length===1,'observed request reached synthetic upstream');
+  assert(!Object.hasOwn(f.requests[0],'submission'),'Origin metadata is not sent to the model');assert.deepEqual(f.requests[0].messages.at(-1),input.messages.at(-1));
+  assert.equal((await f.request(payload)).statusCode,200);assert.equal((await f.request({...payload,submission:{...input.submission,isTrusted:true}})).statusCode,400);assert.equal(f.requests.length,1);
+  await f.request({action:'stop',runId:input.runId});const bytes=await readFile(join(f.directory,input.runId+'.json'));assert.deepEqual(JSON.parse(bytes).submission,input.submission);
+  const legacy=f.input();assert.equal((await f.request(legacy)).statusCode,200);await until(()=>f.requests.length===2,'legacy request admitted');await f.request({action:'stop',runId:legacy.runId});const legacyBytes=await readFile(join(f.directory,legacy.runId+'.json'));assert(!Object.hasOwn(JSON.parse(legacyBytes),'submission'));
+  await f.close();const next=createServer(f.options);try{
+   const recovered=await requestOn(next,{action:'read',runId:input.runId});assert.deepEqual(recovered.run.submission,input.submission);assert.equal(recovered.live,false);
+   assert(!Object.hasOwn((await requestOn(next,{action:'read',runId:legacy.runId})).run,'submission'));
+   assert.deepEqual(await readFile(join(f.directory,input.runId+'.json')),bytes);assert.deepEqual(await readFile(join(f.directory,legacy.runId+'.json')),legacyBytes);assert.equal(f.requests.length,2,'Cold receipt reads never replay');
+  }finally{await next.shutdownTools();}
+ }finally{await f.close();}
+});
+await test('malformed or authority-claiming submission metadata rejects before inference',async()=>{
+ const f=await fixture();try{
+  const good=submissionFixture(),missing={...good};delete missing.isTrusted;
+  const invalid=[null,[],{},missing,{...good,version:2},{...good,attemptId:'x'.repeat(4096)},{...good,path:'goal-continue'},{...good,path:'physical-human'},{...good,eventType:'paste'},{...good,eventType:'keydown'},{...good,isTrusted:'true'},{...good,isTrusted:null},{...good,observedAt:-1},{...good,observedAt:1.5},{...good,observedAt:Number.MAX_SAFE_INTEGER+1},{...good,documentFocused:1},{...good,visibility:'minimized'},{...good,activeControl:'prompt contents'},{...good,submitter:'not-applicable'},{...good,retryOfUserMessageId:'unexpected'},{...good,draft:'must not retain'},{...good,toolAccess:true},{...good,path:'retry',submitter:'not-applicable',retryOfUserMessageId:''},{...good,path:'retry',submitter:'not-applicable',retryOfUserMessageId:'\n'},{...good,path:'retry',submitter:'not-applicable',retryOfUserMessageId:'🧪'.repeat(41)}];
+  const generation=(await f.request({action:'list'})).json.generation;
+  for(const submission of invalid){const input={...f.input(),submission};assert.throws(()=>chatRunDigest(input),/submission/i);assert.equal((await f.request({...input,ticket:randomUUID(),generation})).statusCode,400);}
+  assert.equal(f.requests.length,0);assert.equal(f.resolving,0);assert.equal(f.admitting,0);await assert.rejects(readdir(f.directory),{code:'ENOENT'});
+ }finally{await f.close();}
+});
+await test('legacy v1 through v5 receipts remain readable without invented submission evidence or migration',async()=>{
+ const f=await fixture();try{
+  await mkdir(f.directory,{mode:0o700});const retained=[];
+  for(const version of [1,2,3,4,5]){
+   const runId=randomUUID(),agent=[2,4].includes(version),row={version,runId,chatId:'legacy-'+version,userMessageId:'legacy-user-'+version,assistantMessageId:'legacy-answer-'+version,inputDigest:'a'.repeat(64),userMessage:'Legacy fixture',requestedModel:'fixture',resolvedModel:'fixture',thinking:'standard',createdAt:1,updatedAt:2,endedAt:2,revision:1,status:'complete',content:'Legacy result',reasoning:'',finishReason:'stop',stopRequested:false,error:null,...([3,4].includes(version)?{userContentDigest:'b'.repeat(64)}:{}),...(agent?{kind:'agent',receipts:[],plan:[],sources:[],pendingStep:null,budgetReached:false,nativeResult:false}:{}),...(version===5?{purpose:'compact',sourceDigest:'c'.repeat(64)}:{})};
+   const bytes=Buffer.from(JSON.stringify(row));await writeFile(join(f.directory,runId+'.json'),bytes,{mode:0o600,flag:'wx'});retained.push({runId,bytes,row});
+  }
+  for(const {runId,bytes,row} of retained){const result=await f.request({action:'read',runId});assert.equal(result.statusCode,200);assert.deepEqual(result.json.run,row);assert(!Object.hasOwn(result.json.run,'submission'));assert.deepEqual(await readFile(join(f.directory,runId+'.json')),bytes);}
+  assert.equal(f.requests.length,0);assert.equal((await f.request({action:'list'})).json.runs.length,5);
+ }finally{await f.close();}
+});
+
 console.log(JSON.stringify({passed:true,cases:passed,realModelCalls:0,installedAppTouched:false}));

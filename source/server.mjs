@@ -153,7 +153,7 @@ export function createServer({ upstream, model = MODEL, instanceToken = '', hub,
           if(input.action==='list'&&keys==='action')return json(200,await chatRuns.list());
           if(['read','stop'].includes(input.action)&&keys==='action,runId')return json(200,await chatRuns[input.action==='read'?'inspect':'stop'](input.runId));
           if(input.action==='prepare'&&keys==='action,generation,inputDigest,runId'){const {action,...value}=input;return json(200,chatRuns.prepareAdmission(value));}
-          const startKeys=['action','assistantMessageId','chatId','generation','messages','model','runId','thinking','ticket','userMessageId',...(Object.hasOwn(input,'longOutput')?['longOutput']:[]),...(input.kind==='agent'?['kind','sources']:[]),...(Object.hasOwn(input,'purpose')?['purpose','sourceDigest']:[])].sort().join();
+          const startKeys=['action','assistantMessageId','chatId','generation','messages','model','runId','thinking','ticket','userMessageId',...(Object.hasOwn(input,'longOutput')?['longOutput']:[]),...(input.kind==='agent'?['kind','sources']:[]),...(Object.hasOwn(input,'purpose')?['purpose','sourceDigest']:[]),...(Object.hasOwn(input,'submission')?['submission']:[])].sort().join();
            if(input.action!=='start'||keys!==startKeys)throw Error('Invalid text-run fields.');
           if(agentRoute.closed)return json(503,{error:'Shutdown is in progress. No new work can start.'});
           const {action,ticket,generation,...value}=input;value.messages=value.kind==='agent'?validateAgentMessages(value.messages):validateMessages(value.messages);attachments.validateUploads(value.messages);value.model=validateModelID(value.model);

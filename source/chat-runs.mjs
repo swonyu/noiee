@@ -51,12 +51,23 @@ const clipAgent=(value,limit,label)=>{const s=String(value);if(s.length<=limit)r
     return text.length<=limit?text:JSON.stringify({truncated:true,message:'Tool output exceeded the context budget. This excerpt is incomplete; request a narrower result before acting.',preview:text.slice(0,12000)});
   }
 
+function normalizeSubmission(value){
+ const keys=['version','attemptId','path','eventType','isTrusted','observedAt','documentFocused','visibility','activeControl','submitter','retryOfUserMessageId'];
+ if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).length!==keys.length||!keys.every(key=>Object.hasOwn(value,key))||value.version!==1||!uuid(value.attemptId)||!['composer-enter','send-button','form-submit','retry'].includes(value.path)||!['keydown','click','submit','none'].includes(value.eventType)||!(value.eventType==='none'?value.isTrusted===null:typeof value.isTrusted==='boolean')||!Number.isSafeInteger(value.observedAt)||value.observedAt<0||typeof value.documentFocused!=='boolean'||!['visible','hidden','unknown'].includes(value.visibility)||!['prompt','send','retry','other','none'].includes(value.activeControl)||!['send','other','none','not-applicable'].includes(value.submitter))throw Error('Invalid submission observation.');
+ const retry=value.path==='retry',eventType={'composer-enter':'keydown','send-button':'click','form-submit':'submit',retry:'click'}[value.path];
+ if(value.eventType!==eventType&&value.eventType!=='none'||retry&&value.retryOfUserMessageId!==null&&(typeof value.retryOfUserMessageId!=='string'||!value.retryOfUserMessageId.isWellFormed()||!value.retryOfUserMessageId.length||new TextEncoder().encode(value.retryOfUserMessageId).length>160||/[\x00-\x1f\x7f]/.test(value.retryOfUserMessageId))||!retry&&value.retryOfUserMessageId!==null||retry&&value.submitter!=='not-applicable'||!retry&&value.submitter==='not-applicable'||['composer-enter','send-button'].includes(value.path)&&value.submitter!=='send')throw Error('Invalid submission observation path.');
+ // Canonical order binds the page-reported observation to the exact admitted input.
+ // This does not establish physical input, human identity, intent or tool authority.
+ return Object.fromEntries(keys.map(key=>[key,value[key]]));
+}
+
 export function chatRunDigest(input){
  const extra=Object.hasOwn(input,'longOutput')?{longOutput:input.longOutput}:{};
- const compact=Object.hasOwn(input,'purpose');
+ const compact=Object.hasOwn(input,'purpose'),submission=Object.hasOwn(input,'submission')?{submission:normalizeSubmission(input.submission)}:{};
+ if(compact&&Object.hasOwn(input,'submission'))throw Error('Context compaction cannot carry ordinary submission metadata.');
  if(compact&&(input.purpose!=='compact'||input.kind!==undefined||input.thinking!=='standard'||Object.hasOwn(input,'longOutput')||!/^[a-f0-9]{64}$/.test(input.sourceDigest)))throw Error('Invalid context compaction purpose.');
  outputPolicy({mode:agentInput(input)?'agent':'chat',effort:input.thinking==='standard'?'none':'high',...extra});
- return hash(JSON.stringify({chatId:input.chatId,userMessageId:input.userMessageId,assistantMessageId:input.assistantMessageId,messages:input.messages,model:input.model,thinking:input.thinking,...extra,...(agentInput(input)?{kind:'agent',sources:input.sources}:{}),...(compact?{purpose:'compact',sourceDigest:input.sourceDigest}:{})}));
+ return hash(JSON.stringify({chatId:input.chatId,userMessageId:input.userMessageId,assistantMessageId:input.assistantMessageId,messages:input.messages,model:input.model,thinking:input.thinking,...extra,...(agentInput(input)?{kind:'agent',sources:input.sources}:{}),...(compact?{purpose:'compact',sourceDigest:input.sourceDigest}:{}),...submission}));
 }
 
 // Two backend-owned text Chats, or one exclusive Agent; no queue, replay, pruning or stored tool grants.
@@ -102,8 +113,9 @@ export class ChatRuns{
   }finally{await file.close();}
  }
  #validate(row){
-  const modern=[3,4].includes(row?.version),agent=[2,4].includes(row?.version)&&row.kind==='agent',compact=row?.version===5,expected=[...(agent?agentFields:fields),...(modern?['userContentDigest']:[]),...(compact?['purpose','sourceDigest']:[])];
+  const modern=[3,4].includes(row?.version),agent=[2,4].includes(row?.version)&&row.kind==='agent',compact=row?.version===5,expected=[...(agent?agentFields:fields),...(modern?['userContentDigest']:[]),...(compact?['purpose','sourceDigest']:[]),...(Object.hasOwn(row??{},'submission')?['submission']:[])];
   if(![1,2,3,4,5].includes(row?.version)||!exact(row,expected)||compact&&(row.purpose!=='compact'||!/^[a-f0-9]{64}$/.test(row.sourceDigest)||row.thinking!=='standard'||bytes(row.content)+bytes(row.reasoning)>32000)||([2,4].includes(row.version)&&!agent)||modern&&!/^[a-f0-9]{64}$/.test(row.userContentDigest)||!uuid(row.runId)||!id(row.chatId)||!id(row.userMessageId)||!id(row.assistantMessageId)||row.userMessageId===row.assistantMessageId||!/^[a-f0-9]{64}$/.test(row.inputDigest)||!text(row.userMessage,96000)||!row.userMessage.trim()||!model(row.requestedModel)||!(row.resolvedModel===null||model(row.resolvedModel))||!['standard','deep'].includes(row.thinking)||!integer(row.createdAt)||!integer(row.updatedAt)||row.updatedAt<row.createdAt||!integer(row.revision)||row.revision<1||!['intent','running','complete','length','stopped','error','unconfirmed'].includes(row.status)||!text(row.content,TEXT)||!text(row.reasoning,TEXT)||bytes(row.content)+bytes(row.reasoning)>TEXT||typeof row.stopRequested!=='boolean'||!(row.error===null||text(row.error,2000))||!(row.finishReason===null||['stop','length'].includes(row.finishReason))||!(row.endedAt===null||integer(row.endedAt)&&row.endedAt>=row.createdAt)||bytes(JSON.stringify(row))>RECORD)throw Error('Invalid chat receipt schema or bound.');
+  if(Object.hasOwn(row,'submission')){if(compact)throw Error('Context compaction cannot carry ordinary submission metadata.');normalizeSubmission(row.submission);}
   if(agent)this.#validateAgent(row);
   if(pending.has(row.status)?row.endedAt!==null:row.endedAt===null)throw Error('Invalid chat receipt terminal time.');
   if(['complete','length'].includes(row.status)&&(!row.content.trim()&&!(row.status==='length'&&!agent&&row.thinking==='deep'&&row.reasoning.trim())||row.finishReason!==(row.status==='complete'?'stop':'length')||row.error!==null))throw Error('Invalid complete chat receipt.');return row;
@@ -164,7 +176,7 @@ export class ChatRuns{
   return {...this.#tickets.get(input.runId)};
  }
  async start(input,authorization){
-  const agent=agentInput(input),compact=Object.hasOwn(input,'purpose'),keys=['runId','chatId','userMessageId','assistantMessageId','messages','model','thinking',...(agent?['kind','sources']:[]),...(compact?['purpose','sourceDigest']:[])];
+  const agent=agentInput(input),compact=Object.hasOwn(input,'purpose'),keys=['runId','chatId','userMessageId','assistantMessageId','messages','model','thinking',...(agent?['kind','sources']:[]),...(compact?['purpose','sourceDigest']:[]),...(Object.hasOwn(input,'submission')?['submission']:[])];
   if(!(exact(input,keys)||exact(input,[...keys,'longOutput']))||!uuid(input.runId)||!id(input.chatId)||!id(input.userMessageId)||!id(input.assistantMessageId)||input.userMessageId===input.assistantMessageId||!model(input.model)||!['standard','deep'].includes(input.thinking)||!Array.isArray(input.messages)||!input.messages.length)throw Error('Invalid text-run admission.');
   if(agent&&(!this.#agentReply||!Array.isArray(input.sources)||JSON.stringify(work.normalizeSources(input.sources))!==JSON.stringify(input.sources)))throw Error('Invalid Agent sources or host.');
   if(compact&&(input.messages.length!==1||input.messages[0].role!=='user'||typeof input.messages[0].content!=='string'||bytes(input.messages[0].content)>32000))throw Error('Context compaction requires one bounded text request.');
@@ -183,7 +195,7 @@ export class ChatRuns{
   if(occupied.length>=2||occupied.some(entry=>!entry.parallelText)||!parallelText&&occupied.length)throw Error('Two text-only Chats can run at once; Agent and image Chats need the other ordinary runs to finish first. Your draft is kept.');
   this.#tickets.delete(input.runId);
   const userContent=input.messages.at(-1).content,multimodal=Array.isArray(userContent);
-  const now=Date.now(),row={version:compact?5:multimodal?(agent?4:3):(agent?2:1),runId:input.runId,chatId:input.chatId,userMessageId:input.userMessageId,assistantMessageId:input.assistantMessageId,inputDigest:digest,userMessage:attachments.text(userContent),...(multimodal?{userContentDigest:hash(JSON.stringify(userContent))}:{}),requestedModel:input.model,resolvedModel:null,thinking:input.thinking,createdAt:now,updatedAt:now,endedAt:null,revision:1,status:'intent',content:'',reasoning:'',finishReason:null,stopRequested:false,error:null,...(agent?{kind:'agent',receipts:[],plan:[],sources:structuredClone(input.sources),pendingStep:null,budgetReached:false,nativeResult:false}:{}),...(compact?{purpose:'compact',sourceDigest:input.sourceDigest}:{})};
+  const now=Date.now(),row={version:compact?5:multimodal?(agent?4:3):(agent?2:1),runId:input.runId,chatId:input.chatId,userMessageId:input.userMessageId,assistantMessageId:input.assistantMessageId,inputDigest:digest,userMessage:attachments.text(userContent),...(multimodal?{userContentDigest:hash(JSON.stringify(userContent))}:{}),requestedModel:input.model,resolvedModel:null,thinking:input.thinking,createdAt:now,updatedAt:now,endedAt:null,revision:1,status:'intent',content:'',reasoning:'',finishReason:null,stopRequested:false,error:null,...(agent?{kind:'agent',receipts:[],plan:[],sources:structuredClone(input.sources),pendingStep:null,budgetReached:false,nativeResult:false}:{}),...(compact?{purpose:'compact',sourceDigest:input.sourceDigest}:{}),...(Object.hasOwn(input,'submission')?{submission:normalizeSubmission(input.submission)}:{})};
   this.#validate(row);this.#reserve(row.runId);const inference=this.#begin(agent?'agent':'text');let settle;const entry={row,parallelText,inference,done:new Promise(resolve=>settle=resolve),settle,timer:null,checkpoint:null,saveError:null,admission:null};this.#active.set(row.runId,entry);
   entry.admission=(async()=>{
    try{

@@ -3,6 +3,15 @@
   const agentLimits=globalThis.qwenWork.agentLimits;
   const agentMode=document.getElementById('chat-mode');if(agentMode)agentMode.title=`Agent allows up to ${agentLimits.actions} tool actions and ${agentLimits.plans} plan updates, then a final review. Context limits may end the run earlier. Chat answers without tools.`;
   const uuid=v=>typeof v==='string'&&/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(v),id=v=>typeof v==='string'&&v.length>0&&v.length<=160&&!/[\x00-\x1f\x7f]/.test(v);
+function normalizeSubmission(value){
+ const keys=['version','attemptId','path','eventType','isTrusted','observedAt','documentFocused','visibility','activeControl','submitter','retryOfUserMessageId'];
+ if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).length!==keys.length||!keys.every(key=>Object.hasOwn(value,key))||value.version!==1||!uuid(value.attemptId)||!['composer-enter','send-button','form-submit','retry'].includes(value.path)||!['keydown','click','submit','none'].includes(value.eventType)||!(value.eventType==='none'?value.isTrusted===null:typeof value.isTrusted==='boolean')||!Number.isSafeInteger(value.observedAt)||value.observedAt<0||typeof value.documentFocused!=='boolean'||!['visible','hidden','unknown'].includes(value.visibility)||!['prompt','send','retry','other','none'].includes(value.activeControl)||!['send','other','none','not-applicable'].includes(value.submitter))throw Error('Invalid submission observation.');
+ const retry=value.path==='retry',eventType={'composer-enter':'keydown','send-button':'click','form-submit':'submit',retry:'click'}[value.path];
+ if(value.eventType!==eventType&&value.eventType!=='none'||retry&&value.retryOfUserMessageId!==null&&(typeof value.retryOfUserMessageId!=='string'||!value.retryOfUserMessageId.isWellFormed()||!value.retryOfUserMessageId.length||new TextEncoder().encode(value.retryOfUserMessageId).length>160||/[\x00-\x1f\x7f]/.test(value.retryOfUserMessageId))||!retry&&value.retryOfUserMessageId!==null||retry&&value.submitter!=='not-applicable'||!retry&&value.submitter==='not-applicable'||['composer-enter','send-button'].includes(value.path)&&value.submitter!=='send')throw Error('Invalid submission observation path.');
+ // Canonical order binds the page-reported observation to the exact admitted input.
+ // This does not establish physical input, human identity, intent or tool authority.
+ return Object.fromEntries(keys.map(key=>[key,value[key]]));
+}
   const statuses=['intent','running','complete','length','stopped','error','unconfirmed'];
   let disposed=false,controller=null,watched=null,refreshing=null,timer=null,latest=null,sequence=0,stateEpoch=0,generation=null,currentChatId=null;const seen=new Map(),liveIds=new Set(),observedLive=new Set();
   const bridge=window.webkit?.messageHandlers?.tools,automaticReviews=new Set(),reviewedSteps=new Set();let reviewing=null;
@@ -13,6 +22,7 @@
   function validate(value,summary=false){
     const row=value?.run;if(!row||!uuid(row.runId)||!id(row.chatId)||!id(row.userMessageId)||!id(row.assistantMessageId)||!/^[a-f0-9]{64}$/.test(row.inputDigest)||!statuses.includes(row.status)||!Number.isSafeInteger(row.revision)||row.revision<1||!Number.isSafeInteger(value.durableRevision)||value.durableRevision<0||value.durableRevision>row.revision||typeof value.live!=='boolean'||!['saved','pending','failed'].includes(value.persistence)||!(value.saveError===null||typeof value.saveError==='string')||!summary&&(typeof row.content!=='string'||typeof row.reasoning!=='string'||typeof row.userMessage!=='string'||new TextEncoder().encode(JSON.stringify(value)).length>16*1024*1024))throw Error('Invalid saved text-run observation.');
     if(![1,2,3,4,5].includes(row.version)||row.version===5&&(row.purpose!=='compact'||row.kind!==undefined||!/^[a-f0-9]{64}$/.test(row.sourceDigest)||row.thinking!=='standard')||[3,4].includes(row.version)&&!/^[a-f0-9]{64}$/.test(row.userContentDigest)||[2,4].includes(row.version)&&(row.kind!=='agent'||!Array.isArray(row.receipts)||row.receipts.length>agentLimits.receipts||!Array.isArray(row.plan)||row.plan.length>agentLimits.plans||!Array.isArray(row.sources)||row.sources.length>8||typeof row.budgetReached!=='boolean'||typeof row.nativeResult!=='boolean'))throw Error('Invalid saved Agent observation.');
+    if(Object.hasOwn(row,'submission')){if(row.version===5)throw Error('Context compaction cannot carry ordinary submission metadata.');normalizeSubmission(row.submission);}
     if(Object.hasOwn(value,'parallelText')&&typeof value.parallelText!=='boolean')throw Error('Invalid text-run parallel eligibility.');
     const step=row.pendingStep;if(step!=null&&(!uuid(step.stepId)||!/^[a-f0-9]{64}$/.test(step.stepDigest)||typeof step.name!=='string'||!['pending','claimed'].includes(step.state)))throw Error('Invalid pending Agent action.');return value;
   }
@@ -81,10 +91,11 @@
   for(const name of ['agent-stopped','tools-stopped'])window.addEventListener(name,()=>{automaticReviews.clear();if(latest&&!disposed)render(latest);});
   async function digest(input){
     const extra=Object.hasOwn(input,'longOutput')?{longOutput:input.longOutput}:{};
-    const compact=Object.hasOwn(input,'purpose');
+    const compact=Object.hasOwn(input,'purpose'),submission=Object.hasOwn(input,'submission')?{submission:normalizeSubmission(input.submission)}:{};
+    if(compact&&Object.hasOwn(input,'submission'))throw Error('Context compaction cannot carry ordinary submission metadata.');
     if(compact&&(input.purpose!=='compact'||input.kind!==undefined||input.thinking!=='standard'||Object.hasOwn(input,'longOutput')||!/^[a-f0-9]{64}$/.test(input.sourceDigest)))throw Error('Invalid context compaction purpose.');
     if(Object.hasOwn(extra,'longOutput')&&(extra.longOutput!==true||input.thinking!=='standard'))throw Error('Long answer requires longOutput: true and Standard reasoning.');
-    const bytes=new TextEncoder().encode(JSON.stringify({chatId:input.chatId,userMessageId:input.userMessageId,assistantMessageId:input.assistantMessageId,messages:input.messages,model:input.model,thinking:input.thinking,...extra,...(input.kind==='agent'?{kind:'agent',sources:input.sources}:{}),...(compact?{purpose:'compact',sourceDigest:input.sourceDigest}:{})}));return [...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(n=>n.toString(16).padStart(2,'0')).join('');
+    const bytes=new TextEncoder().encode(JSON.stringify({chatId:input.chatId,userMessageId:input.userMessageId,assistantMessageId:input.assistantMessageId,messages:input.messages,model:input.model,thinking:input.thinking,...extra,...(input.kind==='agent'?{kind:'agent',sources:input.sources}:{}),...(compact?{purpose:'compact',sourceDigest:input.sourceDigest}:{}),...submission}));return [...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(n=>n.toString(16).padStart(2,'0')).join('');
   }
   function metadata(value){
     if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).sort().join()!=='admitted,draftCleared,imported,inputDigest,revision,runId,submittedDraft,userMessageId'||!uuid(value.runId)||!id(value.userMessageId)||!/^[a-f0-9]{64}$/.test(value.inputDigest)||!Number.isSafeInteger(value.revision)||value.revision<0||typeof value.submittedDraft!=='string'||value.submittedDraft.length>24000||['admitted','draftCleared','imported'].some(key=>typeof value[key]!=='boolean'))throw Error('Invalid saved text-run link.');return {...value};
@@ -100,21 +111,23 @@
   if(stop)stop.onclick=async()=>{if(!latest?.live)return;stop.disabled=true;try{await stopRun(latest.run.runId);}catch(error){label.textContent=error.message;}finally{stop.disabled=false;}};
   if(receipt)receipt.onclick=async()=>{
     if(!latest||document.body.inert||document.querySelector('dialog[open]'))return;
-    const runId=latest.run.runId,dialog=document.createElement('dialog'),title=document.createElement('h2'),note=document.createElement('p'),body=document.createElement('pre'),close=document.createElement('button');
+    const runId=latest.run.runId,dialog=document.createElement('dialog'),title=document.createElement('h2'),note=document.createElement('p'),body=document.createElement('pre'),origin=document.createElement('details'),originLabel=document.createElement('summary'),originData=document.createElement('div'),close=document.createElement('button');
     let presented=false;
     dialog.id='chat-run-receipt-dialog';title.id='chat-run-receipt-title';dialog.setAttribute('aria-labelledby',title.id);
     title.textContent='Loading saved result…';note.setAttribute('role','status');body.tabIndex=0;close.type='button';close.textContent='Close';
-    close.onclick=()=>window.salehWorkspace.closeDialog(dialog);dialog.append(title,note,body,close);document.body.append(dialog);dialog.addEventListener('close',()=>dialog.remove());
+    origin.id='chat-run-submission';origin.hidden=true;originLabel.textContent='Observed input path';originData.style.whiteSpace='pre-wrap';originData.style.overflowWrap='anywhere';origin.append(originLabel,originData);
+    close.onclick=()=>window.salehWorkspace.closeDialog(dialog);dialog.append(title,note,body,origin,close);document.body.append(dialog);dialog.addEventListener('close',()=>dialog.remove());
     try{
       window.salehWorkspace.openDialog(dialog,receipt);
       presented=true;
       const value=await inspect(runId);if(disposed||!dialog.isConnected||!dialog.open)return;
       if(!value.run)throw Error('This saved run is unavailable. No history was recreated.');
+      origin.hidden=value.run.purpose==='compact';originData.textContent=Object.hasOwn(value.run,'submission')?'Page-reported observation. This does not prove who initiated the request or grant tool access.\n'+JSON.stringify(normalizeSubmission(value.run.submission),null,2):'Submission observation unavailable for this saved result.';
       title.textContent=(fullySaved(value)?'Saved ':'')+(value.run.purpose==='compact'?'context summary':value.run.kind==='agent'?'Agent result':'Chat result');note.textContent=(fullySaved(value)?'':value.persistence==='failed'||value.saveError?'Saving failed; the latest result is not fully saved. ':'Saving pending; the latest result is not fully saved. ')+(value.saveError||'Read-only receipt. Missing or deleted chats are not recreated; this does not start another generation.');body.textContent=value.run.userMessage+'\n\n'+value.run.content+(value.run.reasoning?'\n\nModel reasoning · model output:\n'+value.run.reasoning:'')+(value.run.kind==='agent'?'\n\nAction receipts:\n'+JSON.stringify(value.run.receipts,null,2):'')+(value.run.error?'\n\n'+value.run.error:'');
     }catch(error){if(disposed||!dialog.isConnected)return;if(dialog.open){title.textContent='Result could not load';note.textContent=error.message;}else{dialog.remove();if(!presented)label.textContent=error.message;}}
   };
   window.addEventListener('pagehide',()=>{disposed=true;automaticReviews.clear();clearTimeout(timer);detach();});
   window.addEventListener('visibilitychange',()=>{if(!document.hidden)void refresh().catch(()=>{});});
-  window.SalehChatRuns={contentDigest:async content=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(content))))].map(n=>n.toString(16).padStart(2,'0')).join(''),request,inspect,stop:stopRun,allowAgentReview:runId=>{if(!uuid(runId))throw Error('Invalid Agent run ID.');automaticReviews.add(runId);},digest,metadata,watch,refresh,validate,receive:observed,generation:async()=>{const value=await request({action:'list'});if(!uuid(value.generation))throw Error('Text admission is not ready. Refresh saved runs first.');generation=value.generation;return generation;}};
+  window.SalehChatRuns={contentDigest:async content=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(content))))].map(n=>n.toString(16).padStart(2,'0')).join(''),request,inspect,stop:stopRun,allowAgentReview:runId=>{if(!uuid(runId))throw Error('Invalid Agent run ID.');automaticReviews.add(runId);},digest,submission:normalizeSubmission,metadata,watch,refresh,validate,receive:observed,generation:async()=>{const value=await request({action:'list'});if(!uuid(value.generation))throw Error('Text admission is not ready. Refresh saved runs first.');generation=value.generation;return generation;}};
   timer=setTimeout(()=>{void refresh().catch(()=>{});},0);
 })();

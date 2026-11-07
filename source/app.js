@@ -454,7 +454,7 @@ function renderMessages(onlyLast = false) {
       }
       if (!m.agent && m === chat.messages.at(-1) && ['error', 'stopped', 'length', 'unconfirmed'].includes(displayState)) {
         const retry = document.createElement('button'); retry.textContent = 'Retry'; retry.className = 'retry-reply'; retry.disabled = storageHydrating||storageBlocked||runBlocked(chat) || computerBusy || attachmentReads.has(chat);
-        retry.onclick = () => { if (storageHydrating||storageBlocked||restoring||structuralPending||deletingChats.has(chat.id)||runBlocked(chat) || computerBusy || attachmentReads.has(chat) || !chatModelState(chat).ready) return; const prior=chat.messages.slice(0,chat.messages.indexOf(m)).findLast(row=>row.role==='user');if(!prior||!messageRoom(chat))return;chat.messages.push({id:crypto.randomUUID(),role:'user',content:prior.content,...(prior.attachments?{attachments:attachments.normalize(prior.attachments)}:{}),state:'complete'});generate(chat,true); }; actions.append(retry);
+        retry.onclick = event => { if (storageHydrating||storageBlocked||restoring||structuralPending||deletingChats.has(chat.id)||runBlocked(chat) || computerBusy || attachmentReads.has(chat) || !chatModelState(chat).ready) return; const prior=chat.messages.slice(0,chat.messages.indexOf(m)).findLast(row=>row.role==='user');if(!prior||!messageRoom(chat))return;const submission=submissionOrigin('retry',event,{retryOfUserMessageId:prior.id});chat.messages.push({id:crypto.randomUUID(),role:'user',content:prior.content,...(prior.attachments?{attachments:attachments.normalize(prior.attachments)}:{}),state:'complete'});generate(chat,true,submission); }; actions.append(retry);
       }
       article.append(actions);
     }
@@ -715,7 +715,7 @@ $('compaction-full-history').onclick=()=>{void useFullHistory();};
 $('compaction-rebuild').onclick=()=>{void compactCurrent({rebuild:true});};
 $('compaction-apply').onclick=()=>{const chat=current(),job=contextCompaction.state(chat).records.at(-1),value=job&&compactionResults.get(job.runId);if(job&&value)void applyCompaction(chat,job,value);};
 $('compaction-originals').onclick=()=>{const chat=current(),saved=contextCompaction.state(chat),job=saved.records.find(row=>row.id===saved.activeId)??saved.records.at(-1),id=job?.source.covered[0]?.id,article=[...$('messages').children].find(node=>node.dataset.id===id);if(article){article.tabIndex=-1;article.focus({preventScroll:true});article.scrollIntoView({block:'center'});}};
-async function generateRun(chat,selection,preserveDraft) {
+async function generateRun(chat,selection,preserveDraft,submission) {
   const user=chat.messages.at(-1);if(user?.role!=='user')return;
   const body=document.body,url=location.href,userText=user.content,userFiles=user.attachments,sourceCount=chat.messages.length,projectionToken=contextCompaction.projectionToken(chat,sourceCount);
   const reply={id:crypto.randomUUID(),role:'assistant',content:'',state:'streaming',...(selection.mode==='agent'?{agent:true,receipts:[]}: {})},runId=crypto.randomUUID(),submittedDraft=chat.draft;
@@ -740,7 +740,7 @@ async function generateRun(chat,selection,preserveDraft) {
     const messages=qwenWork.boundContext(context,sources,selection.mode,null,selection.contextLength,budget.responseReserve+2048);
     const raw=rawContext.map(message=>JSON.stringify(message));let retained=0;for(const message of messages)if(JSON.stringify(message)===raw[retained])retained++;
     if(retained!==raw.length)throw Error('Unsettled original history does not fit this request without omission. Your draft is kept; inspect the earlier outcome before continuing.');
-    const input={runId,chatId:chat.id,userMessageId:user.id,assistantMessageId:reply.id,messages,model:selection.model,thinking:selection.thinking,...(selection.longOutput===true?{longOutput:true}:{}),...(selection.mode==='agent'?{kind:'agent',sources}:{})};
+    const input={runId,chatId:chat.id,userMessageId:user.id,assistantMessageId:reply.id,messages,model:selection.model,thinking:selection.thinking,submission:window.SalehChatRuns.submission(submission),...(selection.longOutput===true?{longOutput:true}:{}),...(selection.mode==='agent'?{kind:'agent',sources}:{})};
     reply.textRun=window.SalehChatRuns.metadata({runId,userMessageId:user.id,inputDigest:await window.SalehChatRuns.digest(input),revision:0,admitted:false,draftCleared:preserveDraft,submittedDraft,imported:false});
     if(!validAdmission())throw Error(admission.cancelled?'Stopped before text admission. The draft is kept.':'Chat or document changed before text admission. The draft is kept.');
     if(!chats.includes(chat)||chat.messages.at(-1)!==user)throw Error('Chat changed before text admission. The draft is kept.');
@@ -763,11 +763,11 @@ async function generateRun(chat,selection,preserveDraft) {
   }catch(error){if(chat.messages.includes(reply)){reply.state='unconfirmed';reply.note=error.message;void save();}notice(error.message);}
   finally{if(activeRuns.get(runId)===admission&&admission.admitting)activeRuns.delete(runId);renderSidebar();refreshReply(chat);controls();void window.SalehChatRuns.refresh().catch(()=>{});}
 }
-async function generate(chat,preserveDraft=false) {
+async function generate(chat,preserveDraft=false,submission) {
   if (storageHydrating||storageBlocked||restoring||structuralPending||deletingChats.has(chat.id)||runBlocked(chat) || computerBusy || attachmentReads.has(chat) || !textRunsReady) return;
   const eligibility = chatModelState(chat); if (!eligibility.ready) {notice(eligibility.reason); return;}
   const selection = {model: chat.model, thinking: chat.thinking, mode: chat.mode,contextLength:eligibility.entry.contextLength,...(chat.longOutput===true?{longOutput:true}:{})};
-  return generateRun(chat,selection,preserveDraft);
+  return generateRun(chat,selection,preserveDraft,submission);
 }
 async function readBackupSelection(files) {
   if(files.length>2048||files.some(file=>file.size>qwenWork.backupLimit)||files.reduce((n,f)=>n+f.size,0)>514*1024*1024)throw Error('Select all backup parts together, up to 32 MB each and 514 MB in total.');
@@ -833,23 +833,46 @@ $('recovery-file').onchange=async()=>{
     render();notice('Exact recovery saved. Original chat and message IDs, run links and prior history were kept; the previous destination snapshot was retained.');
   }catch(error){notice('Exact recovery not applied. '+(error instanceof SyntaxError?'The file is not valid JSON.':error.message)+' Current history was kept.');}finally{restoring=false;controls();try{if(!storageBlocked&&!pageDisposed&&captureSnapshot().payload!==lastSavedSnapshot)scheduleSave();}catch(error){persistenceFailure(error);}}
 };
+let composerSubmission=null,promptComposing=false;
+function submissionOrigin(path,event,{submitter='not-applicable',retryOfUserMessageId=null}={}){
+  const active=document.activeElement,eventType=event instanceof Event&&['keydown','click','submit'].includes(event.type)?event.type:'none';
+  // Legacy/imported IDs can exceed the receipt bound. Preserve Retry and record
+  // an unavailable reference instead of truncating an ID or logging more text.
+  if(path==='retry'&&retryOfUserMessageId!==null&&(typeof retryOfUserMessageId!=='string'||!retryOfUserMessageId.isWellFormed()||!retryOfUserMessageId.length||new TextEncoder().encode(retryOfUserMessageId).length>160||/[\x00-\x1f\x7f]/.test(retryOfUserMessageId)))retryOfUserMessageId=null;
+  return window.SalehChatRuns.submission({version:1,attemptId:crypto.randomUUID(),path,eventType,isTrusted:eventType==='none'?null:event.isTrusted===true,observedAt:Date.now(),documentFocused:document.hasFocus(),visibility:['visible','hidden'].includes(document.visibilityState)?document.visibilityState:'unknown',activeControl:active===$('prompt')?'prompt':active===$('send')?'send':path==='retry'&&active===event?.currentTarget?'retry':!active||active===document.body?'none':'other',submitter,retryOfUserMessageId});
+}
+function requestComposerSubmit(path,event){
+  // Keep the originating event only for this synchronous requestSubmit call.
+  // A later script/form submission must never inherit an earlier click or key.
+  const observed=submissionOrigin(path,event,{submitter:'send'});composerSubmission=observed;
+  try{$('composer').requestSubmit($('send'));}finally{if(composerSubmission===observed)composerSubmission=null;}
+}
+$('send').addEventListener('click',event=>{if(event.defaultPrevented)return;event.preventDefault();requestComposerSubmit('send-button',event);});
 $('composer').onsubmit = event => {
-  event.preventDefault();const command=contextCompaction.classify($('prompt').value);if(command!=='text'){if(command==='compact')void compactCurrent();else notice('Use /compact as a standalone command, or choose Compact context. Your draft and attachments are kept.');return;}
+  event.preventDefault();const observed=composerSubmission;composerSubmission=null;const command=contextCompaction.classify($('prompt').value);if(command!=='text'){if(command==='compact')void compactCurrent();else notice('Use /compact as a standalone command, or choose Compact context. Your draft and attachments are kept.');return;}
   if (storageHydrating||storageBlocked||restoring||structuralPending||deletingChats.has(current().id)||runBlocked(current()) || computerBusy || attachmentReads.has(current()) || !textRunsReady) return;
   const text = $('prompt').value.trim(); if (!text&&!draftAttachments(current()).length) return;
   const chat = current(), eligibility = chatModelState(chat);
   if (!eligibility.ready) {notice(eligibility.reason); return;}
   if(!messageRoom(chat))return;
+  const submitter=event.submitter===$('send')?'send':event.submitter?'other':'none',submission=observed?window.SalehChatRuns.submission({...observed,submitter}):submissionOrigin('form-submit',event,{submitter});
   const files=attachments.normalize(draftAttachments(chat)),message={ id: crypto.randomUUID(), role: 'user', content: text, state: 'complete',...(files.length?{attachments:files}:{}) };
   chat.messages.push(message);
   if(files.length){delete chat.draftAttachments;chat.draftAttachmentMessageId=message.id;}
   if (chat.messages.length === 1 && chat.title === 'New chat') chat.title = (text||files.map(file=>file.name).join(', ')).replace(/\s+/g, ' ').slice(0, 56);
-  generate(chat);
+  generate(chat,false,submission);
 };
 window.addEventListener('computer-busy', event => { computerBusy = event.detail; controls(); });
 for (const event of ['agent-stopped','tools-stopped']) window.addEventListener(event, stopped => {attachmentReads.clear();renderDraftAttachments();agentView=null;for(const entry of compactionAdmissions.values())entry.cancelled=true;for(const entry of activeRuns.values())if(entry.kind==='compact'||entry.admitting&&(!stopped.detail?.departure||!entry.dispatched))entry.cancelled=true;void window.SalehChatRuns.refresh().catch(()=>{});document.querySelectorAll('.agent-view').forEach(image=>image.remove());renderMessages(true);});
 $('prompt').addEventListener('input', () => { current().draft = $('prompt').value; scheduleSave(); resize(); controls(); });
-$('prompt').addEventListener('keydown', event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); $('composer').requestSubmit(); } });
+$('prompt').addEventListener('compositionstart',()=>{promptComposing=true;});
+$('prompt').addEventListener('compositionend',()=>{promptComposing=false;});
+$('prompt').addEventListener('blur',()=>{promptComposing=false;});
+$('prompt').addEventListener('keydown',event=>{
+  if(event.defaultPrevented||event.key!=='Enter'||event.shiftKey||event.isComposing||promptComposing||event.keyCode===229)return;
+  event.preventDefault();if(event.repeat)return;
+  requestComposerSubmit('composer-enter',event);
+});
 $('chat-mode').onchange=()=>{if(activeFor(current()))return;current().mode=$('chat-mode').value;void save();controls();};
 $('thinking').onchange = () => { if (activeFor(current())) return; const value=$('thinking').value;if(!['standard','long','deep'].includes(value))return;current().thinking=value==='long'?'standard':value;if(value==='long')current().longOutput=true;else delete current().longOutput;void save();controls(); };
 $('chat-model').onchange = () => {if (activeFor(current()) || computerBusy) return; current().model = $('chat-model').value; pendingModelDefaults.delete(current()); void save(); controls();};
