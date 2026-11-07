@@ -589,7 +589,7 @@ function renderCompaction(){
       compactionViews.delete(chat);region.dataset.state='full';
       $('compaction-status').textContent='Full history is in use.';$('compaction-details').hidden=true;$('compaction-summary').textContent='';$('compaction-range').textContent='';
       for(const id of ['compaction-apply','compaction-full-history','compaction-rebuild']){$(id).hidden=true;$(id).disabled=true;}
-      $('compact-context').disabled=blocked;$('compact-context').title='Summarize complete earlier exchanges, up to 24,000 bytes per step; the newest exchange stays in full.';return;
+      $('compact-context').disabled=blocked;$('compact-context').title=contextCompaction.stepHint;return;
     }
     const token=contextCompaction.viewToken(chat);
     $('compact-context').disabled=blocked;
@@ -602,7 +602,7 @@ function renderCompaction(){
       const busy=!!compactionBlocked(chat);region.dataset.state=view.status;
       $('compaction-status').textContent=view.message+(view.pending&&activeRuns.has(view.runId)?' Use Stop to cancel this summary.':'');
       $('compaction-details').hidden=!view.summary;$('compaction-summary').textContent=view.summary;$('compaction-range').textContent=view.range;
-      $('compact-context').disabled=busy||view.status==='stale';$('compact-context').title=view.status==='stale'?'Choose Rebuild summary to use the original history with the current settings.':'Summarize complete earlier exchanges, up to 24,000 bytes per step; the newest exchange stays in full.';
+      $('compact-context').disabled=busy||view.status==='stale';$('compact-context').title=view.status==='stale'?'Choose Rebuild summary to use the original history with the current settings.':contextCompaction.stepHint;
       $('compaction-full-history').disabled=busy;
       $('compaction-rebuild').disabled=busy||!view.canRebuild;
       $('compaction-apply').hidden=!view.canApply||!compactionResults.has(view.runId);$('compaction-apply').disabled=busy;
@@ -643,7 +643,7 @@ async function applyCompaction(chat,job,value){
       const next={...chat,contextCompactions:{...saved,activeId:job.id,records:saved.records.map(row=>row.id===job.id?complete:row)}};
       return {value:{...snapshotFields,chats:chats.map(row=>row===chat?next:row),selectedId},apply:()=>{chat.contextCompactions=next.contextCompactions;}};
     });
-    notice('Context compacted for '+job.source.covered.length+' earlier messages. Original history and the current draft are kept.');
+    notice(contextCompaction.operationMessage(chat,job));
   }catch(error){notice('Summary not applied. '+error.message);}finally{compactionApplying.delete(job.runId);compactionAdmissions.delete(job.runId);controls();}
 }
 async function mergeCompactionRun(value){
@@ -695,7 +695,7 @@ async function compactCurrent({rebuild=false}={}){
     if(!valid())throw Error('Stopped before compaction admission. The draft is kept.');
     await changeSnapshot(()=>{
       if(!valid()||contextCompaction.compareToken(chat,source)!==token)throw Error('The source range changed before compaction. No request was sent.');
-      const saved=contextCompaction.state(chat),next={...chat,contextCompactions:{...saved,records:[...saved.records,job]}};
+      const next=contextCompaction.append(chat,job);
       return {value:{...snapshotFields,chats:chats.map(row=>row===chat?next:row),selectedId},apply:()=>{chat.contextCompactions=next.contextCompactions;}};
     });
     compactionAdmissions.set(runId,admission);const prepared=await window.SalehChatRuns.request({action:'prepare',runId,inputDigest:job.inputDigest,generation});
