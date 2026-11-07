@@ -8,6 +8,10 @@ ADAPTER = Path(__file__).resolve().parents[1] / "release_host.py"
 spec = importlib.util.spec_from_file_location("noiee_release_input_fixture", ADAPTER)
 release = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(release)
+CAPTURE = ADAPTER.with_name("capture_closed_boundary.py")
+capture_spec = importlib.util.spec_from_file_location("noiee_closed_boundary_fixture", CAPTURE)
+capture = importlib.util.module_from_spec(capture_spec)
+capture_spec.loader.exec_module(capture)
 
 
 class Inputs(unittest.TestCase):
@@ -107,7 +111,7 @@ class Inputs(unittest.TestCase):
             command.extend(["-framework", framework])
         command.extend([str(self.source / "App.swift"), "-o", binary["path"]])
         return base, {
-            "fixtureOnly": True, "schemaVersion": 2, "build": 172,
+            "fixtureOnly": True, "schemaVersion": 2, "build": 173,
             "sourceDirectory": str(self.source), "sourceCommit": self.frozen["gitCommit"],
             "sourceManifest": self.files, "nativeFiles": {"App.swift": self.files["App.swift"]["sha256"]},
             "gitStatus": "", "sourceStableDuringBuild": True, "releaseEligible": True, "development": False,
@@ -247,6 +251,51 @@ class Inputs(unittest.TestCase):
         value, refs = self.check_native(base, receipt)
         self.assertTrue(value["fixtureOnly"])
         self.assertEqual(len(refs), 4)
+
+    def test_previous_build_native_receipt_refused(self):
+        base, receipt = self.native()
+        receipt["build"] = 172
+        with self.assertRaisesRegex(RuntimeError, "Release-eligible"):
+            self.check_native(base, receipt)
+
+    def test_capture_and_adapter_bind_the_same_predecessor(self):
+        self.assertEqual(hashlib.sha256(CAPTURE.read_bytes()).hexdigest(), release.CAPTURE_SHA)
+        self.assertEqual(release.OLD, capture.STAGE172)
+        self.assertEqual(release.RELEASE, capture.RELEASE)
+        self.assertEqual(release.OLD_PINS["candidate-receipt.json"], capture.PACKAGE_SHA)
+        self.assertEqual(release.OLD_PINS["candidate-bundle-manifest.json"], capture.BUNDLE_SHA)
+        self.assertEqual(release.HELPER_PINS["build-candidate.py"], capture.HELPER_SHA)
+
+    def capture_fixture(self, build):
+        # Every observed byte and callback is generated. The actual app path is
+        # passed only to these fakes; no process, store or release phase is used.
+        from unittest.mock import Mock
+        import plistlib
+        bundle = {"generated-entry": {"sha256": "b" * 64}}
+        catalog = {"generated-owner": True}
+        snapshot = Mock(return_value=({"generated-store": None}, {"generated-identity": None}))
+        h = {"boot_session": lambda: "generated-boot", "requirement": lambda _: "generated-signature",
+             "manifest": lambda _: bundle, "data_snapshot": snapshot}
+        info = plistlib.dumps({"CFBundleIdentifier": "com.saleh.qwenlocal.chat",
+                              "CFBundleExecutable": "QwenLocal", "CFBundleVersion": build})
+        with patch.object(capture, "require_stopped"), patch.object(capture, "catalog_state", return_value=catalog), \
+                patch.object(capture, "regular_bytes", return_value=info):
+            try:
+                return capture.observe(h, bundle), snapshot
+            except RuntimeError:
+                snapshot.assert_not_called()
+                raise
+
+    def test_capture_observes_build172_fixture(self):
+        value, snapshot = self.capture_fixture("172")
+        self.assertEqual(value["installedBuild"], "172")
+        self.assertEqual(value["dataManifests"], {"generated-store": None})
+        snapshot.assert_called_once_with()
+
+    def test_capture_refuses_wrong_build_before_store_observation(self):
+        for build in ("171", "173", "unknown"):
+            with self.subTest(build=build), self.assertRaisesRegex(RuntimeError, "Unexpected predecessor"):
+                self.capture_fixture(build)
 
     def test_development_native_refused(self):
         base, receipt = self.native()

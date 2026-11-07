@@ -12,7 +12,7 @@ guard apps.count == 1, let app = apps.first,
       AXIsProcessTrusted() else { fputs("Expected installed app and granted accessibility access.\n", stderr); exit(2) }
 let build = Bundle(url: app.bundleURL!)?.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
 let mutating = mode == "press" || mode == "set" || mode == "key"
-guard !mutating || build == "172" else { fputs("Native acceptance mutations require installed Build 172.\n", stderr); exit(2) }
+guard !mutating || build == "173" else { fputs("Native acceptance mutations require installed Build 173.\n", stderr); exit(2) }
 
 func attr(_ e: AXUIElement, _ key: String) -> CFTypeRef? {
     var value: CFTypeRef?
@@ -48,7 +48,7 @@ func walk(_ e: AXUIElement, _ depth: Int) {
             if role == kAXTextAreaRole || role == kAXTextFieldRole {
                 let value = attr(e,kAXValueAttribute) as? String ?? ""
                 row["valueLength"] = value.count
-                row["acceptanceText"] = value.hasPrefix("NOIEE172") ? String(value.prefix(600)) : ""
+                row["acceptanceText"] = value.hasPrefix("NOIEE173") ? String(value.prefix(600)) : ""
                 var settable = DarwinBoolean(false)
                 row["settable"] = AXUIElementIsAttributeSettable(e,kAXValueAttribute as CFString,&settable) == .success && settable.boolValue
             }
@@ -78,7 +78,7 @@ else if mode == "press" || mode == "set" {
     else {
         guard args.count == 4, [kAXTextAreaRole,kAXTextFieldRole].contains(args[2]) else { exit(2) }
         let file = URL(fileURLWithPath:args[3]).standardizedFileURL
-        guard file.path.hasPrefix("/Users/saleh/Documents/Noiee/updates/build172/acceptance/") else { exit(2) }
+        guard file.path.hasPrefix("/Users/saleh/Documents/Noiee/updates/build173/acceptance/") else { exit(2) }
         let value = try String(contentsOf:file,encoding:.utf8)
         guard value.utf8.count <= 8192 else { exit(2) }
         report["setResult"] = AXUIElementSetAttributeValue(matches[0],kAXValueAttribute as CFString,value as CFString).rawValue
