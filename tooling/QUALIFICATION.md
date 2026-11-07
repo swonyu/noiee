@@ -6,7 +6,7 @@ Run from the final committed checkout:
 python3 -B tooling/qualify.py
 ~~~
 
-The runner executes compaction/recovery, model stabilization, startup diagnostics and build tools, presentation, MCP/skills, Fetch, worktrees, and release input gates in order. It stops on the first failed suite, preserves the failed command and output, and emits an ineligible report. It never invokes a release phase, the installed app, original app stores or a live model.
+The runner executes compaction/recovery, model stabilization, startup diagnostics and build tools, presentation, Goals, submission origins, MCP/skills, Fetch, worktrees, and release input gates in order. It stops on the first failed suite, preserves the failed command and output, and emits an ineligible report. It never invokes a release phase, the installed app, original app stores or a live model.
 
 Each run has an exclusive directory under this checkout's .artifacts. qualification.json binds the final Git commit, the complete flat source namespace, source stability, actual suite commands, process exits, pass/fail counts and separate logs and execution RESULT files. Every suite RESULT retains its actual constituent command records and opaque copies of the unchanged raw reports. Logs, templates and generated fixture scripts referenced by those reports are copied into the current qualification's evidence directory when directly referenced; original execution paths remain plain provenance strings. Old reports never supply fresh pass counts.
 
@@ -33,3 +33,19 @@ Generated fixture state remains under private Caches directories where the exist
 
 
 Python workers launch the interpreter resolved from the actual `sys.orig_argv[0]` invocation identity. On macOS framework builds, `sys.executable` can name a launcher that execs a different Python.app binary; using that launcher would make an otherwise passing child report a different command. The executor keeps exact command equality and rejects a genuinely different executable or argument list. It never rewrites an older execution receipt to make its command match.
+
+## Goal and submission coverage
+
+The required Goals family runs the bounded ledger/admission fixtures and the real Tasks page against a fake native bridge. It checks explicit continuation, attempt limits, retained uncertainty, owner/project/model scope, pause/resume, manual completion evidence, cold storage reads, editor/composer preservation, stale and mis-scoped replies, unavailable capabilities and failed draft persistence. It reports actual unique assertion counts.
+
+The submission-origin family runs the ordinary run backend and browser fixtures. It checks exact digest/admission binding, legacy receipt reads without migration, bounded input observations, IME/repeat/default submission behavior, Retry and reload without resend. Generated or scripted browser events remain eligible under existing guards; observed trust never replaces authorization.
+
+These suites do not establish native accessibility, real macOS IME behavior, real-model quality or the installed native Goal restoration fence. A disposable installed-runtime protocol probe and installed-app acceptance are separately identified evidence; they must not be folded into generated pass counts.
+
+## Build175 installed-runtime Goal fence
+
+A separate disposable protocol qualification exercised the exact installed Codex runtime (0.167.0-alpha.3.2, SHA256 a636331ed87605efc4cf84028ac2884a75363f9d10ead63cffb57ea0016d486e). It used new test homes/projects, a read-only sandbox and an inert loopback provider. The enabled positive control restored an active native Goal and started one turn/provider request. With the feature disabled, cold resume started no turn during two independent eight-second observations. One explicitly requested text-only turn completed, followed by an eight-second observation with no additional continuation. Re-enabling the getter in a later process confirmed that the original active Goal was still retained.
+
+The disabled native Goal getter returns RPC -32600, "goals feature is disabled". This is evidence of feature disablement under the qualified runtime, not evidence of absent native Goal state. Noiee requires the exact runtime pin, verified disabled configuration, disabled launch/thread overrides and only the recognized disabled-feature response or an explicit null result. Other errors or uncertain configuration hold continuation.
+
+The 38 positive checks and retained initial refusal are separate from the generated suite count. Their manifest is /Users/saleh/Documents/Noiee/updates/build175/runtime-goal-fence/QUALIFICATION.json, SHA256 593df160589573432afdb6f07d89359387c32b8f654eb053d1d25d8be4b7aa3e. It binds runner source, raw protocol, fake-provider traffic, command, environment, process exits and receipt hashes. This is bounded observed evidence on that binary; it does not prove other runtime versions, real model quality or native UI behavior. A runtime change requires renewed compatibility and Goal-fence qualification.

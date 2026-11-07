@@ -1,6 +1,6 @@
 # Noiee
 
-Noiee is the native macOS local AI workspace formerly named Saleh Uncensored. This checkout is the versioned development source for Build 174. The accepted Build 173 predecessor is retained at tag `noiee-build173`; the original Build 171 source and its `noiee-build171-source` baseline remain separate and unchanged.
+Noiee is the native macOS local AI workspace formerly named Saleh Uncensored. This checkout is the versioned development source for Build 175. The accepted Build 174 predecessor is retained at tag `noiee-build174`; the original Build 171 source and its `noiee-build171-source` baseline remain separate and unchanged.
 
 ## Layout
 
@@ -15,6 +15,12 @@ The `source/node_modules` link points to the verified owned dependency snapshot 
 ## Workflow improvements
 
 The shared command palette opens with Cmd+Shift+P or the existing Cmd+J shortcut. Commands call existing guarded controls and preserve drafts; Cmd+K remains New chat. The Chat composer states that tools are off, while Agent shows the current launch policy. Delegated Tasks show their own result and a verified Return to parent action. Explicit inherited-parent history is collapsed, and command execution remains separate from verification. Retained failed startups have a bounded recovery summary.
+
+The Tasks Goal panel saves an objective, explicit completion criteria and a 1–20 continuation-attempt limit. Save, inspection, pause, resume and reopening do not start work. Continue goal requests one turn through ordinary native task admission, using the visible Plan/Build and Standard/Deep settings. Pause blocks the next continuation; the existing Stop control interrupts current work. The Goal keeps its own editor draft while preserving the ordinary message draft. Completion requires a deliberate review with saved evidence and does not establish automatic verification.
+
+Goal attempts keep exact turn identity, contract revision and digest, the limit at dispatch, and the observed outcome. Changed criteria do not reset consumed attempts. A raised exhausted limit stays paused until explicit Resume. Uncertain starts consume their reserved attempt and are never retried automatically. Completed Goals remain read-only; archived root tasks can inspect their saved Goal. The retained Goal ledger is bounded to 64 contracts and 8 MiB; reaching a bound refuses the next write without deleting history. Automatic multi-turn pursuit and enforced token budgets are not implemented.
+
+Ordinary Chat/Agent receipts now retain a bounded, versioned observation of Enter, Send, form submission or Retry, with event trust, page focus and visibility. These page observations contain no keystroke stream or extra message body and grant no authority. They are part of the existing input digest and admission identity. Legacy receipts remain readable without rewriting. Composition, repeated Enter and already-prevented keyboard events are guarded; an unattributed programmatic form submission is labeled as such. This does not establish who initiated a historical request.
 
 [CODEX_PARITY.md](CODEX_PARITY.md) records the scoped parity target, existing capabilities, and remaining gaps. Source implementation, generated qualification and installed native acceptance are separate evidence.
 
@@ -31,12 +37,12 @@ Tasks derives its execution context and automatic-compaction threshold from the 
 Use a clean committed checkout for a release build:
 
 ```sh
-python3 -B tooling/build_native.py --build 174
+python3 -B tooling/build_native.py --build 175
 ```
 
 This compiles all native sources and runs the built-in native checks without opening the installed app. Each run creates an exclusive receipt containing source, compiler, SDK, command, binary and log hashes. A `--development` build is explicitly ineligible for release.
 
-See [tooling/README.md](tooling/README.md) for startup checks and backup coverage inspection. See [tooling/RELEASE.md](tooling/RELEASE.md) for the complete Build 173 to Build 174 qualification, capture, signing and guarded installation process. Do not run a historic release recipe or rewrite a prior receipt.
+See [tooling/README.md](tooling/README.md) for startup checks and backup coverage inspection. See [tooling/RELEASE.md](tooling/RELEASE.md) for the complete Build 174 to Build 175 qualification, capture, signing and guarded installation process. Do not run a historic release recipe or rewrite a prior receipt.
 
 `tooling/check_live_profile.mjs` is an explicitly invoked real-model qualification harness. It uses a generated project and isolated native engine home; its result is separate from installed native UI acceptance. Live tests must run serially under the release owner. Never label generated fixtures or a compiler check as a completed user task.
 
