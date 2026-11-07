@@ -19,6 +19,7 @@ const outputRoot=path.join(root,'.artifacts','live-profile');await fs.mkdir(outp
 const output=await fs.mkdtemp(path.join(outputRoot,'run-'));
 const names=['coding-engine.mjs','coding-context.mjs','coding-local.mjs','coding-runtime.mjs','coding-runtime-contract.json','local-models.mjs','model-policy.js'];
 const hashes=async()=>Object.fromEntries(await Promise.all(names.map(async name=>[name,createHash('sha256').update(await fs.readFile(path.join(root,'source',name))).digest('hex')])));
+const runnerBytes=await fs.readFile(fileURLToPath(import.meta.url));
 const sourceBefore=await hashes(),wire=[],turns=[],waiters=new Map();
 let engine,childPID=null,buffer='',wireErrors=0,requestedStop=false;
 const observed=new Map();
@@ -39,7 +40,7 @@ const waitTurn=id=>observed.has(id)?Promise.resolve(observed.get(id)):new Promis
   const timer=setTimeout(()=>{waiters.delete(id);reject(Error('Live qualification turn timed out.'));},180000);
   waiters.set(id,{resolve:value=>{clearTimeout(timer);resolve(value);},reject});
 });
-const report={version:1,startedAt:new Date().toISOString(),fixture,output,project,dataDir,sourceDirectory:path.join(root,'source'),sourcePins:sourceBefore,scope:'Real installed Codex app-server and loaded LM Studio model, using shipped Noiee engine/context/relay code in an isolated generated home/project. This is not installed native UI acceptance; no original owner catalog or user history is opened.',turns,wire,exitCode:1,passed:0,failed:1};
+const report={version:1,command:[process.execPath,...process.execArgv,...process.argv.slice(1)],runner:{path:fileURLToPath(import.meta.url),sha256:createHash('sha256').update(runnerBytes).digest('hex')},startedAt:new Date().toISOString(),fixture,output,project,dataDir,sourceDirectory:path.join(root,'source'),sourcePins:sourceBefore,scope:'Real installed Codex app-server and loaded LM Studio model, using shipped Noiee engine/context/relay code in an isolated generated home/project. This is not installed native UI acceptance; no original owner catalog or user history is opened.',turns,wire,exitCode:1,passed:0,failed:1};
 try{
   const catalog=new LocalModelCatalog(),inventory=await catalog.catalog();
   assert.equal(inventory.online,true,inventory.message);
@@ -90,9 +91,7 @@ try{
   assert.ok(usages.length>0,'Real native token usage must be observed');
   const windows=[...new Set(usages.map(row=>row.modelContextWindow).filter(value=>value!==undefined&&value!==null))];
   report.observedContextWindows=windows;
-  // Codex reports its effective input window (95% of the configured window).
-  const configured=selected.contextLength,effective=Math.floor(configured*0.95);
-  assert.ok(windows.length>0&&windows.every(value=>value===configured||value===effective),'Native reported window must match the loaded profile or its documented 95% effective input window');
+  assert.ok(windows.length>0&&windows.every(value=>value===selected.contextLength),'Native reported window must match the configured loaded profile; any effective-window difference needs separate verification.');
   report.compactionItems=wire.filter(row=>/compact/i.test(row.type??''));
   if(compact)assert.ok(report.compactionItems.some(row=>row.method==='item/completed'),'Automatic native context compaction must complete');
   assert.equal(wireErrors,0,'Native protocol JSON must be readable');
@@ -101,6 +100,7 @@ try{
 }catch(error){report.error=String(error?.stack??error);console.log(JSON.stringify({phase:'failed',error:error.message}));}
 finally{
   if(engine){requestedStop=true;try{await engine.stop();await engine.disposal;report.processExitConfirmed=engine.processLife===null&&!engine.child&&!engine.exitUnconfirmed;}catch(error){report.stopError=error.message;report.exitCode=1;report.failed=1;}}
+  if(report.processExitConfirmed!==true){report.exitCode=1;report.failed=1;report.cleanupUnconfirmed=true;}
   report.childPID=childPID;report.stopRequested=requestedStop;report.completedAt=new Date().toISOString();
   await fs.writeFile(path.join(output,'RESULT.json'),JSON.stringify(report,null,2)+'\n',{flag:'wx',mode:0o600});
   console.log(JSON.stringify({report:path.join(output,'RESULT.json'),exitCode:report.exitCode,passed:report.passed,failed:report.failed,processExitConfirmed:report.processExitConfirmed}));
