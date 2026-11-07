@@ -140,6 +140,112 @@ struct StartupFixture {
         let linked = root.appendingPathComponent("linked", isDirectory: true)
         try FileManager.default.createSymbolicLink(at: linked, withDestinationURL: root.appendingPathComponent("reports"))
         refuses(.invalidConfiguration) { _ = try NoieeStartupReports.write(report, root: linked.appendingPathComponent("Startup")) }
-        print("{\"passed\":\(checks),\"failed\":0,\"appLaunches\":0,\"modelRequests\":0,\"originalStoreActions\":0,\"scope\":\"generated process, socket, config and support-report fixtures\"}")
+
+        // Deterministic event orderings for the same lifecycle value used by App.
+        // These fixtures create no AppKit object, actual app, model, or data store.
+        do {
+            var state = NoieeStartupLifecycle()
+            let start = state.beginStartup()!
+            check(state.beginStartup() == nil, "startup task cannot be duplicated")
+            let quit = state.beginQuit()!
+            check(!state.continuePreflight(start) && state.phase == .paused, "Quit before preflight pauses all launch work")
+            check(!state.authorizeBackendLaunch(start), "paused startup cannot create an access marker or child")
+            check(state.completeQuit(quit) && state.phase == .closed, "closed no-server decision remains terminal")
+            check(!state.markReady(start) && !state.markFailed(start) && state.beginStartup() == nil, "late startup completions cannot reopen a closed app")
+        }
+        do {
+            var state = NoieeStartupLifecycle()
+            let old = state.beginStartup()!
+            check(state.continuePreflight(old), "active preflight may observe runtime")
+            let quit = state.beginQuit()!
+            check(!state.authorizeBackendLaunch(old) && state.phase == .paused, "Quit during preflight revokes backend launch")
+            check(!state.markFailed(old), "paused preflight error cannot replace cancellation state")
+            check(state.cancelQuit(quit) == .restart, "cancelled early Quit requests a fresh startup")
+            let current = state.beginStartup()!
+            check(current != old && !state.authorizeBackendLaunch(old), "retry gets new authority and rejects old completion")
+            check(!state.markReady(current), "preflight alone cannot report a ready backend")
+            check(state.authorizeBackendLaunch(current) && state.markReady(current), "fresh retry can launch and become ready")
+        }
+        do {
+            var state = NoieeStartupLifecycle()
+            let start = state.beginStartup()!
+            check(state.authorizeBackendLaunch(start), "backend launch is admitted before shutdown")
+            let quit = state.beginQuit()!
+            check(state.markReady(start) && state.quitting, "already launched backend finishes readiness under Quit ownership")
+            check(state.beginNavigation(generation: 1) == nil, "ready backend cannot navigate during departure")
+            check(state.cancelQuit(quit) == .present, "cancelled warm Quit resumes presentation without another process")
+            let permit = state.beginNavigation(generation: 1)!
+            check(state.finishNavigation(permit, generation: 1, startupDocument: true, blocked: false), "ready startup can present after cancelled Quit")
+            check(state.beginStartup() == nil && state.beginNavigation(generation: 1) == nil, "warm cancellation neither duplicates backend nor page")
+        }
+        do {
+            var state = NoieeStartupLifecycle()
+            let start = state.beginStartup()!
+            _ = state.authorizeBackendLaunch(start); _ = state.markReady(start)
+            let stale = state.beginNavigation(generation: 3)!
+            let quit = state.beginQuit()!
+            check(!state.finishNavigation(stale, generation: 3, startupDocument: true, blocked: false), "Quit invalidates in-flight ready document evaluation")
+            check(state.cancelQuit(quit) == .present, "pending presentation survives a cancelled Quit")
+            let fresh = state.beginNavigation(generation: 3)!
+            check(!state.finishNavigation(stale, generation: 3, startupDocument: true, blocked: false), "stale callback cannot consume a newer navigation permit")
+            check(state.finishNavigation(fresh, generation: 3, startupDocument: true, blocked: false), "fresh ready evaluation commits once")
+            check(!state.finishNavigation(fresh, generation: 3, startupDocument: true, blocked: false), "duplicate ready callback is ignored")
+        }
+        do {
+            var state = NoieeStartupLifecycle()
+            let start = state.beginStartup()!
+            _ = state.authorizeBackendLaunch(start); _ = state.markReady(start)
+            let oldPage = state.beginNavigation(generation: 8)!
+            check(!state.finishNavigation(oldPage, generation: 9, startupDocument: true, blocked: false), "page generation change rejects old ready navigation")
+            let beforeBody = state.beginNavigation(generation: 9)!
+            state.invalidateNavigation() // didFinish supplies a new document observation.
+            let afterBody = state.beginNavigation(generation: 9)!
+            check(!state.finishNavigation(beforeBody, generation: 9, startupDocument: false, blocked: false), "early body reply cannot clear the completed-document permit")
+            check(!state.finishNavigation(afterBody, generation: 9, startupDocument: false, blocked: false), "non-startup document is never replaced")
+            let held = state.beginNavigation(generation: 9)!
+            check(!state.finishNavigation(held, generation: 9, startupDocument: true, blocked: true), "reload or newly closed backend blocks navigation")
+            let restored = state.beginNavigation(generation: 9)!
+            check(state.finishNavigation(restored, generation: 9, startupDocument: true, blocked: false), "released reload can finish pending startup presentation")
+        }
+        do {
+            var state = NoieeStartupLifecycle()
+            let start = state.beginStartup()!
+            _ = state.authorizeBackendLaunch(start); _ = state.markReady(start)
+            let permit = state.beginNavigation(generation: 2)!
+            check(state.markFailed(start), "backend exit removes ready authority")
+            check(!state.finishNavigation(permit, generation: 2, startupDocument: true, blocked: false), "dead backend cannot load its cached ready page")
+            let quit = state.beginQuit()!
+            check(state.cancelQuit(quit) == .present && state.beginStartup() == nil, "failed backend is reported without an unsafe automatic restart")
+            check(!state.markReady(start), "late readiness cannot resurrect a failed process")
+        }
+        do {
+            var state = NoieeStartupLifecycle()
+            let first = state.beginStartup()!
+            let oldQuit = state.beginQuit()!
+            _ = state.continuePreflight(first)
+            _ = state.cancelQuit(oldQuit)
+            let retry = state.beginStartup()!
+            let currentQuit = state.beginQuit()!
+            check(state.beginQuit() == nil, "duplicate Quit cannot replace departure ownership")
+            check(!state.completeQuit(oldQuit) && state.quitting, "old successful Quit cannot close a newer departure")
+            check(state.cancelQuit(oldQuit) == nil && state.quitting, "old cancellation cannot unfreeze a newer departure")
+            check(!state.authorizeBackendLaunch(retry), "second Quit still prevents the retry from launching")
+            check(state.cancelQuit(currentQuit) == .restart, "current cancelled Quit can retry exactly its paused startup")
+            let final = state.beginStartup()!
+            check(final != retry && !state.markReady(retry), "repeated cancellation rejects every prior startup generation")
+        }
+        do {
+            var state = NoieeStartupLifecycle()
+            let start = state.beginStartup()!
+            _ = state.authorizeBackendLaunch(start)
+            let quit = state.beginQuit()!
+            check(state.markFailed(start) && state.quitting, "startup failure during Quit stays owned by departure")
+            check(state.cancelQuit(quit) == .present, "cancelled Quit exposes its deferred startup failure")
+            let again = state.beginQuit()!
+            check(state.completeQuit(again), "a later confirmed Quit closes the failed startup")
+            check(state.cancelQuit(again) == nil && state.beginNavigation(generation: 0) == nil, "successful closure rejects cancellation and presentation")
+        }
+
+        print("{\"passed\":\(checks),\"failed\":0,\"appLaunches\":0,\"modelRequests\":0,\"originalStoreActions\":0,\"scope\":\"generated process, socket, config, lifecycle-race and support-report fixtures\"}")
     }
 }

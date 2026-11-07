@@ -360,3 +360,87 @@ enum NoieeStartupReports {
         return root.appendingPathComponent(name)
     }
 }
+
+
+// Main-actor caller owns this value. No process, UI, timer, or original store
+// operation is performed here; tokens reject stale asynchronous completions.
+struct NoieeStartupLifecycle {
+    enum Phase: Equatable { case idle, preflight, paused, backend, ready, failed, closed }
+    enum ResumeAction: Equatable { case restart, present, none }
+    struct NavigationPermit: Equatable {
+        let attempt: UUID
+        let generation: Int
+        fileprivate let identity = UUID()
+    }
+    private(set) var phase: Phase = .idle
+    private(set) var attempt: UUID?
+    private(set) var presented = false
+    private var departure: UUID?
+    private var navigation: NavigationPermit?
+    var quitting: Bool { departure != nil }
+
+    func owns(_ ticket: UUID) -> Bool { attempt == ticket && phase != .closed }
+    mutating func beginStartup() -> UUID? {
+        guard !quitting, phase == .idle || phase == .paused else { return nil }
+        let ticket = UUID()
+        attempt = ticket; phase = .preflight; presented = false; navigation = nil
+        return ticket
+    }
+    mutating func continuePreflight(_ ticket: UUID) -> Bool {
+        guard owns(ticket), phase == .preflight else { return false }
+        if quitting { phase = .paused; return false }
+        return true
+    }
+    mutating func authorizeBackendLaunch(_ ticket: UUID) -> Bool {
+        guard continuePreflight(ticket) else { return false }
+        phase = .backend
+        return true
+    }
+    mutating func markReady(_ ticket: UUID) -> Bool {
+        guard owns(ticket), phase == .backend else { return false }
+        phase = .ready
+        return true
+    }
+    mutating func markFailed(_ ticket: UUID) -> Bool {
+        guard owns(ticket), [.preflight, .backend, .ready].contains(phase) else { return false }
+        phase = .failed; navigation = nil
+        return true
+    }
+    mutating func beginQuit() -> UUID? {
+        guard !quitting, phase != .closed else { return nil }
+        let ticket = UUID()
+        departure = ticket; navigation = nil
+        return ticket
+    }
+    mutating func cancelQuit(_ ticket: UUID) -> ResumeAction? {
+        guard departure == ticket, phase != .closed else { return nil }
+        departure = nil
+        switch phase {
+        case .idle, .paused: return .restart
+        case .ready, .failed: return .present
+        default: return .none
+        }
+    }
+    mutating func completeQuit(_ ticket: UUID) -> Bool {
+        guard departure == ticket, phase != .closed else { return false }
+        phase = .closed; navigation = nil
+        return true
+    }
+    mutating func invalidateNavigation() { navigation = nil }
+    mutating func beginNavigation(generation: Int) -> NavigationPermit? {
+        guard phase == .ready, !quitting, !presented, navigation == nil,
+              let attempt else { return nil }
+        let permit = NavigationPermit(attempt: attempt, generation: generation)
+        navigation = permit
+        return permit
+    }
+    mutating func finishNavigation(_ permit: NavigationPermit, generation: Int,
+                                   startupDocument: Bool, blocked: Bool) -> Bool {
+        guard navigation == permit else { return false }
+        navigation = nil
+        guard owns(permit.attempt), phase == .ready, !quitting, !presented,
+              !blocked, permit.generation == generation, startupDocument else { return false }
+        presented = true
+        return true
+    }
+}

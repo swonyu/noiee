@@ -27,11 +27,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     private let home = URL(string: "http://127.0.0.1:8787")!
 
     private var diagnosticRunning = false
-    private let startupStderr = NoieeBoundedCapture()
+    private var startupStderr = NoieeBoundedCapture()
     private var startupRuntime: NoieeVerifiedRuntime?
     private var startupReportURL: URL?
     private var startupReportSummary = "The startup check has not finished."
-    private var startupReady = false
+    private var startupLifecycle = NoieeStartupLifecycle()
+    private var startupTask: Task<Void, Never>?
+    private var startupFailureMessage: String?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.applicationIconImage = NSImage(size: NSSize(width: 1024, height: 1024), flipped: false) { _ in
@@ -101,7 +103,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
         window.contentView = webView; window.center(); window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         webView.loadHTMLString("<html><body data-saleh-startup='\(startupPageID)' style='background:#202122;color:#cad3cd;font:15px -apple-system;padding:60px'>Opening your local workspace…</body></html>", baseURL: nil)
-        Task { await start() }
+        beginStartupIfNeeded()
     }
 
     private func ready() async -> Bool {
@@ -117,21 +119,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
         return proof == expected && server.isRunning
     }
 
-    private func start() async {
-        guard let resources = Bundle.main.resourceURL else {
-            startupFailed(NoieeStartupFailure(.missingResources), phase: "preflight"); return
+    private func beginStartupIfNeeded() {
+        guard startupTask == nil, server == nil, let ticket = startupLifecycle.beginStartup() else { return }
+        startupRuntime = nil
+        startupFailureMessage = nil
+        startupStderr = NoieeBoundedCapture()
+        startupTask = Task {
+            await start(ticket)
+            if startupLifecycle.owns(ticket) { startupTask = nil }
+            await presentStartupOutcome()
         }
+    }
+
+    private func start(_ ticket: UUID) async {
+        guard startupLifecycle.continuePreflight(ticket) else { return }
+        guard let resources = Bundle.main.resourceURL else {
+            startupFailed(NoieeStartupFailure(.missingResources), phase: "preflight", ticket: ticket); return
+        }
+        let runtime: NoieeVerifiedRuntime
         do {
-            startupRuntime = try await Task.detached(priority: .userInitiated) {
+            runtime = try await Task.detached(priority: .userInitiated) {
                 try NoieeStartupPreflight.prepare(resources: resources)
             }.value
         } catch {
-            startupFailed(error as? NoieeStartupFailure ?? NoieeStartupFailure(.runtimeProbeFailed), phase: "preflight")
+            guard startupLifecycle.continuePreflight(ticket) else { return }
+            startupFailed(error as? NoieeStartupFailure ?? NoieeStartupFailure(.runtimeProbeFailed),
+                          phase: "preflight", ticket: ticket)
             return
         }
-        guard let runtime = startupRuntime else {
-            startupFailed(NoieeStartupFailure(.runtimeProbeFailed), phase: "preflight"); return
-        }
+        // Quit revokes launch authority before awaiting this task. No access
+        // marker or child can be created after it chooses the no-server branch.
+        guard startupLifecycle.authorizeBackendLaunch(ticket) else { return }
+        startupRuntime = runtime
         let mutationBlocked:Bool
         do {
             let directory=FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/Qwen Local/Access",isDirectory:true)
@@ -144,8 +163,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
                 window.subtitle=accessMode.label+" · Recovery prepared · Mac restart required"
             }
         } catch {
+            guard startupLifecycle.markFailed(ticket) else { return }
             recordStartup(NoieeStartupFailure(.accessUnavailable), phase: "access", stderr: startupStderr.finish())
-            showError("Tool access could not be verified: " + error.localizedDescription); return
+            startupFailureMessage = "Tool access could not be verified: " + error.localizedDescription
+            return
         }
         let process = Process(); process.executableURL = runtime.executable
         process.arguments = [resources.appendingPathComponent("server.mjs").path]
@@ -157,11 +178,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
         environment["SALEH_RECOVERY_STARTUP"] = recoveryStartup ? "true":"false"
         process.environment = environment
         process.terminationHandler = { [weak self] child in Task { @MainActor in
-            guard let self else { return }
+            guard let self, self.server === child, self.startupLifecycle.owns(ticket) else { return }
             self.tools.stop()
-            if self.startupReady && !self.terminationPending {
-                self.startupReady = false
-                self.startupFailed(NoieeStartupFailure(.unexpectedBackendExit, exit: child.terminationStatus), phase: "server-exit")
+            if self.startupLifecycle.phase == .ready {
+                if self.terminationPending {
+                    _ = self.startupLifecycle.markFailed(ticket)
+                } else {
+                    self.startupFailed(NoieeStartupFailure(.unexpectedBackendExit, exit: child.terminationStatus),
+                                       phase: "server-exit", ticket: ticket)
+                    await self.presentStartupOutcome()
+                }
             }
         } }
         process.standardInput = serverInput
@@ -176,23 +202,47 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
             try? errors.fileHandleForWriting.close()
         } catch {
             errors.fileHandleForReading.readabilityHandler = nil
-            startupFailed(NoieeStartupFailure(.backendExited), phase: "server-launch"); return
+            startupFailed(NoieeStartupFailure(.backendExited), phase: "server-launch", ticket: ticket); return
         }
+        // An already launched backend completes its bounded readiness check.
+        // Quit awaits it and then uses the existing authenticated shutdown path.
         for _ in 0..<30 {
             if await ready() {
-                guard process.isRunning else { break }
-                startupReady = true
+                guard process.isRunning, startupLifecycle.markReady(ticket) else { break }
                 recordStartup(nil, phase: "ready", stderr: startupStderr.finish())
-                webView.load(URLRequest(url: home)); return
+                return
             }
             if !process.isRunning { break }
             try? await Task.sleep(for: .milliseconds(200))
         }
+        guard startupLifecycle.markFailed(ticket) else { return }
         let summary = startupStderr.finish()
         let failure = NoieeStartupPreflight.backendFailure(exited: !process.isRunning,
             status: process.isRunning ? nil : process.terminationStatus, stderr: summary)
         recordStartup(failure, phase: "server-readiness", stderr: summary)
-        showError(failure.localizedDescription + "\n\nDiagnostics → Startup Report contains the redacted result.")
+        startupFailureMessage = failure.localizedDescription + "\n\nDiagnostics → Startup Report contains the redacted result."
+    }
+
+    private func presentStartupOutcome() async {
+        guard !terminationPending, !reloadPending else { return }
+        if startupLifecycle.phase == .failed, let message = startupFailureMessage {
+            startupFailureMessage = nil
+            showError(message)
+            return
+        }
+        guard let permit = startupLifecycle.beginNavigation(generation: departureGeneration) else { return }
+        let script = """
+        Boolean(location.href === 'about:blank' && document.body?.dataset.salehStartup === '\(startupPageID)' &&
+                document.body.childElementCount === 0 && document.body.textContent === 'Opening your local workspace…' &&
+                !window.__salehDraftDeparture)
+        """
+        let startupDocument = (try? await webView.evaluateJavaScript(script)) as? Bool == true
+        guard startupLifecycle.finishNavigation(permit, generation: departureGeneration,
+            startupDocument: startupDocument,
+            blocked: terminationPending || reloadPending || server?.isRunning != true) else { return }
+        // No suspension between committing this permit and asking WebKit to
+        // navigate; a later Quit uses the unchanged document-generation guard.
+        webView.load(URLRequest(url: home))
     }
 
     private func recordStartup(_ failure: NoieeStartupFailure?, phase: String, stderr: NoieeStderrSummary) {
@@ -213,9 +263,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
         catch { startupReportURL = nil; startupReportSummary += "\nThe support receipt could not be saved." }
     }
 
-    private func startupFailed(_ failure: NoieeStartupFailure, phase: String) {
+    private func startupFailed(_ failure: NoieeStartupFailure, phase: String, ticket: UUID) {
+        guard startupLifecycle.markFailed(ticket) else { return }
         recordStartup(failure, phase: phase, stderr: startupStderr.finish())
-        showError(failure.localizedDescription + "\n\nOpen Diagnostics → Startup Report for the redacted result.")
+        startupFailureMessage = failure.localizedDescription + "\n\nOpen Diagnostics → Startup Report for the redacted result."
     }
 
     @objc private func showStartupReport() {
@@ -400,13 +451,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
         _ = try? await webView.evaluateJavaScript(releaseDepartureScript(token))
         reloadPending = false
         if let error { window?.makeKeyAndOrderFront(nil); showError(error.localizedDescription) }
+        await presentStartupOutcome()
     }
     private func completeReload(_ navigation: WKNavigation?, error: Error? = nil) {
         guard let pending = pendingReload, pending.navigation === navigation else { return }
         pendingReload = nil
         Task { await restoreReload(pending.token, error: error) }
     }
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { completeReload(navigation) }
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        // A completed document invalidates an evaluation begun before its body
+        // existed. Its fresh permit cannot be consumed by that older reply.
+        startupLifecycle.invalidateNavigation()
+        completeReload(navigation)
+        Task { await presentStartupOutcome() }
+    }
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { completeReload(navigation, error: error) }
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) { completeReload(navigation, error: error) }
     func windowShouldClose(_ sender: NSWindow) -> Bool {
@@ -419,9 +477,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         if terminationPending { return .terminateLater }
         if reloadPending { return .terminateCancel }
+        guard let quitTicket = startupLifecycle.beginQuit() else { return .terminateLater }
         terminationPending = true
         let token = UUID().uuidString, generation = departureGeneration
+        let pendingStartup = startupTask
         Task {
+            // Startup either pauses before all access/backend mutation, or
+            // finishes its bounded readiness check for the existing shutdown.
+            await pendingStartup?.value
             do {
                 try await saveForDeparture(token, generation: generation)
                 showShutdownInspection()
@@ -438,15 +501,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
                     tools.stop()
                     try await saveForDeparture(token, generation: generation, finishing: true)
                 }
+                guard startupLifecycle.completeQuit(quitTicket) else {
+                    throw ComputerError.message("Startup state changed during shutdown. This window is staying open.")
+                }
                 dismissShutdownInspection()
                 NSApp.reply(toApplicationShouldTerminate: true)
             } catch {
                 _ = try? await webView.evaluateJavaScript(releaseDepartureScript(token))
                 dismissShutdownInspection()
+                guard let resume = startupLifecycle.cancelQuit(quitTicket) else { return }
                 terminationPending = false
                 NSApp.reply(toApplicationShouldTerminate: false)
                 window?.makeKeyAndOrderFront(nil)
                 showError(error.localizedDescription)
+                if resume == .restart { beginStartupIfNeeded() }
+                await presentStartupOutcome()
             }
         }
         return .terminateLater
@@ -461,7 +530,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
             decisionHandler(.cancel)
             return
         }
-        if action.targetFrame?.isMainFrame == true { departureGeneration += 1; tools.departPage() }
+        if action.targetFrame?.isMainFrame == true { departureGeneration += 1; startupLifecycle.invalidateNavigation(); tools.departPage() }
         let local = url.scheme == "http" && url.host == "127.0.0.1" && url.port == 8787
         if action.shouldPerformDownload && url.scheme == "blob" { decisionHandler(.download) }
         else { decisionHandler(local || url.scheme == "about" ? .allow : .cancel) }
