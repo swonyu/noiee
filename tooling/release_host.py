@@ -1,6 +1,6 @@
-"""Noiee 174 host release adapter.
+"""Noiee 175 host release adapter.
 
-Adapted from the committed Build173 adapter (75fae64); historical guard functions are
+Adapted from the committed Build174 adapter (d109669f); historical guard functions are
 vendored byte-for-byte with provenance. This host-specific installer is separate
 from the portable, non-installing native compiler in build_native.py.
 
@@ -17,11 +17,11 @@ sys.dont_write_bytecode = True
 ROOT = Path("/Users/saleh/Documents/Noiee")
 PROJECT = Path(__file__).resolve().parents[1]
 SOURCE = PROJECT / "source"
-RELEASE = ROOT / 'releases/build174'
+RELEASE = ROOT / 'releases/build175'
 APP = Path("/Users/saleh/Applications/Saleh Uncensored.app")
 SUPPORT = Path("/Users/saleh/Library/Application Support")
 STAGING = SUPPORT / "Saleh Uncensored Release Staging"
-OLD = STAGING / 'Noiee173-anqrn_ml'
+OLD = STAGING / 'Noiee174-jo427t7u'
 HELPERS = PROJECT / "tooling/release_helpers"
 DEPENDENCIES = ROOT / "dependencies/node-26.13.0-build171"
 INTENTS = SUPPORT / "Saleh Uncensored Runtime/Release Intents"
@@ -29,13 +29,13 @@ SIGNING = "01BE58A036F57AF09A20C06858B9C856115B35E8"
 RELEASE_NODE = Path("/opt/homebrew/bin/node")
 RELEASE_NODE_SHA = "7296c3dda88793e08d1089d839a782178c4bba6bb22f5c40ab2a75263fb071bd"
 CAPTURE = PROJECT / "tooling/capture_closed_boundary.py"
-CAPTURE_SHA = '3b011b7d6e7df8484bca36b4f734c7126dcf4b1f94d8063feb3b90be58177e85'
+CAPTURE_SHA = 'ecd86522076004b7cbf2bb20d32bcde23baac817263249a82be5b545f9a92413'
 R88 = HELPERS / "filesystem_identity.py"
 R88_SHA = "4a113bd4073d391080ad1941c307109498e359d22072339a605adcc559454d55"
 OLD_PINS = {
-    "source-manifest.json": '813d29e38486ba9bf11021eb0dc339020dfcae149b49d1a900924e30c48c64d9',
-    "candidate-bundle-manifest.json": 'aeb5179a8f769a6189629c743e8f08c87a9c10672f0a5fab381f40cc7f28ebc5',
-    "candidate-receipt.json": '10d4c145b1af97706f136dfcc0a7761329b63fd51056098a258482bbcabc08d8',
+    "source-manifest.json": 'af3e43930955733fb8a15b9c33ece3004b551a6e8256f9e74464a975281a1b29',
+    "candidate-bundle-manifest.json": 'fc20968988ec932273c716f7e05573900126a3eec19edef8bd8f1d0e0e038103',
+    "candidate-receipt.json": 'ddd993e1ce6e29d943ae2ab0e4d16c2a5a14fc25b19b0697bfb96b243880110d',
 }
 HELPER_PINS = {
     "build-candidate.py": "185fd10cf66b9a87054db4d3a13b6cdfa82c22190ad219b6492bc9ee5528ae03",
@@ -48,7 +48,7 @@ FETCH_IMMUTABLE = {
 }
 RESOURCE_SUFFIXES = {".mjs", ".js", ".json", ".html", ".css", ".exp", ".txt"}
 GENERATED = {"legacy-admission.json", "legacy-boot-helper"}
-ARTIFACT_ROOTS = (PROJECT / ".artifacts", ROOT / 'updates/build174', RELEASE)
+ARTIFACT_ROOTS = (PROJECT / ".artifacts", ROOT / 'updates/build175', RELEASE)
 SYSTEM_BUILD_ROOTS = (Path("/Applications"), Path("/Library/Developer"), Path("/usr/bin"))
 REQUIRED_SUITES = {"compaction-recovery", "model-stabilization", "startup-diagnostics",
                    "presentation", "mcp-skills", "fetch", "worktrees"}
@@ -149,8 +149,8 @@ def load_helpers(stage):
         require({n.name for n in nodes} == names, "Pinned helper API missing")
         if filename == "install-guarded.py":
             changes = {
-                "verified-build40-installed": 'verified-noiee174-installed',
-                "Build40-postcheck-failed.app": 'Noiee174-postcheck-failed.app',
+                "verified-build40-installed": 'verified-noiee175-installed',
+                "Build40-postcheck-failed.app": 'Noiee175-postcheck-failed.app',
             }
             labels = [n for f in nodes for n in ast.walk(f)
                       if isinstance(n, ast.Constant) and type(n.value) is str
@@ -388,7 +388,7 @@ def verify_native(value, frozen):
     files = frozen["files"]
     swift = {name: row["sha256"] for name, row in files.items() if name.endswith(".swift")}
     require(type(native) is dict and native.get("schemaVersion") == 2
-            and native.get("build") == 174 and native.get("sourceDirectory") == str(SOURCE)
+            and native.get("build") == 175 and native.get("sourceDirectory") == str(SOURCE)
             and native.get("sourceCommit") == frozen["gitCommit"]
             and native.get("sourceManifest") == files and native.get("nativeFiles") == swift
             and native.get("gitStatus") == "" and native.get("sourceStableDuringBuild") is True
@@ -461,7 +461,7 @@ def context(input_ref, stage):
     required = {"version", "build", "sourceDirectory", "sourceManifest", "closedBoundary",
                 "nativeBuild", "qualification"}
     require(type(cfg) is dict and set(cfg) == required
-            and cfg["version"] == 1 and cfg["build"] == 174
+            and cfg["version"] == 1 and cfg["build"] == 175
             and cfg["sourceDirectory"] == str(SOURCE), "Release input schema/scope differs")
     artifact_reference(cfg["sourceManifest"], (RELEASE,), limit=16 * 1024 * 1024)
     frozen = document(cfg["sourceManifest"])
@@ -492,7 +492,7 @@ def context(input_ref, stage):
                 "sha256": OLD_PINS["candidate-receipt.json"]}
             and boundary["twoCompleteObservationsEqual"] is True
             and boundary["processAndPortChecksPassed"] is True
-            and boundary["installedBuild"] == '173' and boundary["bundlePath"] == str(APP)
+            and boundary["installedBuild"] == '174' and boundary["bundlePath"] == str(APP)
             and boundary["bundleIdentifier"] == "com.saleh.qwenlocal.chat"
             and boundary["bundleManifest"] == before
             and all(boundary[k] is False for k in (
@@ -500,7 +500,7 @@ def context(input_ref, stage):
                 "backupCreated", "historicalNormalQuitClaimed", "ownerRecoveryClaimed",
                 "releaseAdmissionClaimed", "nativeAcceptancePassed")),
             "Fresh preservation boundary schema differs")
-    require(package["version"] == 1 and package["build"] == 173 and package["baselineBuild"] == 172
+    require(package["version"] == 1 and package["build"] == 174 and package["baselineBuild"] == 173
             and package["candidateBundleManifest"] == {
                 "path": str(OLD / "candidate-bundle-manifest.json"),
                 "sha256": OLD_PINS["candidate-bundle-manifest.json"]}
@@ -510,10 +510,10 @@ def context(input_ref, stage):
             and package["binarySHA256"] == before["Contents/MacOS/QwenLocal"]["sha256"]
             and all(package[k] is True for k in (
                 "signatureVerified", "sameDesignatedRequirement", "archiveRoundtripVerified")),
-            'Authentic signed Build173 predecessor differs')
+            'Authentic signed Build174 predecessor differs')
     native, native_refs = verify_native(cfg["nativeBuild"], frozen)
     evidence = verify_reports(cfg, frozen)
-    capture = module(CAPTURE, CAPTURE_SHA, 'noiee_174_boundary_support')
+    capture = module(CAPTURE, CAPTURE_SHA, 'noiee_175_boundary_support')
     r88 = module(R88, R88_SHA, "noiee_vendored_filesystem_identity")
     runtime = node_runtime()
     r88.NODE, r88.require = runtime["executable"]["path"], require
@@ -577,7 +577,7 @@ def run(c, stage, label, argv, timeout=120):
 
 def prepared(stage, pin):
     stage = private(stage)
-    require(stage.parent == STAGING and stage.name.startswith('Noiee174-'),
+    require(stage.parent == STAGING and stage.name.startswith('Noiee175-'),
             "Foreign release stage")
     p = document({"path": str(stage / "prepared.json"), "sha256": pin})
     require(p["adapter"] == ref(__file__), "Release adapter changed after preparation")
@@ -603,7 +603,7 @@ def prepare(input_ref):
     require(SIGNING in subprocess.check_output(
         ["/usr/bin/security", "find-identity", "-v", "-p", "codesigning"], text=True),
         "Existing signing identity unavailable")
-    stage = Path(tempfile.mkdtemp(prefix='Noiee174-', dir=STAGING))
+    stage = Path(tempfile.mkdtemp(prefix='Noiee175-', dir=STAGING))
     stage.chmod(0o700)
     c = context(input_ref, stage)
     h = c["h"]
@@ -644,14 +644,14 @@ def prepare(input_ref):
         changed.append(name)
     require(h["manifest"](stage / "resources") == expected, "Unexpected resource delta")
     info = plistlib.loads(raw(APP / "Contents/Info.plist"))
-    require(info["CFBundleVersion"] == '173', "Unexpected installed build")
-    info.update(CFBundleVersion='174', CFBundleName="Noiee", CFBundleDisplayName="Noiee")
+    require(info["CFBundleVersion"] == '174', "Unexpected installed build")
+    info.update(CFBundleVersion='175', CFBundleName="Noiee", CFBundleDisplayName="Noiee")
     require(info["CFBundleIdentifier"] == "com.saleh.qwenlocal.chat"
             and info["CFBundleExecutable"] == "QwenLocal", "App identity changed")
     h["write_new"](stage / "approved-Info.plist", plistlib.dumps(info), 0o600)
     guard(c)
     value = {
-        "version": 1, "build": 174, "adapter": ref(__file__), "input": input_ref,
+        "version": 1, "build": 175, "adapter": ref(__file__), "input": input_ref,
         "sourceManifest": c["cfg"]["sourceManifest"], "gitCommit": c["frozen"]["gitCommit"],
         "releaseRuntime": c["releaseRuntime"],
         "stagedSource": h["manifest"](stage / "source", True),
@@ -722,7 +722,7 @@ def build(stage, pin):
     binary.write_bytes(artifact_reference(c["native"]["binary"], ARTIFACT_ROOTS))
     binary.chmod(0o700)
     source = {
-        "candidateBuild": '174', "input": p["input"], "prepared": ref(stage / "prepared.json"),
+        "candidateBuild": '175', "input": p["input"], "prepared": ref(stage / "prepared.json"),
         "sourceManifest": p["stagedSource"], "dependencyManifest": c["old"]["dependencyManifest"],
         "resourceManifest": p["resourceManifest"],
         "plistEntry": h["manifest"](app / "Contents/Info.plist", True)["."],
@@ -753,7 +753,7 @@ def build(stage, pin):
     guard(c)
     private(INTENTS)
     intent = successor_intent(c, successor)
-    intent_path = INTENTS / ('Build174-' + str(uuid.uuid4()) + ".json")
+    intent_path = INTENTS / ('Build175-' + str(uuid.uuid4()) + ".json")
     h["write_new"](intent_path, compact(intent) + b"\n", 0o400)
     envelope = {"version": 1, "intent": ref(intent_path), "successor": successor}
     h["write_new"](app / "Contents/Resources/legacy-admission.json",
@@ -781,7 +781,7 @@ def build(stage, pin):
     require(not delta["removed"] and set(delta["changed"]) <= allowed
             and set(delta["added"]) <= changed_resources,
             "Signed bundle delta exceeds reviewed changes")
-    archive = stage / 'outputs/Noiee-Build174.zip'
+    archive = stage / 'outputs/Noiee-Build175.zip'
     run(c, stage, "archive",
         ["/usr/bin/ditto", "-c", "-k", "--sequesterRsrc", "--keepParent", str(app), str(archive)])
     extracted = private(stage / "archive-review", create=True)
@@ -796,7 +796,7 @@ def build(stage, pin):
     write(h, stage / "source-manifest.json", source)
     write(h, stage / "candidate-bundle-manifest.json", expected)
     receipt = {
-        "version": 1, "build": 174, "baselineBuild": 173,
+        "version": 1, "build": 175, "baselineBuild": 174,
         "adapter": ref(__file__), "prepared": ref(stage / "prepared.json"),
         "sourceManifest": ref(stage / "source-manifest.json"),
         "candidateBundleManifest": ref(stage / "candidate-bundle-manifest.json"),
@@ -812,12 +812,12 @@ def build(stage, pin):
 
 def install(stage, pin):
     stage = private(stage)
-    require(stage.parent == STAGING and stage.name.startswith('Noiee174-'),
+    require(stage.parent == STAGING and stage.name.startswith('Noiee175-'),
             "Foreign install stage")
     package = document({"path": str(stage / "candidate-receipt.json"), "sha256": pin})
     require(package["adapter"] == ref(__file__)
             and package["prepared"]["path"] == str(stage / "prepared.json")
-            and package["build"] == 174 and package["baselineBuild"] == 173
+            and package["build"] == 175 and package["baselineBuild"] == 174
             and all(package[k] is True for k in (
                 "sameDesignatedRequirement", "signatureVerified", "archiveRoundtripVerified"))
             and package["installed"] is False and package["launched"] is False,
@@ -833,18 +833,18 @@ def install(stage, pin):
             and package["bundleDelta"] == h["delta"](c["before"], expected)
             and package["binarySHA256"] == expected["Contents/MacOS/QwenLocal"]["sha256"],
             "Packaged source differs")
-    require(package["archive"]["path"] == str(stage / 'outputs/Noiee-Build174.zip'),
+    require(package["archive"]["path"] == str(stage / 'outputs/Noiee-Build175.zip'),
             "Archive path differs")
     read_ref(package["archive"])
     guard(c)
     journal_path = stage / "installation-journal.json"
-    journal = {"at": h["now"](), "build": 174, "state": "attempt-started",
+    journal = {"at": h["now"](), "build": 175, "state": "attempt-started",
                "packageSHA256": pin, "launched": False, "events": [],
                "bundleRestoration": {"scope": "bundle-only-while-closed", "dataRollback": False}}
     h["begin_attempt"](journal_path, journal)
     model_before = h["observe_model_listener"]()
     nonce = uuid.uuid4().hex
-    target = private(APP.parent / ('.noiee-build174-update-' + nonce), create=True)
+    target = private(APP.parent / ('.noiee-build175-update-' + nonce), create=True)
     journal["stage"] = str(target)
     h["save"](journal_path, journal)
     subprocess.run(["/usr/bin/ditto", "-x", "-k", package["archive"]["path"], str(target)],
@@ -858,7 +858,7 @@ def install(stage, pin):
     proof(c, stage, candidate, source)
     backup_parent = SUPPORT / "Saleh Uncensored Backups"
     private(backup_parent)
-    backup = private(backup_parent / ('before-Noiee174-' + nonce), create=True)
+    backup = private(backup_parent / ('before-Noiee175-' + nonce), create=True)
     copies = {}
     for name, original in h["DATA_ROOTS"].items():
         guard(c)
@@ -876,7 +876,7 @@ def install(stage, pin):
     write(h, backup / "backup-receipt.json",
           {"at": h["now"](), "dataIdentities": c["boundary"]["dataIdentities"],
            "backups": copies, "closedBoundary": c["cfg"]["closedBoundary"]})
-    old_app = target / 'Build173-original.app'
+    old_app = target / 'Build174-original.app'
     journal.update(rollbackApp=str(old_app), dataBackup=str(backup), state="prepared")
     h["save"](journal_path, journal)
 
@@ -886,7 +886,7 @@ def install(stage, pin):
 
     def postcheck():
         info = plistlib.loads(raw(APP / "Contents/Info.plist"))
-        require(info["CFBundleVersion"] == '174'
+        require(info["CFBundleVersion"] == '175'
                 and info["CFBundleName"] == info["CFBundleDisplayName"] == "Noiee"
                 and info["CFBundleIdentifier"] == "com.saleh.qwenlocal.chat"
                 and info["CFBundleExecutable"] == "QwenLocal"
@@ -901,7 +901,7 @@ def install(stage, pin):
             and h["requirement"](old_app) == c["boundary"]["designatedRequirement"],
             "Signed rollback bundle differs")
     write(h, stage / "installation.json", {
-        "at": h["now"](), "build": 174, "name": "Noiee", "packageSHA256": pin,
+        "at": h["now"](), "build": 175, "name": "Noiee", "packageSHA256": pin,
         "bundleMatchesPackage": True, "signatureVerified": True,
         "originalDataUnchanged": True, "rollbackApp": str(old_app), "backup": str(backup),
         "rollbackSignatureVerified": True, "backupReceipt": ref(backup / "backup-receipt.json"),
@@ -910,7 +910,7 @@ def install(stage, pin):
         "modelListenerBefore": model_before, "modelListenerAfter": h["observe_model_listener"](),
         "nativeAcceptancePassed": False, "productionAcceptance": "pending",
     })
-    print(json.dumps({"installed": True, "build": 174, "app": str(APP),
+    print(json.dumps({"installed": True, "build": 175, "app": str(APP),
                       "installation": ref(stage / "installation.json"),
                       "backup": str(backup), "rollbackApp": str(old_app),
                       "launched": False, "productionAcceptance": "pending"}))

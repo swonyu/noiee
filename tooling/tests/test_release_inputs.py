@@ -111,7 +111,7 @@ class Inputs(unittest.TestCase):
             command.extend(["-framework", framework])
         command.extend([str(self.source / "App.swift"), "-o", binary["path"]])
         return base, {
-            "fixtureOnly": True, "schemaVersion": 2, "build": 174,
+            "fixtureOnly": True, "schemaVersion": 2, "build": 175,
             "sourceDirectory": str(self.source), "sourceCommit": self.frozen["gitCommit"],
             "sourceManifest": self.files, "nativeFiles": {"App.swift": self.files["App.swift"]["sha256"]},
             "gitStatus": "", "sourceStableDuringBuild": True, "releaseEligible": True, "development": False,
@@ -254,13 +254,13 @@ class Inputs(unittest.TestCase):
 
     def test_previous_build_native_receipt_refused(self):
         base, receipt = self.native()
-        receipt["build"] = 173
+        receipt["build"] = 174
         with self.assertRaisesRegex(RuntimeError, "Release-eligible"):
             self.check_native(base, receipt)
 
     def test_capture_and_adapter_bind_the_same_predecessor(self):
         self.assertEqual(hashlib.sha256(CAPTURE.read_bytes()).hexdigest(), release.CAPTURE_SHA)
-        self.assertEqual(release.OLD, capture.STAGE173)
+        self.assertEqual(release.OLD, capture.STAGE174)
         self.assertEqual(release.RELEASE, capture.RELEASE)
         self.assertEqual(release.OLD_PINS["candidate-receipt.json"], capture.PACKAGE_SHA)
         self.assertEqual(release.OLD_PINS["candidate-bundle-manifest.json"], capture.BUNDLE_SHA)
@@ -286,14 +286,14 @@ class Inputs(unittest.TestCase):
                 snapshot.assert_not_called()
                 raise
 
-    def test_capture_observes_build173_fixture(self):
-        value, snapshot = self.capture_fixture('173')
-        self.assertEqual(value["installedBuild"], '173')
+    def test_capture_observes_build174_fixture(self):
+        value, snapshot = self.capture_fixture('174')
+        self.assertEqual(value["installedBuild"], '174')
         self.assertEqual(value["dataManifests"], {"generated-store": None})
         snapshot.assert_called_once_with()
 
     def test_capture_refuses_wrong_build_before_store_observation(self):
-        for build in ('172', '174', "unknown"):
+        for build in ('172', '173', '175', "unknown"):
             with self.subTest(build=build), self.assertRaisesRegex(RuntimeError, "Unexpected predecessor"):
                 self.capture_fixture(build)
 

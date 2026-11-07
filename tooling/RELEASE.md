@@ -1,16 +1,16 @@
-# Host release: Build 173 to Build 174
+# Host release: Build 174 to Build 175
 
 This adapter is an explicitly host-bound update of the already signed Noiee app. The native compiler in `build_native.py` is separate: it compiles and checks source without signing, preparing an admission, replacing an app, or reading original stores.
 
-The host adapter retains the installed bundle path `/Users/saleh/Applications/Saleh Uncensored.app`, identifier `com.saleh.qwenlocal.chat`, executable name `QwenLocal`, existing signing requirement, four data-store paths, and authentic history admission chain. Visible bundle names are Noiee, and the new bundle version is 174. It is not a portable distribution installer: the current runtime, owned runtime paths, certificate, predecessor and data-directory identity are specific to this Mac.
+The host adapter retains the installed bundle path `/Users/saleh/Applications/Saleh Uncensored.app`, identifier `com.saleh.qwenlocal.chat`, executable name `QwenLocal`, existing signing requirement, four data-store paths, and authentic history admission chain. Visible bundle names are Noiee, and the new bundle version is 175. It is not a portable distribution installer: the current runtime, owned runtime paths, certificate, predecessor and data-directory identity are specific to this Mac.
 
 ## Guard provenance
 
 The three files under `release_helpers` are exact copies of the pinned Build40 implementations. Their bytes are checked before importing definitions. `PROVENANCE.json` records the original path, digest and size. The original files remain unchanged.
 
-The adapter extracts only `copy_exact`, `replace_bundle`, and `observe_model_listener` from the applicable modules. The two human-readable transaction labels use Build174; the replacement/rollback guards and control flow are unchanged. The filesystem identity function is an unchanged extraction of the pinned Build88 function, with the digest-checked current Node executable and the adapter's `require` supplied explicitly.
+The adapter extracts only `copy_exact`, `replace_bundle`, and `observe_model_listener` from the applicable modules. The two human-readable transaction labels use Build175; the replacement/rollback guards and control flow are unchanged. The filesystem identity function is an unchanged extraction of the pinned Build88 function, with the digest-checked current Node executable and the adapter's `require` supplied explicitly.
 
-Historical Build171, Build172 and Build173 source, recipes, receipts, archives and rollback are never rewritten. The Build173 predecessor is the signed package at `Noiee173-anqrn_ml`, bound to commit `75fae6454a8d8726c1e34471ca342ac3c09e1e49`. New capture/config/freeze files belong under `/Users/saleh/Documents/Noiee/releases/build174`; staging, backups, intent and installation transactions each use new exclusive names.
+Historical Build171, Build172, Build173 and Build174 source, recipes, receipts, archives and rollback are never rewritten. The Build174 predecessor is the signed package at `Noiee174-jo427t7u`, bound to commit `d109669f4850c3a8955705b8e22d22a36b859666`. New capture/config/freeze files belong under `/Users/saleh/Documents/Noiee/releases/build175`; staging, backups, intent and installation transactions each use new exclusive names.
 
 ## Required evidence
 
@@ -23,7 +23,7 @@ The stable dependency copy is `/Users/saleh/Documents/Noiee/dependencies/node-26
 Use a fresh schema2 native receipt produced from the clean final integrated commit:
 
 ```sh
-python3 -B /Users/saleh/Documents/Noiee/project/tooling/build_native.py --build 174
+python3 -B /Users/saleh/Documents/Noiee/project/tooling/build_native.py --build 175
 ```
 
 The host adapter checks release eligibility; the complete source and Swift inventory; compiler, SDK, builder and command provenance; native binary bytes; and the real compiler/self-check logs. A development artifact, stale commit, failed self-check or omitted Swift file is rejected. Native compilation and the existing `--check-computer` self-check do not establish installed UI or live model acceptance.
@@ -53,19 +53,19 @@ The illustrative count above is not an expected test count. Use the actual fresh
 
 Each suite's real execution result has numeric `exitCode: 0`, `sourceDirectory`, `sourceUnchanged: true`, and `sourcePins`; pass/failure counts can be at the top level or under `result` for the startup fixture. If command/log/name/commit fields are recorded, they must match the normalized row. Aggregate constituent rows retain their actual commands and exit codes; recorded count totals must agree. Source pins may be complete source basenames or a subset using source basenames/tracked project-relative fixture paths.
 
-All referenced logs and results must be regular, single-link, owned files under the integrated `project/.artifacts`, `updates/build174` or `releases/build174` roots. Suite log/result paths are distinct. Nested artifact references in the result are hash checked; nested raw JSON is retained as evidence without rewriting its original execution paths. A runner that uses generated Caches fixtures must preserve the evidence under the allowed artifact roots.
+All referenced logs and results must be regular, single-link, owned files under the integrated `project/.artifacts`, `updates/build175` or `releases/build175` roots. Suite log/result paths are distinct. Nested artifact references in the result are hash checked; nested raw JSON is retained as evidence without rewriting its original execution paths. A runner that uses generated Caches fixtures must preserve the evidence under the allowed artifact roots.
 
 ## Explicit release phases
 
 The following are operational instructions for the release owner. Authoring or testing this tooling does not execute these steps. Every phase is a separate invocation; the host adapter never launches the app or a model.
 
-1. Finish and review the integrated commit. Run the fresh qualifications and native build, then leave the source unchanged. Create an owned, canonical, private `releases/build174` directory.
-2. Freeze with `release_host.py freeze --output /Users/saleh/Documents/Noiee/releases/build174/source-manifest.json`. The output is exclusive and binds the final commit, source and tracked tooling.
-3. Quit Noiee normally and confirm its work is closed. Run `capture_closed_boundary.py --output /Users/saleh/Documents/Noiee/releases/build174/closed-boundary-<unique>.json`. It refuses an active/unknown process or port 8787, a retained owner lease, or a native reader not recorded closed. It performs two equal complete observations of the signed Build173 bundle and all four original stores. It reads filesystem metadata/bytes only; it does not open SQLite, recover an owner, clear a lease or claim historical normal-Quit/native acceptance.
-4. Create a new `release-input.json` containing exactly `version:1`, `build:174`, `sourceDirectory` for the integrated source, and `sourceManifest`, `closedBoundary`, `nativeBuild`, `qualification` references. Each reference has exactly `path` and `sha256`. Use the actual fresh files/digests.
+1. Finish and review the integrated commit. Run the fresh qualifications and native build, then leave the source unchanged. Create an owned, canonical, private `releases/build175` directory.
+2. Freeze with `release_host.py freeze --output /Users/saleh/Documents/Noiee/releases/build175/source-manifest.json`. The output is exclusive and binds the final commit, source and tracked tooling.
+3. Quit Noiee normally and confirm its work is closed. Run `capture_closed_boundary.py --output /Users/saleh/Documents/Noiee/releases/build175/closed-boundary-<unique>.json`. It refuses an active/unknown process or port 8787, a retained owner lease, or a native reader not recorded closed. It performs two equal complete observations of the signed Build174 bundle and all four original stores. It reads filesystem metadata/bytes only; it does not open SQLite, recover an owner, clear a lease or claim historical normal-Quit/native acceptance.
+4. Create a new `release-input.json` containing exactly `version:1`, `build:175`, `sourceDirectory` for the integrated source, and `sourceManifest`, `closedBoundary`, `nativeBuild`, `qualification` references. Each reference has exactly `path` and `sha256`. Use the actual fresh files/digests.
 5. Run `release_host.py prepare --input <release-input.json> --sha256 <input digest>`. Review the emitted `prepared.json`, resource delta, commit and evidence before the next phase.
-6. Run `release_host.py build --stage <Noiee174-stage> --sha256 <prepared digest>`. This reuses the validated native binary, generates a successor admission bound to the authentic saved predecessor, signs with the existing identity, checks exact resource/signature scope, archives, extracts, and verifies the round trip. Review the new `candidate-receipt.json`.
-7. Run `release_host.py install --stage <Noiee174-stage> --sha256 <candidate receipt digest>` only when the release owner has completed review. It revalidates inputs and the stopped boundary, makes complete exact backups of the four stores, retains the exact signed Build173 bundle, and uses the unchanged guarded rename transaction.
+6. Run `release_host.py build --stage <Noiee175-stage> --sha256 <prepared digest>`. This reuses the validated native binary, generates a successor admission bound to the authentic saved predecessor, signs with the existing identity, checks exact resource/signature scope, archives, extracts, and verifies the round trip. Review the new `candidate-receipt.json`.
+7. Run `release_host.py install --stage <Noiee175-stage> --sha256 <candidate receipt digest>` only when the release owner has completed review. It revalidates inputs and the stopped boundary, makes complete exact backups of the four stores, retains the exact signed Build174 bundle, and uses the unchanged guarded rename transaction.
 
 Every write target is exclusive. A failed attempt is retained for diagnosis and cannot be silently resumed. If source, runtime, predecessor, owner boundary or data changes, stop and preserve the evidence; do not edit accepted receipts or bypass a guard.
 
@@ -73,7 +73,7 @@ Every write target is exclusive. A failed attempt is retained for diagnosis and 
 
 `prepared.json` records the input, freeze, staged source, resource changes, approved plist and evidence. `candidate-receipt.json` binds the signed candidate manifest, archive and unchanged signing requirement. `installation-journal.json` records each rename and any refusal or rollback error. `installation.json` records the final bundle verification, unchanged original stores, exact backup/rollback locations, and model listener observations.
 
-The backup has one manifest covering QwenLocal, WebKit, HTTP storage and preferences, including explicitly absent stores, and a `backup-receipt.json` describing each copy. The signed rollback is `Build173-original.app` under the unique sibling transaction directory. There is no original-store restore or cleanup command.
+The backup has one manifest covering the exact keys `Qwen Local`, `WebKit`, `HTTPStorages` and `preferences.plist`, including explicitly absent stores, and a `backup-receipt.json` describing each copy. The signed rollback is `Build174-original.app` under the unique sibling transaction directory. There is no original-store restore or cleanup command.
 
 Automatic bundle restoration exists only inside the synchronous guarded transaction while the application remains closed and original data is unchanged. Any observed writer, uncertain stopped state, app launch, changed data or unknown bundle forbids an automatic downgrade. The journal then names the preserved bundles and requires independent recovery review. A later downgrade after first launch is not authorized or implemented by this adapter.
 
@@ -90,8 +90,17 @@ These checks construct explicitly synthetic files in private temporary directori
 
 ## Workflow parity release and native acceptance
 
-Build174 binds the exact signed Build173 predecessor. Its source and tooling changes require fresh complete qualification, native compilation, a new stopped-store boundary, signed candidate and archive verification, and the unchanged guarded installation transaction. Build173 artifacts and its native acceptance remain immutable.
+Build175 binds the exact signed Build174 predecessor. Its source and tooling changes require fresh complete qualification, native compilation, a new stopped-store boundary, signed candidate and archive verification, and the unchanged guarded installation transaction. Build174 artifacts and its native acceptance remain immutable.
 
-This release changes desktop workflow presentation and Chat compaction behavior. Prior model observations do not replace fresh native acceptance. Exercise the affected command palette and keyboard/focus behavior; per-message tool authority; parent/child navigation, results and retained drafts; oversized-exchange compaction and resume; and ordinary Quit/cold reopen. Preserve truthful partial-progress and legacy-summary states. Only complete source coverage may be projected as compacted.
+Prior model observations do not replace fresh native acceptance. Exercise every changed workflow, its retained state, ordinary Quit/cold reopen, and affected Chat/Tasks keyboard and focus behavior. Goals or submission-provenance changes need specific persistence, pause/resume, completion-evidence and input-origin checks; record only behavior actually exercised. Retain the Build174 command-palette, tool-authority, delegated-result and fragmented-compaction boundaries. Preserve truthful partial-progress and legacy-summary states. Only complete source coverage may be projected as compacted.
 
-The installed local model, loaded context, runtime contracts and provider configuration remain governed by their existing checks. Compaction-specific output bounds do not create a cap on ordinary replies. Release input and native acceptance helpers use new Build174 artifact paths; historical helpers and receipts are not relabeled. No automatic downgrade or data restore is permitted after the new app launches.
+The installed local model, loaded context, runtime contracts and provider configuration remain governed by their existing checks. Compaction-specific output bounds do not create a cap on ordinary replies. Release input and native acceptance helpers use new Build175 artifact paths; historical helpers and receipts are not relabeled. No automatic downgrade or data restore is permitted after the new app launches.
+
+
+## Accepted predecessor and status finalization
+
+The accepted Build174 source is `d109669f4850c3a8955705b8e22d22a36b859666`, tagged `noiee-build174`. Its frozen project manifest is `/Users/saleh/Documents/Noiee/releases/build174/source-manifest.json`, SHA256 `4ad9b27c38f0ea96a551e764f0a4df95f057c90da0b7b8c4616b07d47d1f996d`. This is distinct from the predecessor packaging manifest under `Noiee174-jo427t7u` that `OLD_PINS` binds. Build174 native acceptance remains `passed_with_known_limits`; its unresolved observations are not closed merely by producing Build175.
+
+The host adapter never writes `/Users/saleh/Documents/Noiee/STATUS.json`. Before finalization, preserve its exact accepted Build174 bytes exclusively at `/Users/saleh/Documents/Noiee/releases/build175/STATUS.before-build175.json`. The reviewed predecessor SHA256 is `f49214669917653233757461e1aacc0f2fd5f7117b5c34a6db7068ec3f31b89c`. The finalizer must re-read and compare that digest immediately before replacement; any concurrent status change requires review. Do not replace the accepted status until fresh Build175 native acceptance exists. The successor status must reference the preserved predecessor, final integrated commit/tag, actual qualification and installation receipts, current-use evidence and any remaining limitations.
+
+Keep the Build174 candidate and installation receipts unchanged, including their historical phase-specific `launched:false` and pending-acceptance fields. The same rule applies to Build175 receipts after its later first launch. The checked-in `native_acceptance.swift` is a historical Build173 helper; create separately reviewed Build175 acceptance tooling and evidence under new `updates/build175` paths. Neither a status update nor an acceptance helper authorizes automatic downgrade after launch or alteration of ownership/admission records.
