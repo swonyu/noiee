@@ -20,6 +20,8 @@ func attr(_ e: AXUIElement, _ key: String) -> CFTypeRef? {
 }
 let query = args.count > 1 ? args[1] : ""
 var controls: [[String: Any]] = []
+var visibleText: [String] = []
+var visibleTextBytes = 0
 var matches: [AXUIElement] = []
 var visited = 0
 let controlRoles = [kAXButtonRole, kAXPopUpButtonRole, kAXMenuItemRole, kAXTextAreaRole, kAXTextFieldRole, kAXCheckBoxRole, kAXDisclosureTriangleRole]
@@ -27,6 +29,13 @@ func walk(_ e: AXUIElement, _ depth: Int) {
     guard depth < 28, visited < 4000 else { return }
     visited += 1
     let role = attr(e, kAXRoleAttribute) as? String ?? ""
+    if mode == "snapshot", role == kAXStaticTextRole, visibleTextBytes < 16000 {
+        let value = attr(e,kAXValueAttribute) as? String ?? attr(e,kAXTitleAttribute) as? String ?? ""
+        if !value.isEmpty, query.isEmpty || value.localizedCaseInsensitiveContains(query) {
+            let text = String(value.prefix(1500))
+            visibleText.append(text); visibleTextBytes += text.utf8.count
+        }
+    }
     if controlRoles.contains(role) {
         let title = attr(e, kAXTitleAttribute) as? String ?? ""
         let description = attr(e, kAXDescriptionAttribute) as? String ?? ""
@@ -52,6 +61,14 @@ func walk(_ e: AXUIElement, _ depth: Int) {
 walk(AXUIElementCreateApplication(app.processIdentifier),0)
 var report: [String: Any] = ["mode":mode,"pid":Int(app.processIdentifier),"build":build,"visited":visited]
 if mode == "inspect" { report["controls"] = controls }
+else if mode == "snapshot" {
+    report["text"] = visibleText; report["bounded"] = true
+    let windows = CGWindowListCopyWindowInfo([.optionAll,.excludeDesktopElements],kCGNullWindowID) as? [[String:Any]] ?? []
+    report["windows"] = windows.filter { ($0[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value == app.processIdentifier }.map {
+        ["windowID":$0[kCGWindowNumber as String] ?? 0,"title":$0[kCGWindowName as String] ?? "",
+         "onScreen":$0[kCGWindowIsOnscreen as String] ?? false,"bounds":$0[kCGWindowBounds as String] ?? [:]]
+    }
+}
 else if mode == "press" || mode == "set" {
     report["matchingEnabledControls"] = matches.count
     guard matches.count == 1 else { print(String(data:try JSONSerialization.data(withJSONObject:report,options:[.sortedKeys]),encoding:.utf8)!);exit(3) }
