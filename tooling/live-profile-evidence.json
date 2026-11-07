@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "purpose": "Expected token-usage window for the exact installed Codex runtime; does not qualify child inheritance or broad model reliability.",
+  "observedBinary": {
+    "path": "/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex",
+    "cliVersion": "codex-cli 0.167.0-alpha.3.2",
+    "sha256": "a636331ed87605efc4cf84028ac2884a75363f9d10ead63cffb57ea0016d486e",
+    "size": 270814880,
+    "fallbackDisassembly": {
+      "symbol": "codex_models_manager::model_info::model_info_from_slug",
+      "address": "0x10856c998",
+      "instruction": "mov w8, #0x5f",
+      "nextInstruction": "str x8, [x19, #0xdf0]",
+      "qualification": "The immediate95 corroborates the matching-version fallback source; this is not a claim of a reproducible source-to-binary build."
+    }
+  },
+  "release": {
+    "tag": "rust-v0.167.0-alpha.3.2",
+    "commit": "c40729ea5cf8e947481b130c59807273eda2f8e9",
+    "url": "https://github.com/openai/codex/releases/tag/rust-v0.167.0-alpha.3.2"
+  },
+  "semantics": {
+    "rawLoadedContext": 39424,
+    "percent": 95,
+    "rounding": "integer division toward zero for positive values",
+    "expectedUsableInputWindow": 37452,
+    "autoCompactTokenLimit": 24576,
+    "note": "Reported usable input context and configured raw model context are distinct. The compaction threshold is separately overridden. A match does not prove compaction continuity, native UI behavior, or child inheritance."
+  },
+  "sources": [
+    {
+      "file": "codex-rs/protocol/src/openai_models.rs",
+      "url": "https://raw.githubusercontent.com/openai/codex/c40729ea5cf8e947481b130c59807273eda2f8e9/codex-rs/protocol/src/openai_models.rs",
+      "sha256": "d38767cc1f05750c73e5aa265e22413098f4de740df2075733baf38e9eb70c84",
+      "lines": "399–401,474–477,553–570",
+      "meaning": "Default95, input-headroom meaning, usable-window formula, separate compaction limit"
+    },
+    {
+      "file": "codex-rs/models-manager/src/model_info.rs",
+      "url": "https://raw.githubusercontent.com/openai/codex/c40729ea5cf8e947481b130c59807273eda2f8e9/codex-rs/models-manager/src/model_info.rs",
+      "sha256": "d8628ab1def38253d6e4b79e4b3b4d825d229953f5e0a5237a9964a20919e224",
+      "lines": "19–32,128–132",
+      "meaning": "Context/compaction overrides and fallback95"
+    },
+    {
+      "file": "codex-rs/core/src/session/turn_context.rs",
+      "url": "https://raw.githubusercontent.com/openai/codex/c40729ea5cf8e947481b130c59807273eda2f8e9/codex-rs/core/src/session/turn_context.rs",
+      "sha256": "30dcac776467c188526f3e7b6c9dc713c3f70630989f7b9424a61b32db4d2d0e",
+      "lines": "765–768",
+      "meaning": "TurnContext context getter returns usable window"
+    },
+    {
+      "file": "codex-rs/core/src/session/mod.rs",
+      "url": "https://raw.githubusercontent.com/openai/codex/c40729ea5cf8e947481b130c59807273eda2f8e9/codex-rs/core/src/session/mod.rs",
+      "sha256": "c04716274b5ecfc91730908bf25159bc6498a368d10352a0fc311aae7182df62",
+      "lines": "5400–5404,5537–5543",
+      "meaning": "Usage takes the effective TurnContext window and emits TokenCount"
+    },
+    {
+      "file": "codex-rs/app-server/src/bespoke_event_handling.rs",
+      "url": "https://raw.githubusercontent.com/openai/codex/c40729ea5cf8e947481b130c59807273eda2f8e9/codex-rs/app-server/src/bespoke_event_handling.rs",
+      "sha256": "be97e0152518ba89d99324b3d194bb487349c0d84ecbc6947fc950cc5c111b2d",
+      "lines": "1652–1666",
+      "meaning": "TokenCount is converted to ThreadTokenUsage notification"
+    },
+    {
+      "file": "codex-rs/app-server-protocol/src/protocol/v2/thread.rs",
+      "url": "https://raw.githubusercontent.com/openai/codex/c40729ea5cf8e947481b130c59807273eda2f8e9/codex-rs/app-server-protocol/src/protocol/v2/thread.rs",
+      "sha256": "f5a99bd250950ddaa3a07a8cae84e434c77d645650c11ec037e140945fa2c500",
+      "lines": "2042–2059",
+      "meaning": "Camel-case report copies the core model_context_window unchanged"
+    }
+  ]
+}
