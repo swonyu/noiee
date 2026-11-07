@@ -1,16 +1,22 @@
 # Noiee
 
-Noiee is the native macOS local AI workspace formerly named Saleh Uncensored. This checkout is the versioned development source for Build 173. The installed Build 172 source is retained at tag `noiee-build172`; the original Build 171 source and its `noiee-build171-source` baseline remain separate and unchanged.
+Noiee is the native macOS local AI workspace formerly named Saleh Uncensored. This checkout is the versioned development source for Build 174. The accepted Build 173 predecessor is retained at tag `noiee-build173`; the original Build 171 source and its `noiee-build171-source` baseline remain separate and unchanged.
 
 ## Layout
 
 - `source/`: native Swift app, local Node backend, Chat/Agent and Tasks frontends, and their existing checks.
 - `checks/compaction/`: isolated summary, request-admission, recovery and browser regressions.
-- `tests/presentation-check.mjs`: real-browser checks of safe Chat/Tasks rendering and reasoning placement.
+- `tests/presentation-check.mjs` and `tests/workbench-check.mjs`: real-browser checks of rendering, command dispatch, focus, drafts and tool-authority labels.
 - `tooling/`: native compilation, startup checks, preserved integration suites, qualification and the reviewed host release adapter.
 - `.artifacts/`: exclusive generated evidence, omitted from Git. Generated runtime homes and browser profiles use private Caches directories.
 
-The `source/node_modules` link points to the verified owned dependency snapshot at `/Users/saleh/Documents/Noiee/dependencies/node-26.13.0-build171`. The dependency versions are pinned in `source/package-lock.json`; they have not been upgraded in this stabilization release. Development commands use `--preserve-symlinks` because the copied dependency directory has a descriptive name. The signed application embeds its own dependency tree.
+The `source/node_modules` link points to the verified owned dependency snapshot at `/Users/saleh/Documents/Noiee/dependencies/node-26.13.0-build171`. The dependency versions are pinned in `source/package-lock.json`; they have not been upgraded in this workflow release. Development commands use `--preserve-symlinks` because the copied dependency directory has a descriptive name. The signed application embeds its own dependency tree.
+
+## Workflow improvements
+
+The shared command palette opens with Cmd+Shift+P or the existing Cmd+J shortcut. Commands call existing guarded controls and preserve drafts; Cmd+K remains New chat. The Chat composer states that tools are off, while Agent shows the current launch policy. Delegated Tasks show their own result and a verified Return to parent action. Explicit inherited-parent history is collapsed, and command execution remains separate from verification. Retained failed startups have a bounded recovery summary.
+
+[CODEX_PARITY.md](CODEX_PARITY.md) records the scoped parity target, existing capabilities, and remaining gaps. Source implementation, generated qualification and installed native acceptance are separate evidence.
 
 ## Runtime contracts
 
@@ -25,12 +31,12 @@ Tasks derives its execution context and automatic-compaction threshold from the 
 Use a clean committed checkout for a release build:
 
 ```sh
-python3 -B tooling/build_native.py --build 173
+python3 -B tooling/build_native.py --build 174
 ```
 
 This compiles all native sources and runs the built-in native checks without opening the installed app. Each run creates an exclusive receipt containing source, compiler, SDK, command, binary and log hashes. A `--development` build is explicitly ineligible for release.
 
-See [tooling/README.md](tooling/README.md) for startup checks and backup coverage inspection. See [tooling/RELEASE.md](tooling/RELEASE.md) for the complete Build 172 to Build 173 qualification, capture, signing and guarded installation process. Do not run a historic release recipe or rewrite a prior receipt.
+See [tooling/README.md](tooling/README.md) for startup checks and backup coverage inspection. See [tooling/RELEASE.md](tooling/RELEASE.md) for the complete Build 173 to Build 174 qualification, capture, signing and guarded installation process. Do not run a historic release recipe or rewrite a prior receipt.
 
 `tooling/check_live_profile.mjs` is an explicitly invoked real-model qualification harness. It uses a generated project and isolated native engine home; its result is separate from installed native UI acceptance. Live tests must run serially under the release owner. Never label generated fixtures or a compiler check as a completed user task.
 
@@ -40,4 +46,6 @@ The visible app is Noiee. Its physical bundle remains `/Users/saleh/Applications
 
 Chat JSON export covers Chat/Agent conversations and exported attachments. It does not cover Tasks history or native settings. A release backup covers the four declared original stores and retains the exact signed predecessor bundle. No automatic old-history deletion, backup pruning or post-launch data rollback is part of this update.
 
-Conversation summaries retain original messages, drafts and attachments. Full-history selection and rebuilding use the existing storage compare-and-swap. Summary input remains limited to complete exchanges within 24,000 UTF-8 bytes per step, with 64 retained attempts. Oversized or unsettled exchanges are reported explicitly; they are not silently clipped or hidden by a summary.
+Conversation summaries retain original messages, drafts and attachments. Each explicit Compact operation processes up to 24,000 UTF-8 bytes of serialized history, including carried summary and fragment metadata. Oversized exchanges use pinned UTF-8 cursors; partial exchanges remain fully in request history until all their bytes are covered. New results must fit both the 12,000-byte raw summary bound and 16,000-byte encoded carry bound. Older valid summaries that exceed the carry budget remain retained while the next round explicitly rebuilds from originals. Ordinary responses keep their existing generation policy.
+
+Full-history selection, rebuilding, saved progress and activation use the existing storage compare-and-swap. The newest exchange always stays in full; unfinished or unsettled exchanges block compaction. Metadata retains up to 64 current and 2,048 archived attempts within a 32 MiB bound. Reaching a retained-data bound refuses the next attempt without discarding history. Exporting does not reset those limits.

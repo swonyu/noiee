@@ -31,7 +31,7 @@ SCOPES = {
     "compaction-recovery": "Generated compaction state, CAS, races, browser and extracted native recovery fixtures. Fake inference and dialogs only.",
     "model-stabilization": "Generated inventories, in-memory model/engine routing and real headless browser pages with every request and native call faked. No live model.",
     "startup-diagnostics": "Compiled current startup diagnostics with generated processes, configuration and sockets; generated build and backup-inventory fixtures.",
-    "presentation": "Current Chat/Tasks renderer functions in a fresh headless browser. No backend, native bridge, inference or original browser profile.",
+    "presentation": "Current Chat/Tasks rendering, shared command palette, tool-authority labels and delegated-result views in fresh headless browsers, plus generated receipt/state cases. Requests and native calls are faked; no inference or original browser profile.",
     "mcp-skills": "Fresh generated MCP lifecycle/recovery and project-skills native, Agent and UI checks. Fake transports; no original stores.",
     "fetch": "Dependent installer, native, guard, durable, UI, admission and recovery fixtures. Only generated bundled payload copies; no external install.",
     "worktrees": "Generated current V3 consumer cases, unchanged disabled historical map-producer pure cases, and read-only static-map reproduction. No current-boot admission claim."
@@ -372,7 +372,7 @@ class Suite:
         node = lambda path: [self.node, "--preserve-symlinks", str(self.project / path)]
         if name == "compaction-recovery":
             self.case("compaction", py("checks/compaction/run-suite.py") + ["--node", self.node],
-                      self.aggregate_parser(115, "compaction"))
+                      self.aggregate_parser(151, "compaction"))
         elif name == "model-stabilization":
             fixture = self.model_fixture()
             scripts = [self.source / "local-models-check.mjs", self.source / "coding-model-check.mjs",
@@ -411,6 +411,23 @@ class Suite:
                         "Presentation assertions did not all complete")
                 return count, {"rawResult": kept}
             self.case("presentation", node("tests/presentation-check.mjs"), presentation)
+            self.case("workbench", node("tests/workbench-check.mjs"), presentation)
+            self.case("coding-result-state", [self.node, "--preserve-symlinks", "--test",
+                      "--test-reporter=tap", str(self.source / "coding-result-check.mjs")],
+                      lambda text: (tap_counts(text), {}))
+            def coding_parity(text):
+                rows = [row for row in parse_json_lines(text) if row.get("name") == "coding-ui-parity"]
+                require(len(rows) == 1, "Expected one fresh Coding parity result")
+                row = rows[0]
+                checks = row.get("checks")
+                require(row.get("schemaVersion") == 1 and row.get("passed") == 26
+                        and row.get("failed") == 0 and isinstance(checks, list)
+                        and all(isinstance(value, str) and value for value in checks)
+                        and len(checks) == len(set(checks)) == 26,
+                        "Coding parity assertions did not all complete")
+                return len(checks), {"assertions": checks, "preservedExpected": 26}
+            self.case("coding-parity", node("source/coding-ui-check.mjs") + ["--coding-parity-only"],
+                      coding_parity)
         elif name == "release-inputs":
             self.case("release-inputs", [self.python, "-B", "-m", "unittest", "discover", "-s",
                       "tooling/tests", "-p", "test_release_inputs.py", "-v"],
