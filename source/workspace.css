@@ -502,3 +502,20 @@ dialog[aria-modal="true"]::backdrop { background:#0c0b10a3; backdrop-filter:blur
 .workspace-chat .message.find-current .message-label::after { content:'Current match'; color:var(--accent); font-size:11px; }
 @media(max-width:500px) { .conversation-find input { flex-basis:100%; } .conversation-find-actions button { width:40px; height:40px; } }
 @media(forced-colors:active) { .workspace-chat .message.find-current { outline-color:Highlight; } }
+
+/* BUILD172 PRESENTATION: answer-first details and shared safe table styling. */
+.workspace-rail-mark { font-size:23px; font-weight:700; letter-spacing:-.04em; }
+.message .model-reasoning { margin:12px 0; }
+.model-reasoning:not([open]) { padding:6px 0; }
+.reasoning-note { font-size:12px; line-height:1.6; }
+.message .execution-status { margin:10px 0; padding:5px 0 5px 10px; border-left:2px solid var(--line); color:var(--muted); font-size:12px; line-height:1.55; }
+.table-scroll { max-width:100%; overflow:auto; margin:16px 0; white-space:normal; }
+.table-scroll table { display:table; width:100%; border-collapse:collapse; font-size:13px; line-height:1.65; }
+.table-scroll :is(th,td) { padding:9px 12px; border:1px solid var(--line); text-align:start; vertical-align:top; }
+.table-scroll th { background:var(--workspace-soft); font-weight:600; }
+.table-scroll:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+.history-settings h3 { margin:0 0 8px; font-size:14px; }
+.advanced-history-recovery { margin-top:16px; font-size:12px; line-height:1.65; }
+.advanced-history-recovery summary { cursor:pointer; color:var(--muted); }
+.advanced-history-recovery[open] summary { margin-bottom:12px; color:var(--text); }
+.advanced-history-recovery input { margin:8px 0 12px; }

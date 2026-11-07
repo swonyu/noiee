@@ -385,19 +385,19 @@ function renderReasoning(article, message) {
   if (!message.reasoning && !message.reasoningTruncated) return;
   let details = article.querySelector('.model-reasoning');
   if (!details) {
-    details = document.createElement('details'); details.className = 'model-reasoning'; details.open = message.reasoningOpen !== false;
-    const summary = document.createElement('summary'); summary.textContent = 'Model reasoning · model output';
+    details = document.createElement('details'); details.className = 'model-reasoning'; details.open = message.reasoningOpen === true;
+    const summary = document.createElement('summary'); summary.textContent = 'Reasoning details';
     const text = document.createElement('pre'); text.className = 'reasoning-text reasoning-output'; text.dir = 'auto'; text.tabIndex = 0; text.setAttribute('aria-label', 'Model reasoning text');
     const note = document.createElement('p'); note.className = 'reasoning-note';
     details.append(summary, text, note);
     details.addEventListener('toggle', () => { if (message.reasoningOpen !== details.open) { message.reasoningOpen = details.open; scheduleSave(); } });
-    article.insertBefore(details, article.querySelector('.content'));
+    article.querySelector('.content').insertAdjacentElement('afterend', details);
   }
   const text = details.querySelector('.reasoning-text'), follow = text.scrollHeight - text.scrollTop - text.clientHeight < 40;
   const preview=reasoningPreview(message.reasoning||'');
   if (text.textContent !== preview) text.textContent = preview;
   if (details.open && follow) text.scrollTop = text.scrollHeight;
-  details.querySelector('.reasoning-note').textContent = 'Model output, not proof that an action happened.' + (['stopped','error','length'].includes(message.state) ? ' Partial response; generation did not finish.' : '') + (message.reasoningTruncated||message.reasoning?.length>64000 ? ' This preview is limited to 64,000 characters; retained reasoning is included in Export.' : '');
+  details.querySelector('.reasoning-note').textContent = 'Reasoning is generated text. Recorded tool activity shows what actions ran.' + (['stopped','error','length'].includes(message.state) ? ' Partial response; generation did not finish.' : '') + (message.reasoningTruncated||message.reasoning?.length>64000 ? ' This preview is limited to 64,000 characters; retained reasoning is included in Export.' : '');
 }
 // CHAT FIND BEGIN
 // Adapted interaction from owner-authorized Salehman-AI; provenance in notices.
@@ -459,7 +459,7 @@ function renderMessages(onlyLast = false) {
     const article = document.createElement('article'); article.dataset.id = m.id; article.className = `message ${m.role}`;
     const label = document.createElement('div'); label.className = 'message-label';
     if (m.source === 'app') label.textContent = 'Noiee';
-    else if (m.role === 'assistant') { const mark = document.createElement('span'); mark.textContent = 'S'; label.append(mark, document.createTextNode('Assistant')); }
+    else if (m.role === 'assistant') { const mark = document.createElement('span'); mark.textContent = 'N'; label.append(mark, document.createTextNode('Noiee')); }
     else label.textContent = 'You';
     const content = document.createElement('div'); content.className = 'content'; content.dir = 'auto';
     if (!m.content && displayState === 'streaming') { content.classList.add('thinking'); content.textContent = m.reasoning ? '' : 'Thinking…'; }
@@ -467,7 +467,7 @@ function renderMessages(onlyLast = false) {
     article.append(label, content);
     if(m.attachments?.length)article.append(attachmentCards(m.attachments));
     renderReasoning(article, m);
-    if(m.agent && displayState!=='streaming' && !m.receipts?.length){const evidence=document.createElement('p');evidence.className='message-note execution-status';evidence.textContent='No tool ran for this request. This reply is text only; it does not confirm a new action.';article.insertBefore(evidence,content);}
+    if(m.agent && displayState!=='streaming' && !m.receipts?.length){const evidence=document.createElement('p');evidence.className='message-note execution-status';evidence.textContent='Answer only · No tool activity is recorded for this reply.';content.insertAdjacentElement('afterend',evidence);}
     if(m.plan?.length){const plan=document.createElement('details');plan.className='work-plan';plan.open=displayState==='streaming';const title=document.createElement('summary');title.textContent='Work plan · model progress';plan.append(title);const items=document.createElement('ol');for(const step of m.plan){const item=document.createElement('li');item.textContent=`${step.status.replace('_',' ')} · ${step.text}`;items.append(item);}const note=document.createElement('small');note.textContent='Plan status is model-reported. Check tool results for actual outcomes.';plan.append(items,note);article.append(plan);}
     if(m.sources?.length){const sources=document.createElement('details');sources.className='research-sources';const title=document.createElement('summary');title.textContent=`${m.sources.length} source observation${m.sources.length===1?'':'s'} · saved locally`;sources.append(title);for(const source of m.sources){const item=document.createElement('div'),a=document.createElement('a'),meta=document.createElement('small'),quote=document.createElement('p');a.href=source.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent=source.title;meta.textContent=`Observed ${source.observedAt} · ${source.provider} · result ${source.receipt}${source.referenceOnly?' · file reference only; page text not retained':source.truncated?' · partial excerpt':''}`;quote.textContent=source.excerpt;item.append(a,meta,quote);sources.append(item);}const note=document.createElement('small');note.textContent='Historical tool observations; source text may be incomplete or wrong. Saved locally with this chat.';sources.append(note);article.append(sources);}
     if (m.receipts?.length) { const list=document.createElement('details'); list.className='tool-receipts'; const summary=document.createElement('summary');summary.textContent=`${m.receipts.length} tool result${m.receipts.length===1?'':'s'}`;list.append(summary);for(const r of m.receipts){const item=document.createElement('div');item.className='tool-receipt';const status=document.createElement('p');status.textContent=`${r.tool.slice(0,400)}${r.id?' · result '+r.id:''} · ${r.status.slice(0,40)}: ${boundedReceiptText(r.message,1000)}`;item.append(status);for(const [key,label] of [['input','Inputs'],['output','Returned output']])if(typeof r[key]==='string'){const detail=document.createElement('details'),heading=document.createElement('summary'),text=document.createElement('pre');detail.className='receipt-detail';heading.textContent=label;text.textContent=boundedReceiptText(r[key],key==='input'?16000:32000);text.dir='auto';text.tabIndex=0;detail.append(heading,text);item.append(detail);}list.append(item);}article.append(list); }
@@ -497,9 +497,9 @@ function controls() {
   $('archive-status').hidden = !archived;
   document.querySelectorAll('.retry-reply').forEach(button => { button.disabled = storageHydrating||storageBlocked||blocked || computerBusy || attachmentReads.has(current()) || !chatModelState(current()).ready || !textRunsReady; });
   $('send').hidden = !!active; $('stop').hidden = !active; $('send').disabled = storageHydrating||storageBlocked||restoring||structuralPending||deletingChats.has(current().id)||blocked||computerBusy || attachmentReads.has(current()) || !$('prompt').value.trim()&&!draftAttachments(current()).length || !chatModelState(current()).ready || !textRunsReady;
-  $('mode-summary').textContent=current().mode==='agent'?'Agent with native tools':'Text + supplied context';
+  $('mode-summary').textContent=current().mode==='agent'?'Agent · Can use enabled tools':'Chat · Answers with your supplied context';
   $('thinking').disabled = !!active; $('chat-mode').disabled=!!active; $('chat-mode').querySelector('[value=agent]').disabled=!window.webkit?.messageHandlers?.tools;
-  $('activity').textContent = active ? active.kind==='compact'?'Compacting context · original history and draft kept…':'Local model is working in this chat…' : blocked ? (activeRuns.size>=2?'Two Chats are running. Wait for one to finish or stop it.':'Agent and image Chats need the other ordinary runs to finish first.') : activeRuns.size ? 'Another Chat is running · one text slot available' : (current().mode==='agent' ? 'Agent · native tools with action receipts' : 'Chat · no tools');
+  $('activity').textContent = active ? active.kind==='compact'?'Compacting context · original history and draft kept…':'Local model is working in this chat…' : blocked ? (activeRuns.size>=2?'Two Chats are running. Wait for one to finish or stop it.':'Agent and image Chats need the other ordinary runs to finish first.') : activeRuns.size ? 'Another Chat is running · one text slot available' : (current().mode==='agent' ? 'Agent · Tools enabled' : 'Chat · Answers only');
   $('restore-file').disabled = activeRuns.size>0||storageHydrating||storageBlocked||restoring||structuralPending;
   $('recovery-file').disabled = activeRuns.size>0||storageHydrating||restoring||structuralPending;
   $('new-chat').disabled=storageHydrating||storageBlocked||restoring||structuralPending;
@@ -520,7 +520,7 @@ function renderContext() {
   $('composer-file').hidden = !chat.file && !loading;
   $('composer-file-name').textContent = loading ? `Loading ${loading.name}…` : chat.file?.name || '';
   const size = chat.notes.length + (chat.file?.text.length || 0);
-  $('context-count').textContent = size ? `${size.toLocaleString()} context characters · saved with this chat` : 'No context added';
+  $('context-count').textContent = size ? `${size.toLocaleString()} characters in notes and the context file. Conversation and tool history are additional.` : 'No additional notes or context file.';
 }
 function render() { showArchived = current().archived === true; $('title').textContent = current().title; $('prompt').value = current().draft; $('thinking').value = current().longOutput === true ? 'long' : current().thinking; $('chat-mode').value=current().mode; renderSidebar(); renderMessages(); renderContext(); resize(); controls(); window.dispatchEvent(new CustomEvent('chat-selection-change',{detail:{chatId:selectedId}})); if ($('chat-find').hidden) bottom(); }
 function refreshReply(chat) {

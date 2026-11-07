@@ -101,7 +101,20 @@
         <select id="default-model" aria-describedby="default-model-note" disabled><option value="">Checking local models…</option></select>
         <p id="default-model-note">Local models · No API charges. New chats and schedules use your default. Existing ones keep their saved model. Selection never downloads a model.</p>
       </section>
-      <button id="export">↓ &nbsp; Export chats</button><label class="restore-button">↑ &nbsp; Restore backup<input type="file" id="restore-file" accept=".json,application/json" aria-label="Restore chat backup" multiple></label><section class="model-settings" aria-label="Exact history recovery"><label for="recovery-selected-id">Recorded selected chat ID</label><input id="recovery-selected-id" type="text" autocomplete="off" spellcheck="false" placeholder="Required when the export omits selectedId"><p>Recover a complete export with its original IDs and run links. Existing chats and messages must remain in order and unchanged. The previous saved snapshot is retained.</p><label class="restore-button">Recover exact history<input type="file" id="recovery-file" accept=".json,application/json" aria-label="Recover exact chat history" multiple></label></section><div class="device"><span class="device-mark" aria-hidden="true">⌘</span><div>On this Mac<small>Private local history</small></div></div>
+      <section class="model-settings history-settings" aria-labelledby="history-settings-title">
+        <h3 id="history-settings-title">Chat history</h3>
+        <p>Export Chat and Agent conversations, including their attachments. Chat exports do not include Tasks histories or native app settings.</p>
+        <button id="export">Export chat history</button>
+        <label class="restore-button">Import chat history<input type="file" id="restore-file" accept=".json,application/json" aria-label="Import chat history" multiple></label>
+        <details class="advanced-history-recovery">
+          <summary>Advanced: restore original chat IDs</summary>
+          <p>Recover a complete export with its original IDs and saved run links. Existing history must remain in its original order. The previous saved snapshot is retained.</p>
+          <label for="recovery-selected-id">Selected chat ID from the export</label>
+          <input id="recovery-selected-id" type="text" autocomplete="off" spellcheck="false" placeholder="Only needed when the export omits selectedId">
+          <label class="restore-button">Recover exact history<input type="file" id="recovery-file" accept=".json,application/json" aria-label="Recover exact chat history" multiple></label>
+        </details>
+      </section>
+      <div class="device"><span class="device-mark" aria-hidden="true">⌘</span><div>On this Mac<small>Private local history</small></div></div>
     </div>
   </aside>
   <dialog id="rename-dialog" aria-labelledby="rename-heading">

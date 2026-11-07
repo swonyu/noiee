@@ -1393,7 +1393,9 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
     catch {banner('notice', 'Copy was blocked. Select the text and copy it manually.');}
   }
   function formatContent(parent, text, allowFilePreview=true) {
-    // ponytail: common text blocks and fenced code only; no HTML, media or full Markdown dialect.
+    // Safe text blocks, tables and fenced code. Model-provided HTML is never executed.
+    const cells = value => value.trim().replace(/^\||\|$/g, '').split('|').map(value => value.trim());
+    const separator = value => typeof value === 'string' && value.includes('|') && cells(value).length > 0 && cells(value).every(value => /^:?-{3,}:?$/.test(value));
     const lines = String(text || '').replace(/\r\n/g, '\n').split('\n');
     for (let i = 0; i < lines.length;) {
       const line = lines[i]; if (!line.trim()) {i++; continue;}
@@ -1410,10 +1412,20 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
       }
       const heading = line.match(/^(#{1,6})\s+(.+)$/);
       if (heading) {const node = element('h' + Math.min(4, Math.max(2, heading[1].length))); inlineText(node, heading[2], allowFilePreview); parent.append(node); i++; continue;}
+      if (/^\s*(?:---+|\*\*\*+)\s*$/.test(line)) {parent.append(element('hr')); i++; continue;}
+      if (line.includes('|') && separator(lines[i + 1])) {
+        const wrap = element('div', 'table-scroll'); wrap.tabIndex = 0; wrap.setAttribute('role', 'region'); wrap.setAttribute('aria-label', 'Table');
+        const table = element('table'), head = element('thead'), body = element('tbody'), headingRow = element('tr');
+        for (const value of cells(line)) {const cell = element('th'); cell.scope = 'col'; inlineText(cell, value, allowFilePreview); headingRow.append(cell);}
+        head.append(headingRow); i += 2;
+        while (i < lines.length && lines[i].includes('|') && lines[i].trim()) {const row = element('tr'); for (const value of cells(lines[i++])) {const cell = element('td'); inlineText(cell, value, allowFilePreview); row.append(cell);} body.append(row);}
+        table.append(head, body); wrap.append(table); parent.append(wrap); continue;
+      }
+      if (/^>\s?/.test(line)) {const quote = element('blockquote'), body = []; while (i < lines.length && /^>\s?/.test(lines[i])) body.push(lines[i++].replace(/^>\s?/, '')); inlineText(quote, body.join('\n'), allowFilePreview); parent.append(quote); continue;}
       const list = line.match(/^\s*(?:([-+*])|(\d+)\.)\s+(.+)$/);
       if (list) {const tag = list[2] ? 'ol' : 'ul', node = element(tag); if (tag === 'ol') node.start = Number(list[2]); while (i < lines.length) {const item = lines[i].match(/^\s*(?:([-+*])|(\d+)\.)\s+(.+)$/); if (!item || (item[2] ? 'ol' : 'ul') !== tag) break; const li = element('li'); inlineText(li, item[3], allowFilePreview); node.append(li); i++;} parent.append(node); continue;}
       const paragraph = element('p'), body = [line]; i++;
-      while (i < lines.length && lines[i].trim() && !/^\s*(?:#{1,6}\s|`{3,}|[-+*]\s|\d+\.\s)/.test(lines[i])) body.push(lines[i++]);
+      while (i < lines.length && lines[i].trim() && !/^\s*(?:#{1,6}\s|`{3,}|>\s?|[-+*]\s|\d+\.\s|---+\s*$)/.test(lines[i]) && !(lines[i].includes('|') && separator(lines[i+1]))) body.push(lines[i++]);
       inlineText(paragraph, body.join('\n'), allowFilePreview); parent.append(paragraph);
     }
   }
@@ -1486,7 +1498,7 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
       section.append(element('p', `turn-outcome${turn.status === 'failed' ? ' error' : ''}`, outcome(turn)));
       const evidence = codingVerificationSummary(turn, {historyIncomplete: !!(thread.historyTruncated || thread.historyWarning || thread.verificationGap), updatesInterrupted: !view && pollFailed});
       const verification = element('aside', 'verification-summary'); verification.dataset.state = evidence.state; verification.setAttribute('aria-label', 'Verification evidence');
-      verification.append(element('strong', '', 'Verification: not established'), element('p', '', evidence.detail)); section.append(verification); messages.append(section);
+      verification.append(element('strong', '', 'No verification recorded'), element('p', '', evidence.detail)); section.append(verification); messages.append(section);
     }
   }
   function renderMessages() {

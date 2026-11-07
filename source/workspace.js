@@ -281,7 +281,7 @@
   });
   // The rail and palette share existing button dispatch, including draft guards.
   const rail = document.createElement('nav'); rail.id = 'workspace-rail'; rail.setAttribute('aria-label', 'Workspaces');
-  const mark = document.createElement('span'); mark.className = 'workspace-rail-mark'; mark.textContent = 's/'; mark.setAttribute('aria-hidden', 'true'); rail.append(mark);
+  const mark = document.createElement('span'); mark.className = 'workspace-rail-mark'; mark.textContent = 'N'; mark.setAttribute('aria-hidden', 'true'); rail.append(mark);
   const icons = {
     chat:'<path d="M4 4h12v9H9l-5 3V4Z"/>', tasks:'<rect x="3" y="4" width="14" height="12" rx="2"/><path d="m6 8 2 2-2 2m5 0h3"/>',
     search:'<circle cx="8.5" cy="8.5" r="5"/><path d="m12 12 4.5 4.5"/>', extensions:'<rect x="3" y="3" width="5" height="5" rx="1"/><rect x="12" y="3" width="5" height="5" rx="1"/><rect x="3" y="12" width="5" height="5" rx="1"/><rect x="12" y="12" width="5" height="5" rx="1"/>',
