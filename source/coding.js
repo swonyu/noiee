@@ -824,7 +824,7 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
     $('new-tools-task').disabled = !bridge || !mcpSetup || acting;
     for (const id of ['rename-chat', 'fork-chat', 'archive-chat', 'reclaim-guest-disk', 'changes-toggle', 'terminal-toggle']) $(id).disabled = !bridge || !thread || acting;
     $('failed-guest-storage').disabled = !bridge || acting;
-    $('failed-startups').disabled = !bridge || acting || setupBlocking() || storageBlocked || attachmentReads.size>0 || attachmentStorage.busy || !modelEligibility(localModels,newModel,'coding').ready;
+    $('failed-startups').disabled = !bridge || acting || setupBlocking() || storageBlocked || attachmentReads.size>0 || attachmentStorage.busy;
     for (const id of ['rename-chat', 'fork-chat', 'archive-chat', 'reclaim-guest-disk']) if (!ownedChat(thread)) $(id).disabled = true;
     $('browse-history').disabled=!bridge||!thread||historyPending(thread);
     $('cloud-connection').hidden=!managedCloudChat(thread);$('cloud-connection').disabled=!bridge||acting||!managedCloudChat(thread);
@@ -2965,7 +2965,9 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
     if(setupBlocking()||!window.salehSaveBeforeLeave())return;const origin=selectedId,scope=selectionEpoch,model=newModel;
     return act(async()=>{
       banner('notice','Reviewing failed task startups…');
-      const result=await native({op:'codingRecovery',input:{model}});
+      // Listing and reviewing retained startups never needs a ready model.
+      // Only a new continuation receives the model after its actual Coding check.
+      const result=await native({op:'codingRecovery',input:modelEligibility(localModels,model,'coding').ready?{model}:{}});
       if(disposed)return;
       if(!window.salehSaveBeforeLeave()){banner('notice',result.thread?'A continuation chat was created, but your current draft could not be saved. This view is kept; inspect saved Tasks history when ready.':'Recovery review finished. This view is kept because the current draft could not be saved.');return;}
       if(result.thread){

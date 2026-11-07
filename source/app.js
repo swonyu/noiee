@@ -42,7 +42,8 @@ function modelOptions(select, catalog, selected) {
 const $ = id => document.getElementById(id);
 const KEY = 'qwen-local-chats-v1';
 const attachments=window.SalehAttachments,attachmentStorage=window.SalehAttachmentStorage,chatStorage=window.SalehChatStorage;
-const contextCompaction=window.SalehContextCompaction,compactionAdmissions=new Map(),compactionResults=new Map(),compactionApplying=new Set(),compactionReads=new Set();
+const contextCompaction=window.SalehContextCompaction,compactionAdmissions=new Map(),compactionResults=new Map(),compactionApplying=new Set(),compactionReads=new Set(),compactionViews=new WeakMap();
+let compactionRenderVersion=0;
 let pendingSavedChats=null,storageHydrating=true,pageDisposed=false,restoring=false,structuralPending=false,structuralWriting=false;
 let snapshotFields={},saveTail=Promise.resolve(),observedSnapshot=null,dirtyRevision=0,reconcileTail=Promise.resolve(),reconcileHold=null,reconcileSequence=0;
 const inspectionTasks=new Set();
@@ -121,7 +122,7 @@ if(openedChat&&chats.some(c=>c.id===openedChat))selectedId=openedChat;
 const current = () => chats.find(c => c.id === selectedId);
 const activeFor = chat => [...activeRuns.values()].find(run=>run.chatId===chat.id);
 const parallelTextChat = chat => chat.mode==='chat'&&![...draftAttachments(chat),...chat.messages.flatMap(message=>message.attachments??[])].some(file=>file.kind==='image');
-const runBlocked = chat => !!activeFor(chat)||activeRuns.size>=2||activeRuns.size>0&&(!parallelTextChat(chat)||[...activeRuns.values()].some(run=>!run.parallelText));
+const runBlocked = chat => !!activeFor(chat)||(Array.isArray(chat.contextCompactions?.records)&&chat.contextCompactions.records.some(row=>compactionApplying.has(row.runId)))||activeRuns.size>=2||activeRuns.size>0&&(!parallelTextChat(chat)||[...activeRuns.values()].some(run=>!run.parallelText));
 let showArchived = current().archived === true;
 let localModels = {online: null, models: [], message: 'Checking installed local models…'}, modelRefresh = 0;
 const chatModelState = chat => {
@@ -606,19 +607,61 @@ window.addEventListener('chat-runs-ready',event=>{
   textRunsReady=true;if($('notice').dataset.source==='chat-runs')notice('');controls();renderSidebar();
 });
 window.addEventListener('chat-run-error',event=>{textRunsReady=false;notice('Text-run state is unavailable. No recovered request will be resent. '+event.detail,'chat-runs');controls();});
+function compactionBlocked(chat){return storageHydrating||storageBlocked||restoring||structuralPending||deletingChats.has(chat.id)||runBlocked(chat)||computerBusy||attachmentReads.has(chat)||!textRunsReady||contextCompaction.state(chat).records.some(row=>compactionApplying.has(row.runId));}
 function renderCompaction(){
-  const chat=current(),region=$('context-compaction'),busy=!!activeFor(chat),blocked=storageHydrating||storageBlocked||restoring||structuralPending||deletingChats.has(chat.id)||runBlocked(chat)||computerBusy||attachmentReads.has(chat)||!textRunsReady;
-  $('compact-context').disabled=!!blocked;
+  const chat=current(),region=$('context-compaction'),ticket=++compactionRenderVersion;
   try{
-    const saved=contextCompaction.state(chat),latest=saved.records.at(-1),active=saved.records.find(row=>row.id===saved.activeId),imported=Array.isArray(saved.imports)&&saved.imports.length>0;region.hidden=!latest&&!active&&!imported;
-    $('compaction-status').textContent=latest?latest.imported&&['pending','intent','running'].includes(latest.status)?'Imported unfinished compaction record. No request was resumed. Original history and your draft are kept.':['pending','intent','running'].includes(latest.status)?'Compacting context… Original history and your draft are kept. Use Stop to cancel.':latest.id===saved.activeId?'Context compacted. Original history, drafts and attachments are kept.':latest.status==='complete'?'A saved summary is ready. Apply it to this chat; your draft will not be sent.':'Compaction '+latest.status+'. Original history and your draft are kept. '+(latest.note||'Use Compact context for an explicit new attempt.') : imported?'Imported compaction metadata is retained. This chat uses its original history until you explicitly compact it; no old job was resumed.':'';
-    const shown=active??latest;$('compaction-details').hidden=!shown?.summary;$('compaction-summary').textContent=shown?.summary||'';
-    $('compaction-range').textContent=shown?'Derived summary for '+shown.source.covered.length+' earlier messages, '+shown.source.covered[0].id+' through '+shown.source.covered.at(-1).id+'. It is not new authorization or proof that an action completed.':'';
-    $('compaction-apply').hidden=!latest||latest.id===saved.activeId||latest.status!=='complete'||!compactionResults.has(latest.runId);$('compaction-apply').disabled=!!blocked||busy;
-  }catch(error){region.hidden=false;$('compaction-status').textContent=error.message;$('compaction-details').hidden=true;$('compaction-apply').hidden=true;}
+    const saved=contextCompaction.state(chat),blocked=!!compactionBlocked(chat);
+    region.hidden=!saved.records.length&&!saved.imports?.length;
+    if(region.hidden){
+      // Ordinary chats need no summary fingerprint, snapshot or asynchronous SHA.
+      compactionViews.delete(chat);region.dataset.state='full';
+      $('compaction-status').textContent='Full history is in use.';$('compaction-details').hidden=true;$('compaction-summary').textContent='';$('compaction-range').textContent='';
+      for(const id of ['compaction-apply','compaction-full-history','compaction-rebuild']){$(id).hidden=true;$(id).disabled=true;}
+      $('compact-context').disabled=blocked;$('compact-context').title='Summarize complete earlier exchanges, up to 24,000 bytes per step; the newest exchange stays in full.';return;
+    }
+    const token=contextCompaction.viewToken(chat);
+    $('compact-context').disabled=blocked;
+    $('compaction-full-history').hidden=saved.activeId===null;$('compaction-full-history').disabled=blocked;
+    $('compaction-rebuild').hidden=!saved.records.length;$('compaction-rebuild').disabled=true;
+    $('compaction-apply').hidden=true;$('compaction-apply').disabled=true;
+    const paint=view=>{
+      if(pageDisposed||ticket!==compactionRenderVersion||current()!==chat)return;
+      if(contextCompaction.viewToken(chat)!==token){renderCompaction();return;}
+      const busy=!!compactionBlocked(chat);region.dataset.state=view.status;
+      $('compaction-status').textContent=view.message+(view.pending&&activeRuns.has(view.runId)?' Use Stop to cancel this summary.':'');
+      $('compaction-details').hidden=!view.summary;$('compaction-summary').textContent=view.summary;$('compaction-range').textContent=view.range;
+      $('compact-context').disabled=busy||view.status==='stale';$('compact-context').title=view.status==='stale'?'Choose Rebuild summary to use the original history with the current settings.':'Summarize complete earlier exchanges, up to 24,000 bytes per step; the newest exchange stays in full.';
+      $('compaction-full-history').disabled=busy;
+      $('compaction-rebuild').disabled=busy||!view.canRebuild;
+      $('compaction-apply').hidden=!view.canApply||!compactionResults.has(view.runId);$('compaction-apply').disabled=busy;
+    };
+    let entry=compactionViews.get(chat);
+    if(entry?.token===token&&entry.view){paint(entry.view);return;}
+    // Never keep an Active label visible while a changed binding is being checked.
+    region.dataset.state='checking';$('compaction-status').textContent='Checking the saved summary against this chat…';$('compaction-details').hidden=true;
+    if(entry?.token!==token){entry={token,promise:contextCompaction.describe(chat)};compactionViews.set(chat,entry);}
+    void entry.promise.then(view=>{entry.view=view;paint(view);}).catch(error=>{
+      if(pageDisposed||ticket!==compactionRenderVersion||current()!==chat)return;
+      region.hidden=false;region.dataset.state='failed';$('compaction-status').textContent='Summary unavailable. Original history is used. '+error.message;
+      $('compaction-details').hidden=true;$('compaction-apply').hidden=true;
+    });
+  }catch(error){region.hidden=false;region.dataset.state='failed';$('compaction-status').textContent=error.message;$('compaction-details').hidden=true;$('compaction-apply').hidden=true;$('compaction-full-history').disabled=true;$('compaction-rebuild').disabled=true;}
+}
+async function useFullHistory(){
+  const chat=current();
+  try{
+    if(compactionBlocked(chat)){notice('Wait for the current summary, work or storage check before switching to full history. Your draft is kept.');return;}
+    await changeSnapshot(()=>{
+      if(!chats.includes(chat)||activeFor(chat)||pageDisposed)throw Error('The chat changed before full history could be saved.');
+      const next=contextCompaction.fullHistory(chat);
+      return {value:{...snapshotFields,chats:chats.map(row=>row===chat?next:row),selectedId},apply:()=>{chat.contextCompactions=next.contextCompactions;}};
+    });
+    notice('Full history is now in use. Previous summaries, original messages, your draft and attachments are kept.');
+  }catch(error){notice('The full history selection could not be confirmed. '+error.message);}finally{controls();}
 }
 async function applyCompaction(chat,job,value){
-  if(compactionApplying.has(job.runId))return;compactionApplying.add(job.runId);
+  if(compactionApplying.has(job.runId))return;compactionApplying.add(job.runId);controls();
   try{
     const token=contextCompaction.compareToken(chat,job.source),checked=await contextCompaction.activate(chat,job,value),complete=checked.contextCompactions.records.find(row=>row.id===job.id);
     if(pageDisposed||storageBlocked||!chats.includes(chat))return;
@@ -637,7 +680,8 @@ async function mergeCompactionRun(value){
   const chat=chats.find(chat=>chat.id===row.chatId);if(!chat)return;
   const job=contextCompaction.state(chat).records.find(job=>job.runId===row.runId);
   if(!job||job.imported||job.inputDigest!==row.inputDigest||job.source.digest!==row.sourceDigest||job.userMessageId!==row.userMessageId||job.assistantMessageId!==row.assistantMessageId||row.requestedModel!==job.source.model||row.resolvedModel!==null&&row.resolvedModel!==job.source.model||row.revision<job.revision)return;
-  compactionResults.set(row.runId,value);job.revision=row.revision;job.status=row.status;job.summary=row.content;job.summaryHash=row.status==='complete'?await contextCompaction.digest(row.content):null;job.note=value.saveError||row.error||'';
+  const summaryHash=row.status==='complete'?await contextCompaction.digest(row.content):null;
+  compactionResults.set(row.runId,value);job.revision=row.revision;job.status=row.status;job.summary=row.content;job.summaryHash=summaryHash;job.note=value.saveError||row.error||'';controls();
   const saved=await save();controls();
   const admission=compactionAdmissions.get(row.runId);
   // Do not await the structural mutation from inside reconciliation: it drains
@@ -661,13 +705,18 @@ function inspectSelectedCompaction(){
     }catch(error){notice('Compaction inspection is unavailable. Originals and drafts are kept. '+error.message);}finally{compactionReads.delete(job.runId);}
   })();inspectionTasks.add(task);task.then(()=>inspectionTasks.delete(task),()=>inspectionTasks.delete(task));
 }
-async function compactCurrent(){
-  const chat=current();if(storageHydrating||storageBlocked||restoring||structuralPending||deletingChats.has(chat.id)||runBlocked(chat)||computerBusy||attachmentReads.has(chat)||!textRunsReady){notice('Wait for the current work or storage check before compacting. Your draft is kept.');return;}
+async function compactCurrent({rebuild=false}={}){
+  const chat=current();try{if(compactionBlocked(chat)){notice('Wait for the current work or storage check before compacting. Your draft is kept.');return;}}catch(error){notice(error.message);return;}
   const choice=modelEligibility(localModels,chat.model,'chat',false);if(!choice.ready){notice(choice.reason);return;}
   const runId=crypto.randomUUID(),admission={text:true,admitting:true,dispatched:false,cancelled:false,runId,chatId:chat.id,kind:'compact',parallelText:true},body=document.body,url=location.href;activeRuns.set(runId,admission);controls();let job;
   const valid=()=>!admission.cancelled&&!pageDisposed&&!storageBlocked&&!storageHydrating&&!restoring&&document.body===body&&location.href===url&&chats.includes(chat);
   try{
     await drainReconciliation();if(await save()!==true)throw Error('The current draft could not be saved. No compaction request was sent.');
+    if(rebuild)await changeSnapshot(()=>{
+      if(!valid())throw Error('Stopped before rebuilding the summary. Original history and draft are kept.');
+      const next=contextCompaction.fullHistory(chat);
+      return {value:{...snapshotFields,chats:chats.map(row=>row===chat?next:row),selectedId},apply:()=>{chat.contextCompactions=next.contextCompactions;}};
+    });
     const source=await contextCompaction.capture(chat,chatStorage.identity);if(!valid()||!await contextCompaction.matches(chat,source))throw Error('Stopped or changed before compaction. The draft is kept.');
     job=contextCompaction.create(source);job.runId=runId;const token=contextCompaction.compareToken(chat,source),generation=await window.SalehChatRuns.generation();
     if(textRunGeneration!==generation){textRunGeneration=generation;textInspections.clear();}
@@ -691,17 +740,19 @@ async function compactCurrent(){
   }finally{if(activeRuns.get(runId)===admission&&admission.admitting)activeRuns.delete(runId);controls();void window.SalehChatRuns.refresh().catch(()=>{});}
 }
 $('compact-context').onclick=()=>{void compactCurrent();};
+$('compaction-full-history').onclick=()=>{void useFullHistory();};
+$('compaction-rebuild').onclick=()=>{void compactCurrent({rebuild:true});};
 $('compaction-apply').onclick=()=>{const chat=current(),job=contextCompaction.state(chat).records.at(-1),value=job&&compactionResults.get(job.runId);if(job&&value)void applyCompaction(chat,job,value);};
 $('compaction-originals').onclick=()=>{const chat=current(),saved=contextCompaction.state(chat),job=saved.records.find(row=>row.id===saved.activeId)??saved.records.at(-1),id=job?.source.covered[0]?.id,article=[...$('messages').children].find(node=>node.dataset.id===id);if(article){article.tabIndex=-1;article.focus({preventScroll:true});article.scrollIntoView({block:'center'});}};
 async function generateRun(chat,selection,preserveDraft) {
   const user=chat.messages.at(-1);if(user?.role!=='user')return;
-  const body=document.body,url=location.href,userText=user.content,userFiles=user.attachments;
+  const body=document.body,url=location.href,userText=user.content,userFiles=user.attachments,sourceCount=chat.messages.length,projectionToken=contextCompaction.projectionToken(chat,sourceCount);
   const reply={id:crypto.randomUUID(),role:'assistant',content:'',state:'streaming',...(selection.mode==='agent'?{agent:true,receipts:[]}: {})},runId=crypto.randomUUID(),submittedDraft=chat.draft;
   const admission={text:true,admitting:true,dispatched:false,cancelled:false,runId,chatId:chat.id,kind:selection.mode,parallelText:parallelTextChat(chat)};activeRuns.set(runId,admission);controls();
   try{
     const generation=await window.SalehChatRuns.generation();
     if(textRunGeneration!==generation){textRunGeneration=generation;textInspections.clear();}
-    const validAdmission=()=>!admission.cancelled&&!pageDisposed&&!storageBlocked&&!storageHydrating&&!restoring&&!structuralPending&&document.body===body&&location.href===url&&chats.includes(chat)&&chat.messages.includes(user)&&user.content===userText&&user.attachments===userFiles&&chat.model===selection.model&&chat.mode===selection.mode&&chat.thinking===selection.thinking&&(chat.longOutput===true)===(selection.longOutput===true)&&(textRunGeneration===null||textRunGeneration===generation);
+    const validAdmission=()=>!admission.cancelled&&!pageDisposed&&!storageBlocked&&!storageHydrating&&!restoring&&!structuralPending&&document.body===body&&location.href===url&&chats.includes(chat)&&chat.messages.includes(user)&&user.content===userText&&user.attachments===userFiles&&chat.model===selection.model&&chat.mode===selection.mode&&chat.thinking===selection.thinking&&(chat.longOutput===true)===(selection.longOutput===true)&&(textRunGeneration===null||textRunGeneration===generation)&&contextCompaction.projectionToken(chat,sourceCount)===projectionToken;
     const assertCurrent=()=>{if(!validAdmission()||chat.messages.at(-1)!==user)throw Error(admission.cancelled?'Stopped before text admission. The draft is kept.':'Chat or document changed before text admission. The draft is kept.');};
     assertCurrent();let view=chat.messages;try{view=await contextCompaction.project(chat);}catch(error){notice(error.message);}assertCurrent();
     const rawStart=contextCompaction.unsettledStart(view),rawContext=[];
@@ -913,8 +964,8 @@ function setContext(open, mode = 'context') {
 }
 $('toggle-context').onclick = () => { setContext($('context-panel').hidden || inspectorMode !== 'context'); if (!$('context-panel').hidden) $('project-name').focus(); };
 $('close-context').onclick = () => { const button = inspectorMode==='tools'?'open-tools':inspectorMode === 'computer' ? 'open-computer' : 'toggle-context'; setContext(false); $(button).focus(); };
-$('project-name').oninput = () => { current().project = $('project-name').value; scheduleSave(); renderSidebar(); };
-$('notes').oninput = () => { current().notes = $('notes').value; scheduleSave(); };
+$('project-name').oninput = () => { current().project = $('project-name').value; scheduleSave(); renderSidebar(); renderCompaction(); };
+$('notes').oninput = () => { current().notes = $('notes').value; scheduleSave(); renderCompaction(); };
 $('notes').onchange = renderContext;
 $('text-file').onchange = async () => {
   const file = $('text-file').files[0], chat = current(); $('text-file').value = ''; if (!file) return;

@@ -1260,7 +1260,9 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
                     guard let token=providerBindingToken,let input=body["input"] as? [String:Any] else{throw ComputerError.message("Invalid cloud connection request.")}
                     result=try await bindCodingProvider(input,expected:expected,token:token)
                 case "codingRecovery":
-                    guard Set(body.keys)==["op","input"],let input=body["input"] as? [String:Any],Set(input.keys)==["model"],let model=input["model"] as? String,!model.isEmpty,model.utf8.count<=200,!model.unicodeScalars.contains(where:{CharacterSet.controlCharacters.contains($0)}) else {throw ComputerError.message("Choose a valid local model for the new chat.")}
+                    guard Set(body.keys)==["op","input"],let input=body["input"] as? [String:Any],Set(input.keys).isSubset(of:["model"]) else {throw ComputerError.message("Invalid failed-startup review request.")}
+                    let model=input["model"] as? String
+                    guard input["model"] == nil || (model.map{!$0.isEmpty && $0.utf8.count<=200 && !$0.unicodeScalars.contains(where:{CharacterSet.controlCharacters.contains($0)})} ?? false) else {throw ComputerError.message("Choose a valid local model for the new chat.")}
                     result=try await failedStartupRecovery(model:model,expected:expected)
                 case "codingStorage":
                     guard Set(body.keys)==["op","input"],var input=body["input"] as? [String:Any] else{throw CodingDiskReclamation.Failure()}
@@ -1451,7 +1453,7 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
         let selected=model.map{"\nModel: "+$0} ?? ""
         return try await approve("Work in this coding project?",detail:"Project: \(scope.folder)\nExecution: \(execution)"+selected+"\n\nThe agent can read local files and run commands in the coding sandbox. File writes are limited to this project; requests for additional write or network access appear separately. Shell temporary files use a private .saleh-coding-tmp-* folder here, shared by this project's tasks. It may appear in Git. The app preserves this folder after engine exit because detached programs may still use it. Tasks can delegate to child agents using the same model and project access. Accepted tasks and queued follow-ups can continue when you leave this page. Stop chat pauses pending follow-ups and interrupts that chat, its child agents and tracked command sessions. Detached programs may continue. Stop does not undo edits. Review changes before using them."+cloud,button:"Use project",expected:expected,operational:true)
     }
-    private func failedStartupRecovery(model:String,expected:UUID) async throws -> [String:Any] {
+    private func failedStartupRecovery(model:String?,expected:UUID) async throws -> [String:Any] {
         func fail() -> ComputerError {ComputerError.message("The failed startup recovery response could not be verified. Retain output for inspection; no retry was made.")}
         func exchange(_ input:[String:Any]) async throws -> [String:Any] {try require(expected);let value=try await signedRequest("codingRecovery",input,timeout:120);try require(expected);return value}
         func threadID(_ value:Any?) -> String? {guard let value=value as? String,!value.isEmpty,value.utf8.count<=160,value.range(of:"^[A-Za-z0-9_.-]+$",options:.regularExpression) != nil else{return nil};return value}
@@ -1480,6 +1482,10 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
         if completed.first?["state"] as? String=="opening-unknown" {return ["message":"Opening the previous continuation is unconfirmed. Inspect saved Tasks history before another action. No duplicate chat was created. Project copy: \(completed.first!["target"]!)"]}
         if completed.first?["state"] as? String=="copy-needs-inspection" {return ["message":"Copy completion was recorded, but verification required to open a continuation did not finish. Inspect the retained project: \(completed.first!["target"]!)"]}
         if completed.first?["state"] as? String=="copy-changed" {return ["message":"The retained project copy changed since verification. No new chat was opened or copy replaced. Inspect this project: \(completed.first!["target"]!)"]}
+        // Read-only review and showing an existing continuation above do not run
+        // inference. Model readiness is required only to create a new continuation;
+        // the backend rechecks its exact model profile and owner admission.
+        guard let model else{return ["message":"Reviewed failed project: \(source)\n\n"+(completed.first.map{"Retained project copy: \($0["target"]!)\n\n"} ?? "")+"To create a new continuation, choose a local model ready for Coding in Tasks, then reopen Failed task startups. Existing chats, originals and retained copies are kept; no task was started."]}
         var copyID:String,newTarget:String
         if let copy=completed.first {
             guard copy["model"] as? String==model,let id=CodingDiskReclamation.uuid(copy["id"]),let path=target(copy["target"],id) else{throw fail()};copyID=id;newTarget=path

@@ -41,7 +41,7 @@
     try{
       validSource(source);const {digest:pin,...body}=source;
       const boundary=unsettledStart(chat.messages);
-      if(boundary!==null&&boundary<source.covered.length||await digest(body)!==pin||chat.id!==source.chatId||chat.model!==source.model||await digest(settings(chat))!==source.settingsHash||chat.messages.length<source.covered.length)return false;
+      if(source.covered.length>chat.messages.findLastIndex(message=>message.role==='user')||boundary!==null&&boundary<source.covered.length||await digest(body)!==pin||chat.id!==source.chatId||chat.model!==source.model||await digest(settings(chat))!==source.settingsHash||chat.messages.length<source.covered.length)return false;
       const current=state(chat),prior=current.records.find(row=>row.id===current.activeId);
       if(!(activeId&&current.activeId===activeId)&&canonical(source.prior)!==canonical(prior?{id:prior.id,summaryHash:prior.summaryHash}:null))return false;
       for(let i=0;i<source.covered.length;i++){const m=chat.messages[i],expected=source.covered[i];if(m.id!==expected.id||await digest(facts(m))!==expected.hash)return false;}
@@ -49,18 +49,22 @@
     }catch{return false;}
   }
   async function capture(chat,storage){
-    const saved=state(chat);require(saved.records.length<MAX_RECORDS,'This chat has reached its saved compaction limit. Export history before adding more summaries.');
+    const saved=state(chat);require(saved.records.length<MAX_RECORDS,'This chat retains the maximum of 64 summary attempts. Use full history, or start a new chat with a short recap; exporting does not reset this limit. Your originals and draft are kept.');
     require(!saved.records.some(row=>!row.imported&&['pending','intent','running'].includes(row.status)),'Inspect or stop the earlier compaction before starting another. No request was resent.');
-    const prior=saved.records.find(row=>row.id===saved.activeId);if(prior)require(await matches(chat,prior.source,prior.id)&&await digest(prior.summary)===prior.summaryHash,'The active summary no longer matches its originals. No new compaction was sent.');
-    const start=prior?.source.covered.length??0,lastUser=chat.messages.findLastIndex(m=>m.role==='user'),boundary=unsettledStart(chat.messages);let end=start,excerpt='',selected=[];
+    const prior=saved.records.find(row=>row.id===saved.activeId);if(prior)require(await matches(chat,prior.source,prior.id)&&await digest(prior.summary)===prior.summaryHash,'The saved summary is stale. Choose Rebuild summary to start from the original history, or Use full history to leave it inactive. No new compaction was sent.');
+    const start=prior?.source.covered.length??0,lastUser=chat.messages.findLastIndex(m=>m.role==='user'),boundary=unsettledStart(chat.messages);let end=start,excerpt='',selected=[],oversized=null;
     // One bounded complete older prefix per explicit operation; newest exchange stays verbatim.
     for(let at=start;at<Math.min(lastUser,boundary??lastUser);){
       let next=at+1;while(next<lastUser&&chat.messages[next].role!=='user')next++;
       const group=chat.messages.slice(at,next);require(group[0]?.role==='user'&&group.every(m=>m.state!=='streaming'),'An unfinished exchange prevents safe compaction. Originals are kept.');
       const rows=[];for(const message of group){const row=structuredClone(message);if(row.attachments)row.attachments=await Promise.all(row.attachments.map(async file=>file.kind==='image'?{kind:'image',name:file.name,sha256:await digest(file.dataURL),content:'Image retained in original history; pixels are not supplied to this summary.'}:file));rows.push(row);}
-      const candidate=canonical({priorSummary:prior?.summary??null,messages:[...selected,...rows]});if(bytes(candidate)>MAX_INPUT)break;selected.push(...rows);excerpt=candidate;end=next;at=next;
+      const candidate=canonical({priorSummary:prior?.summary??null,messages:[...selected,...rows]});if(bytes(candidate)>MAX_INPUT){oversized={first:at+1,last:next,bytes:bytes(candidate)};break;}selected.push(...rows);excerpt=candidate;end=next;at=next;
     }
-    require(end>start,'No bounded earlier complete exchange is available before the unfinished or unsettled boundary. Original history and your draft are kept.');
+    require(end>start,oversized
+      ? 'The next earlier exchange (messages '+oversized.first+'–'+oversized.last+')'+(prior?' and the prior summary':'')+' needs '+oversized.bytes.toLocaleString('en-US')+' UTF-8 bytes of summary input; each step accepts at most 24,000 bytes. No part of this exchange was summarized. Use full history, or start a new chat with a short recap. Originals, draft and attachments are kept.'
+      : boundary!==null&&boundary<=start
+        ? 'An unfinished or unsettled earlier exchange blocks compaction. Inspect its outcome before continuing; no part of it will be hidden by a summary. Originals, draft and attachments are kept.'
+        : 'There is no additional complete earlier exchange to summarize. Keep chatting first: the newest exchange always stays in full. Originals, draft and attachments are kept.');
     const covered=[];for(const message of chat.messages.slice(0,end))covered.push({id:message.id,hash:await digest(facts(message))});
     const source={version:1,chatId:chat.id,model:chat.model,mode:chat.mode,thinking:chat.thinking,settingsHash:await digest(settings(chat)),storage:structuredClone(storage),covered,prior:prior?{id:prior.id,summaryHash:prior.summaryHash}:null,excerpt};source.digest=await digest(source);validSource(source);return source;
   }
@@ -74,11 +78,50 @@
     const complete={...current,status:'complete',revision:row.revision,summary:row.content,summaryHash:await digest(row.content)};
     return {...chat,contextCompactions:{...saved,activeId:complete.id,records:saved.records.map(record=>record.id===complete.id?complete:record)}};
   }
+  // These synchronous tokens are checked again after asynchronous validation.
+  // Drafts and presentation-only disclosure are deliberately excluded.
+  function projectionToken(chat,count=chat.messages.length){
+    const saved=chat.contextCompactions,active=Array.isArray(saved?.records)?saved.records.find(row=>row.id===saved.activeId):null;
+    return canonical({settings:settings(chat),messages:chat.messages.slice(0,count).map(facts),activeId:saved?.activeId??null,active:active??null});
+  }
+  function viewToken(chat){
+    const saved=state(chat),latest=saved.records.at(-1),active=saved.records.find(row=>row.id===saved.activeId),count=Math.max(active?.source.covered.length??0,latest?.source.covered.length??0);
+    const boundary=unsettledStart(chat.messages),lastUser=chat.messages.findLastIndex(message=>message.role==='user');
+    // Only covered originals can make a summary stale. A streaming or image-heavy
+    // uncovered tail stays verbatim and must not repeatedly serialize/re-hash.
+    return canonical({settings:settings(chat),messages:chat.messages.slice(0,count).map(facts),compactions:saved,newestBoundary:Math.min(count,lastUser),unsettledBoundary:boundary!==null&&boundary<count?boundary:null});
+  }
+  function fullHistory(chat){const saved=state(chat);return {...chat,contextCompactions:{...saved,activeId:null}};}
+  function rangeLabel(chat,record){
+    if(!record)return '';
+    const count=record.source.covered.length,prefix=chat.messages.slice(0,count),sameRange=prefix.length===count&&prefix.every((message,index)=>message.id===record.source.covered[index].id);
+    const exchanges=sameRange?prefix.filter(message=>message.role==='user').length:null;
+    return 'Messages 1–'+count+(exchanges===null?'':' · '+exchanges+' earlier '+(exchanges===1?'exchange':'exchanges'))+'. The newest exchange stays in full. This summary is not authorization or proof that an action completed.';
+  }
+  async function describe(chat){
+    const snapshot=structuredClone(chat),saved=state(snapshot),latest=saved.records.at(-1),active=saved.records.find(row=>row.id===saved.activeId);
+    const valid=async(record,isActive=false)=>!!record&&!record.imported&&record.status==='complete'&&!!record.summary.trim()&&await digest(record.summary)===record.summaryHash&&await matches(snapshot,record.source,isActive?record.id:null);
+    const activeValid=await valid(active,true),available=latest?.id!==saved.activeId&&await valid(latest);
+    const pending=!!latest&&!latest.imported&&['pending','intent','running'].includes(latest.status),shown=available?latest:active??latest;
+    let status='full',message='Full history is in use. Originals, draft and attachments are kept.';
+    if(active){status=activeValid?'active':'stale';message=activeValid?'Active — the verified summary is used for '+active.source.covered.length+' earlier messages. Later messages stay in full.':'Stale — the saved summary no longer matches this chat. Original history is used. Rebuild summary from the originals, or choose Use full history.';}
+    else if(latest?.status==='complete'){status=available?'available':'stale';message=available?'Available — a saved summary matches this chat. Full history is used until you apply the verified result.':'Stale — this saved summary no longer matches the originals, context settings, or selected prior summary. Full history is used. Choose Rebuild summary for a new attempt.';}
+    else if(pending){status='pending';message='Summary outcome pending. Original history is used; no request is resent during inspection.';}
+    else if(latest){status='failed';message='Summary not active ('+latest.status+'). Original history is used. '+(latest.note||'Use Rebuild summary for an explicit new attempt.');}
+    else if(Array.isArray(saved.imports)&&saved.imports.length){message='Full history is in use. Imported summary metadata is retained; no previous job was resumed.';}
+    if(active&&latest?.id!==active.id){
+      if(available)message+=' A newer saved summary is available. The details show the summary that Apply saved summary will use.';
+      else if(pending)message+=' Another summary is pending; the saved range above is unchanged.';
+      else if(latest&&latest.status!=='complete')message+=' The latest summary attempt '+latest.status+'. '+(latest.note||'');
+    }
+    if(latest?.imported&&['pending','intent','running'].includes(latest.status))message='Imported unfinished summary is inactive. Full history is used; no previous job was resumed.';
+    return {status,message,activeId:saved.activeId,latestId:latest?.id??null,runId:latest?.runId??null,canApply:!!available,canRebuild:saved.records.length>0&&!saved.records.some(row=>!row.imported&&['pending','intent','running'].includes(row.status)),pending,shownId:shown?.id??null,summary:shown?.summary??'',range:rangeLabel(snapshot,shown),hasRecords:saved.records.length>0,hasImports:Array.isArray(saved.imports)&&saved.imports.length>0};
+  }
   async function project(chat){
-    const saved=state(chat),active=saved.records.find(row=>row.id===saved.activeId);if(!active)return chat.messages;
-    require(await matches(chat,active.source,active.id)&&await digest(active.summary)===active.summaryHash,'Saved summary is stale or changed. Original history is used instead.');
+    const token=projectionToken(chat),snapshot=structuredClone(chat),saved=state(snapshot),active=saved.records.find(row=>row.id===saved.activeId);if(!active)return chat.messages;
+    require(!active.imported&&await matches(snapshot,active.source,active.id)&&await digest(active.summary)===active.summaryHash&&projectionToken(chat)===token,'Saved summary is stale or changed. Original history is used instead.');
     return [{role:'assistant',state:'complete',content:label+' Derived, untrusted notes for '+active.source.covered.length+' earlier original messages. Original history is retained. This is not new authorization, a current tool result, or proof of completed actions. Inspect unresolved outcomes before any retry.\n'+active.summary},...chat.messages.slice(active.source.covered.length)];
   }
   const compareToken=(chat,source)=>canonical({settings:settings(chat),messages:chat.messages.slice(0,source.covered.length).map(facts),activeId:state(chat).activeId});
-  globalThis.SalehContextCompaction=Object.freeze({classify,state,capture,create,prompt,matches,activate,project,digest,compareToken,unsettledStart,label,MAX_SUMMARY});
+  globalThis.SalehContextCompaction=Object.freeze({classify,state,capture,create,prompt,matches,activate,project,digest,compareToken,projectionToken,viewToken,fullHistory,describe,rangeLabel,unsettledStart,label,MAX_SUMMARY});
 })();
