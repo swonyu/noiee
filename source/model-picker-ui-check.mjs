@@ -21,17 +21,28 @@ const storage = (entries = {}) => {
   return {getItem: key => values.has(key) ? values.get(key) : null, setItem: (key, value) => values.set(key, String(value))};
 };
 const model = (id, extra = {}) => ({id, key: id, label: id, loaded: true, available: true, state: 'loaded', capabilities: {chat: true, agent: true, coding: true, standard: true, deep: true, vision: false}, reasons: {}, ...extra});
-const catalog = {online: true, models: [model(legacy), model('other'), model('standard-only', {capabilities: {chat: true, agent: true, coding: true, standard: true, deep: false}}), model('unloaded', {loaded: false, state: 'installed'}), model('unsupported', {capabilities: {chat: false, agent: false, coding: false, deep: false}, reasons: {chat: 'Unsupported chat format'}, state: 'unsupported'})]};
+const catalog = {online: true, defaultModel:legacy, models: [model(legacy), model('other'), model('standard-only', {capabilities: {chat: true, agent: true, coding: true, standard: true, deep: false}}), model('unloaded', {loaded: false, state: 'installed'}), model('unsupported', {capabilities: {chat: false, agent: false, coding: false, deep: false}, reasons: {chat: 'Unsupported chat format'}, state: 'unsupported'})]};
 function helpers(file, localStorage = storage()) {
   const text = source(file), start = text.indexOf('// MODEL PICKER HELPERS BEGIN'), end = text.indexOf('// MODEL PICKER HELPERS END');
   assert(start >= 0 && end > start, `${file} model picker helpers must exist`);
   const context = vm.createContext({localStorage});
-  vm.runInContext(text.slice(start, end) + '\nthis.api = {modelDefault, modelEligibility, modelOptions};', context);
+  vm.runInContext(source('model-policy.js')+'\n'+source('model-picker.js')+'\nconst pendingModelDefaults=new WeakSet();', context);
+  vm.runInContext(text.slice(start, end) + '\nthis.api = {modelDefault, modelEligibility, modelOptions,connectionState,capabilityOverview};', context);
   return {context, api: context.api};
 }
 for (const file of ['app.js', 'coding.js']) {
-  test(`${file}: default falls back only when absent, preserves missing saved ID`, () => {
-    assert.equal(helpers(file).api.modelDefault(), preferred);
+  test(`${file}: fresh default comes only from inventory, preserves missing saved ID`, () => {
+    assert.equal(helpers(file).api.modelDefault(), '');
+    assert.equal(helpers(file).api.modelDefault(catalog), legacy);
+    assert.equal(helpers(file).api.modelDefault({online:true,models:[model('custom')]}), 'custom');
+    assert.equal(helpers(file).api.modelDefault({online:true,models:[model('a'),model('b')]}), '');
+    const fresh=helpers(file).api;
+    assert.equal(fresh.modelDefault({online:true,defaultModel:legacy,models:[model(legacy,{loaded:false}),model('ready')]}), 'ready');
+    assert.equal(fresh.modelDefault({online:true,defaultModel:legacy,models:[model(legacy,{capabilities:{chat:true,coding:false,standard:true}}),model('ready')]},'coding'), 'ready');
+    assert.equal(fresh.modelDefault({online:true,defaultModel:legacy,models:[model(legacy,{loaded:false}),model('ready-a'),model('ready-b')]}), '');
+    assert.equal(fresh.modelDefault({online:true,defaultModel:legacy,models:[model(legacy,{loaded:false}),model('other',{loaded:false})]}), legacy);
+    assert.equal(helpers(file,storage({[defaultKey]:preferred})).api.modelDefault(catalog), preferred);
+    assert.equal(helpers(file).api.modelEligibility(catalog,preferred,'chat').code, 'MODEL_SELECTION_MISSING');
     assert.equal(helpers(file, storage({[defaultKey]: 'removed'})).api.modelDefault(), 'removed');
     assert.equal(helpers(file, storage({[defaultKey]: ''})).api.modelDefault(), '');
     assert.equal(helpers(file, {getItem() {throw Error('blocked');}}).api.modelDefault(), '');
@@ -95,7 +106,8 @@ test('new chats snapshot the default and do not change existing chats', () => {
   Object.assign(context, {crypto: {randomUUID: () => 'fixture'}, window: {}});
   const definition = source('app.js').match(/^const newChat = .*$/m)?.[0];
   assert(definition); vm.runInContext(definition + '\nthis.createChat = newChat;', context);
-  assert.equal(context.createChat().model, preferred);
+  assert.equal(context.createChat().model, '');
+  assert.equal(context.createChat(catalog).model, legacy);
   localStorage.setItem(defaultKey, 'other');
   const first = context.createChat();
   localStorage.setItem(defaultKey, 'removed');
@@ -155,7 +167,7 @@ test('Coding pending drafts retain the pinned model instead of a later default',
 test('Coding observes the first shared-default change without rewriting an explicit new-chat choice', () => {
   const {context} = helpers('coding.js', storage({[defaultKey]: 'other'}));
   let listener;
-  Object.assign(context, {newModel: preferred, controls() {}, window: {addEventListener: (_name, callback) => {listener = callback;}}});
+  Object.assign(context, {newModel: legacy, localModels:catalog, controls() {}, window: {addEventListener: (_name, callback) => {listener = callback;}}});
   const line = source('coding.js').split('\n').find(value => value.includes("window.addEventListener('storage'") && value.includes('LOCAL_MODEL_DEFAULT_KEY'));
   assert(line); vm.runInContext(line, context);
   listener({key: defaultKey, oldValue: null, newValue: 'other'});
@@ -176,13 +188,31 @@ test('Coding new project captures model before the asynchronous folder chooser',
   const {context} = helpers('coding.js');
   const button = {}, provider = {value: 'local'}, calls = [];
   let release;
-  Object.assign(context, {newModel: 'other', selectedId: 'origin', $: id => id === 'provider' ? provider : button, act: async fn => fn(), native: () => new Promise(resolve => {release = resolve;}), start: async (cwd, selection) => calls.push({cwd, selection})});
-  const line = source('coding.js').split('\n').find(value => value.includes("$('new-project').onclick"));
-  assert(line); vm.runInContext(line, context);
+  Object.assign(context, {newModel: 'other', localModels:catalog, refreshModels:async()=>{}, selectedId: 'origin', $: id => id === 'provider' ? provider : button, act: async fn => fn(), native: () => new Promise(resolve => {release = resolve;}), start: async (cwd, selection) => calls.push({cwd, selection})});
+  const code=source('coding.js'),start=code.indexOf("  $('new-project').onclick"),end=code.indexOf("  $('new-chat').onclick",start);
+  assert(start>=0&&end>start);vm.runInContext(code.slice(start,end),context);
   const work = button.onclick(); context.newModel = legacy; provider.value = 'cloud';
-  release({cwd: '/fixture'}); await work;
+  for(let n=0;n<10&&!release;n++)await Promise.resolve();assert.equal(typeof release,'function');release({cwd: '/fixture'}); await work;
   assert.equal(calls[0].selection?.model, 'other');
   assert.equal(calls[0].selection?.provider, 'local');
+});
+test('New project checks actual local readiness before opening the native folder picker', async () => {
+  const code=source('coding.js'),from=code.indexOf("  $('new-project').onclick"),to=code.indexOf("  $('new-chat').onclick",from);
+  for(const selected of ['missing','unloaded','unsupported']) {
+    const {context}=helpers('coding.js'),button={},calls=[];
+    Object.assign(context,{newModel:selected,selectedId:null,localModels:catalog,$:id=>id==='provider'?{value:'local'}:button,act:fn=>fn(),refreshModels:async()=>calls.push('inventory'),native:async()=>{calls.push('folder');return {};},start:async()=>calls.push('start')});
+    vm.runInContext(code.slice(from,to),context);
+    await assert.rejects(button.onclick());assert.deepEqual(calls,['inventory']);
+  }
+});
+test('Readiness distinguishes inventory failure from a connected loaded model with an unavailable mode',()=>{
+  const {api}=helpers('app.js');
+  const small={...catalog,models:[model('small',{contextLength:8192,capabilities:{chat:true,agent:false,coding:false,standard:true,deep:false},reasons:{coding:'Tasks require 32768 tokens.'}})]};
+  const state=api.connectionState(small,api.modelEligibility(small,'small','coding'));
+  assert.match(state.label,/Model loaded/);assert.equal(state.state,'unavailable');
+  const malformed={online:false,connected:true,status:'invalid',models:[],error:{code:'LOCAL_MODEL_INVENTORY_INVALID'},message:'Inventory format is invalid.'};
+  assert.equal(api.connectionState(malformed,api.modelEligibility(malformed,'small','chat')).label,'Model inventory error');
+  assert.match(api.capabilityOverview(small,'small'),/8,192 tokens loaded/);assert.match(api.capabilityOverview(small,'small'),/Tasks require 32768/);
 });
 for(const mode of ['chat','agent'])test(mode+' generation captures model and reasoning before backend admission', async () => {
   const text = source('app.js'), from = text.indexOf('async function generate('), to = text.indexOf("$('restore-file').onchange", from);
@@ -193,7 +223,7 @@ for(const mode of ['chat','agent'])test(mode+' generation captures model and rea
     activeRuns: new Map(), storageHydrating: false, storageBlocked: false, restoring:false,structuralPending:false,computerBusy: false, deletingChats: new Set(), textRunsReady: true, TextEncoder,
     attachmentReads: new WeakMap(), chatModelState: () => ({ready: true,entry:selected}), notice: value => notices.push(value), AbortController,
     qwenWork: {normalizeSources: value => value},
-    generateRun: async (chat, messages, selection) => {await response;calls.push({messages, selection});},
+    generateRun: async (chat, selection, preserveDraft) => {await response;calls.push({messages:chat.messages, selection,preserveDraft});},
   });
   vm.runInContext(source('attachments.js') + '\nthis.attachments = SalehAttachments;', context);
   const occupancy=text.indexOf('const activeFor = ');assert(occupancy>=0);vm.runInContext(text.slice(occupancy,text.indexOf('\nlet showArchived',occupancy)),context);
@@ -218,7 +248,7 @@ test('real frontend selectors and dispatch through a routed browser fixture', {s
   }
   const errors = [], nativeCalls = [], chatCalls = [], runs=new Map(), admissions=new Map(),generation=crypto.randomUUID();
   const assetNames = {'/': 'index.html', '/coding': 'coding.html', '/xterm.js': 'node_modules/@xterm/xterm/lib/xterm.js', '/xterm-fit.js': 'node_modules/@xterm/addon-fit/lib/addon-fit.js', '/xterm.css': 'node_modules/@xterm/xterm/css/xterm.css'};
-  const assets = new Set(['chat-storage.js','chat-runs.js','coding-submission.js', 'attachments.js','attachment-storage.js','coding-metrics.js','coding-skills.js','coding-mcp-setup.js','workspace.css','workspace-extensions.js','workspace.js','index.html', 'app.js', 'style.css', 'tools.js', 'computer.js', 'work.js', 'coding.html', 'coding.js', 'coding.css', 'coding-terminal.js']);
+  const assets = new Set(['model-policy.js','model-picker.js','chat-storage.js','chat-runs.js','coding-submission.js', 'attachments.js','attachment-storage.js','coding-metrics.js','coding-skills.js','coding-mcp-setup.js','workspace.css','workspace-extensions.js','workspace.js','index.html', 'app.js', 'style.css', 'tools.js', 'computer.js', 'work.js', 'coding.html', 'coding.js', 'coding.css', 'coding-terminal.js']);
   // Match the real app's trustworthy loopback origin; nonlocal HTTP disables crypto.randomUUID.
   const setup = async context => context.route('**/*', async route => {
     const url = new URL(route.request().url());

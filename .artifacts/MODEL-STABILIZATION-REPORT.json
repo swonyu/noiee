@@ -1,0 +1,159 @@
+{
+  "name": "Noiee build172 model stabilization",
+  "sourceDirectory": "/Users/saleh/Documents/Noiee/worktrees/model/source",
+  "sourcePins": {
+    "agent.mjs": "2f3199193aec5b2edea036905d48cecadf770a79e44809df2f4d38de564fa889",
+    "app.js": "bb5a84353a001e13800d9dd9aa91d8e6f24820a246cfeb17ebd330409b27e13a",
+    "coding-context.mjs": "f2feba8f3e8835996d2e5fa46de55f08ad64c1a3f01f712772444a2d79b59b1a",
+    "coding-engine.mjs": "33f0adbfd271e1b91dc5bd8a38c2dcb579198ee00b52aebd7d6a8585be7f2efc",
+    "coding-local.mjs": "17ee92a8dad65b8d9e239d674a96c330aca1e6fd9c1c8bcd88058228e6361de1",
+    "coding-model-check.mjs": "5f61f3826a6f6d78c065c236c4e2949a989b3cc8a935a8cfce57caae0d0912ed",
+    "coding-model-guards-check.mjs": "e3646cbc90091185c38495445ae3e03375ad053f7879649c74367430f7f265e2",
+    "coding-runtime-contract.json": "9f92849742bf4cab6337fac8f664647a10cf42b3384b4ea361d6e7b94fe70d00",
+    "coding-runtime.mjs": "042f3f0522aea78fde83f2b8d492e335674085b600ce8463bcdfbbcc1cf865e4",
+    "coding.html": "e55beaa42dd7fedb7584d56f6d309f2c7ec6530513ea53f7411ffc40fa1dedc3",
+    "coding.js": "0b27d434b1d42af210b6de38299a3cfca4b592ed67ad79aa711b062fa75cb38d",
+    "index.html": "6fd7590b81b48021c44c269ade243e665ab78cfeaeaaf46182b4a14600c775df",
+    "local-models-check.mjs": "07c31fea9008ae8987238bba5df09317e4bbf474c31d527f8f495e796e5778b3",
+    "local-models.mjs": "880883990723a3568d5f5c72a2e7329a4fa6518c77d851e03cdc397e7c075ddb",
+    "model-picker-ui-check.mjs": "c3b3b5749dd2b36e5d932f1b371ee290205b01a353b708b690efa1666ad053e2",
+    "model-picker.js": "a3f93e5940de9da2e0deb3969fcffc7d016cb3eeb2f962681778cf5f93ee1e28",
+    "model-policy.js": "3ec669aad8349d2ab9aad4d537cbd4c4e4e2c1876d1e75eb65cd474e1e830c1a",
+    "model-routing-check.mjs": "d8a0ca45303b77c62c81925c88a15df09fea87d997fb4492b7adf7b879f969b9",
+    "model-stabilization-check.mjs": "a9bc7bac442c501a76bea703ef566a78fc524eae7a06187282f6be1703399f5c",
+    "server.mjs": "b6e2bcd94da3f6315c8c8f5de34614d6b01fdd3e7af07e83a138a5ad0de2481d",
+    "work.js": "02ddbd4854010444195a62ebf8ba3dbadd77c20b498ca8fd3925175c5d7d9aa7"
+  },
+  "exitCode": 0,
+  "passed": 115,
+  "failed": 0,
+  "skipped": 1,
+  "command": [
+    [
+      "/opt/homebrew/bin/node",
+      "--preserve-symlinks",
+      "--test",
+      "--test-reporter=tap",
+      "local-models-check.mjs",
+      "coding-model-check.mjs",
+      "model-picker-ui-check.mjs",
+      "coding-model-guards-check.mjs",
+      "model-stabilization-check.mjs"
+    ],
+    [
+      "/opt/homebrew/bin/node",
+      "--preserve-symlinks",
+      "model-routing-check.mjs"
+    ]
+  ],
+  "suites": [
+    {
+      "name": "model focused",
+      "command": [
+        "/opt/homebrew/bin/node",
+        "--preserve-symlinks",
+        "--test",
+        "--test-reporter=tap",
+        "local-models-check.mjs",
+        "coding-model-check.mjs",
+        "model-picker-ui-check.mjs",
+        "coding-model-guards-check.mjs",
+        "model-stabilization-check.mjs"
+      ],
+      "exitCode": 0,
+      "passed": 95,
+      "failed": 0,
+      "skipped": 1,
+      "log": "/Users/saleh/Documents/Noiee/worktrees/model/.artifacts/model-focused-final.log",
+      "logSHA256": "696fa414ed1f38a533823f86e0ac5eb4a1e7b9bf096ec8f9d739d83db69c1e99"
+    },
+    {
+      "name": "model routing",
+      "command": [
+        "/opt/homebrew/bin/node",
+        "--preserve-symlinks",
+        "model-routing-check.mjs"
+      ],
+      "exitCode": 0,
+      "passed": 20,
+      "failed": 0,
+      "skipped": 0,
+      "log": "/Users/saleh/Documents/Noiee/worktrees/model/.artifacts/model-routing-final.log",
+      "logSHA256": "32d10e31282c78e7a79c8f7b74813fabdedec5f69a0c1e0a557d1fa55da5c63d"
+    }
+  ],
+  "runtimeMetadata": {
+    "command": [
+      "/opt/homebrew/bin/node",
+      "--preserve-symlinks",
+      "--input-type=module",
+      "-e",
+      "import {verifyCodingRuntime} from './coding-runtime.mjs';console.log(JSON.stringify(await verifyCodingRuntime('/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex')));"
+    ],
+    "exitCode": 0,
+    "result": {
+      "path": "/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex",
+      "cliVersion": "codex-cli 0.167.0-alpha.3.2",
+      "sha256": "a636331ed87605efc4cf84028ac2884a75363f9d10ead63cffb57ea0016d486e",
+      "protocolRevision": "noiee-coding-172-v1"
+    },
+    "log": "/Users/saleh/Documents/Noiee/worktrees/model/.artifacts/coding-runtime-preflight.log",
+    "logSHA256": "04af7b54bd8d1de26a5caae0ffbf385bc8add1e0eb733fa91851276cdacdb5dc"
+  },
+  "contextProfile": {
+    "loadedWindow": 39424,
+    "responseReserve": 8192,
+    "toolReserve": 4096,
+    "safetyReserve": 2048,
+    "inputBudget": 25088,
+    "alignment": 1024,
+    "autoCompactTokenLimit": 24576,
+    "scope": "total",
+    "toolOutputTokenLimit": 4096,
+    "outputPolicy": "uncapped; max_tokens:-1"
+  },
+  "limitations": [
+    "No real model inference, model load/unload, app-server session, native UI, installation or original user-store mutation was performed.",
+    "Per-thread config fields are observed in installed protocol schema; effective engine compaction, child inheritance, Deep quality and native workflows require root acceptance.",
+    "One optional browser fixture was skipped; 115 focused offline cases do not establish broad runtime reliability.",
+    "UTF-8 request sizing remains a conservative approximation, not exact tokenization.",
+    "A loaded-context change requires stopping work and restarting Noiee; no automatic model fallback or replay."
+  ],
+  "earlierAttempts": [
+    {
+      "attempt": 1,
+      "result": "Environment dependency resolution failure before meaningful suite completion; worktree symlink required --preserve-symlinks."
+    },
+    {
+      "attempt": 2,
+      "passed": 80,
+      "failed": 13,
+      "skipped": 1,
+      "result": "Existing renamed-message and fixture-extraction/signature expectations failed; routing failed on changed error wording."
+    },
+    {
+      "attempt": 3,
+      "passed": 90,
+      "failed": 3,
+      "skipped": 1,
+      "result": "Typed 3xx inventory classification fixed; remaining message and async fixture expectations corrected. Routing20 passed."
+    },
+    {
+      "attempt": 4,
+      "passed": 95,
+      "failed": 0,
+      "skipped": 1,
+      "result": "Focused suite green."
+    }
+  ],
+  "retainedLogs": {
+    "model-focused-attempt1.log": "b059d1396858654480b2bfc49794292b47aea197407063f1c5cb61af264d4438",
+    "model-focused-attempt2.log": "69ba7285dee5bcbb0e4d930a0bbfd12127fff26fa40aee9afe2534595fe2c970",
+    "model-focused-attempt3.log": "26e0c48b62f02540acb66a28509993392c6aade6215ec6be08ebb9e35702e9d8",
+    "model-focused-attempt4.log": "8d90c29a8856ae463211377c183fe88c423f827b42d0def13c6e5d67f609d301",
+    "model-routing-attempt1.log": "f465c720d80bc8229705a10851312ff4f496bf90aadf3f69652102e50f07263c",
+    "model-routing-attempt2.log": "98cb4588e84555c134eaa8cc635c587172c3588807cd042325bec8ce014ca3df",
+    "model-routing-attempt3.log": "32d10e31282c78e7a79c8f7b74813fabdedec5f69a0c1e0a557d1fa55da5c63d"
+  },
+  "freshDefaultReview": "Preferred only when ready; otherwise sole ready selection; multiple ready alternatives require a choice; installed preferred fallback only when none is ready. Saved default IDs never changed."
+}

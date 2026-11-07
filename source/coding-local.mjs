@@ -1,3 +1,4 @@
+import {assertCodingContext} from './coding-context.mjs';
 import http from 'node:http';
 import {randomBytes,timingSafeEqual} from 'node:crypto';
 import {once} from 'node:events';
@@ -130,13 +131,14 @@ async function* restoreSSE(source,restore) {
 
 // Recheck the actual native request immediately before local dispatch. A saved
 // selection is identity, not evidence that its loaded model is still available.
-export async function prepareLocalModelRequest(request,localModels,{signal}={}) {
+export async function prepareLocalModelRequest(request,localModels,{signal,expectedContextProfile}={}) {
   const model=validateModelID(request?.model),effort=request.reasoning?.effort??'none';
   if(!['none','high'].includes(effort))throw Object.assign(Error('Unsupported local reasoning effort.'),{statusCode:400});
   const vision=Array.isArray(request.input)&&request.input.some(item=>[item.content,item.output].some(parts=>Array.isArray(parts)&&parts.some(part=>part?.type==='input_image')));
   const selected=await localModels.resolve(model,{mode:'coding',effort,...(vision?{vision:true}:{}),...(signal?{signal}:{})});
   signal?.throwIfAborted();
   if(selected?.id!==model)throw Error('Local model inventory returned a different model identity.');
+  if(expectedContextProfile!==undefined)assertCodingContext(selected,expectedContextProfile);
   const body=normalizeRoles(request),generation=selected.generation;
   if(body.temperature===undefined&&effort==='none')body.temperature=0;
   if(!generation||!Number.isSafeInteger(generation.max_tokens)||(generation.max_tokens!==-1&&generation.max_tokens<1))throw Error('Invalid local model generation policy.');
@@ -148,7 +150,8 @@ export async function prepareLocalModelRequest(request,localModels,{signal}={}) 
   return body;
 }
 
-export async function createQwenRelay({upstream,localModels,fetchImpl}={}) {
+export async function createQwenRelay({upstream,localModels,fetchImpl,contextProfileForModel}={}) {
+  if(contextProfileForModel!==undefined&&typeof contextProfileForModel!=='function')throw Error('Invalid trusted context profile binding.');
   let endpoint;
   if(upstream!==undefined){
     try{endpoint=new URL(upstream);}catch{throw Error('Local relay requires an HTTP loopback Responses endpoint.');}
@@ -168,7 +171,7 @@ export async function createQwenRelay({upstream,localModels,fetchImpl}={}) {
       const chunks=[];let size=0;
       for await(const chunk of req){size+=chunk.length;if(size>8*1024*1024)throw Error('Coding context exceeded 8 MiB.');chunks.push(chunk);}
       let request;try{request=JSON.parse(Buffer.concat(chunks));}catch(error){error.statusCode=400;throw error;}
-      const body=await prepareLocalModelRequest(request,localModels,{signal:controller.signal});
+      const body=await prepareLocalModelRequest(request,localModels,{signal:controller.signal,...(contextProfileForModel?{expectedContextProfile:contextProfileForModel(validateModelID(request?.model))}:{})});
       controller.signal.throwIfAborted();
       const restore=namespaceAdapter(body);
       const response=await fetchImpl(upstream,{method:'POST',redirect:'error',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:controller.signal});

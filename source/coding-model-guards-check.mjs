@@ -69,6 +69,8 @@ function harness(extra = {}) {
   const helpersEnd = source.search(/\n\((?:async )?\(\) => \{/);
   assert(helpersEnd > 0, 'Shipped pure helpers end before the application IIFE');
   const helpers = source.slice(0, helpersEnd);
+  vm.runInContext(readFileSync(resolve(dirname(sourcePath),'model-policy.js'),'utf8'),c);
+  vm.runInContext(readFileSync(resolve(dirname(sourcePath),'model-picker.js'),'utf8'),c);
   vm.runInContext(submissionSource, c);
   vm.runInContext('const submissionStore = SalehSubmission.createStore(localStorage);', c);
   const declarations = ['current', 'gitFields', 'childChat', 'ownedChat', 'directInput', 'canExecute', 'canStartWork', 'localThread', 'codingModelState', 'title', 'activeTurn', 'historyPending', 'setupBlocking', 'agentWorking', 'working', 'waiting', 'familyFor', 'workspaceBlocked', 'workspaceStopTarget', 'familyBusy', 'familyStopping', 'sessionIds', 'pendingQuestion', 'waitingAnswer', 'questionLabel', 'affectedCheckout'].map(name => {
@@ -140,7 +142,7 @@ for (const startup of [false, true]) {
   test(`model inventory cannot hold the ${startup ? 'startup status' : 'saved-history refresh'} lane`, async () => {
     const h = harness({refreshModels: () => new Promise(() => {}), readThread: async () => {h.calls.push(['read']);}});
     if (startup) {
-      const marker = "if (!bridge) {banner('notice', 'Open Saleh Uncensored.app";
+      const marker = "if (!bridge) {banner('notice', 'Open Noiee.app";
       const start = source.indexOf('\n', source.indexOf(marker)) + 1;
       const end = source.indexOf('    try {await refreshWorktrees();}', start);
       assert(start > 0 && end > start); h.run(source.slice(start, end) + '\n  });');

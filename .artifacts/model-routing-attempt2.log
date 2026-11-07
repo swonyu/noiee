@@ -1,0 +1,38 @@
+PASS Chat sends the explicit selected model and capability-aware generation
+PASS Agent sends exact selected model and supported deep generation
+PASS Omitted selections preserve explicit legacy default after validation
+PASS Interleaved Chat and Agent selections do not mutate the default
+PASS Catalog and exact selection status expose loaded and missing states
+PASS Offline or unloaded selection never falls back to another model
+PASS Unknown and invalid model IDs are rejected before inference
+PASS Unsupported Deep and Agent modes fail before inference
+PASS Actual image context requires vision compatibility
+PASS Final synthesis preserves selected identity and suppresses tools
+PASS Existing origin boundary and request validation precede inference
+PASS Real catalog inventory and Chat/Agent transport share the same local endpoint
+PASS Remote or credential-bearing upstreams fail even with a trusted catalog injection
+PASS Chat and Agent disconnect during deferred inventory never dispatch inference
+PASS Manual Computer proposal resolves exact selected vision model and bounded signed screenshot
+PASS Manual proposal Stop, departure, shutdown and response close abort deferred work and drain ownership
+PASS Agent compacts removable UTF8 history against loaded32k context and actual tool envelope
+node:internal/modules/run_main:111
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: The input did not match the regular expression /context budget|too large to preserve safely/i. Input:
+
+'This request leaves too little context for the answer. Compact earlier messages, shorten the attachment, or choose a larger loaded context. Saved history and the selected model were kept.'
+
+    at file:///Users/saleh/Documents/Noiee/worktrees/model/source/model-routing-check.mjs:214:84
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async test (file:///Users/saleh/Documents/Noiee/worktrees/model/source/model-routing-check.mjs:63:30)
+    at async file:///Users/saleh/Documents/Noiee/worktrees/model/source/model-routing-check.mjs:203:3 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 'This request leaves too little context for the answer. Compact earlier messages, shorten the attachment, or choose a larger loaded context. Saved history and the selected model were kept.',
+  expected: /context budget|too large to preserve safely/i,
+  operator: 'match',
+  diff: 'simple'
+}
+
+Node.js v26.13.0

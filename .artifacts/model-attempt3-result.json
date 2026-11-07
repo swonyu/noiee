@@ -1,0 +1,26 @@
+{
+  "focused": {
+    "command": [
+      "/opt/homebrew/bin/node",
+      "--preserve-symlinks",
+      "--test",
+      "--test-reporter=tap",
+      "local-models-check.mjs",
+      "coding-model-check.mjs",
+      "model-picker-ui-check.mjs",
+      "coding-model-guards-check.mjs",
+      "model-stabilization-check.mjs"
+    ],
+    "exitCode": 1,
+    "log": "model-focused-attempt3.log"
+  },
+  "routing": {
+    "command": [
+      "/opt/homebrew/bin/node",
+      "--preserve-symlinks",
+      "model-routing-check.mjs"
+    ],
+    "exitCode": 0,
+    "log": "model-routing-attempt3.log"
+  }
+}

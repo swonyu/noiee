@@ -85,6 +85,17 @@ try{
     assert(replies.every(reply=>reply.status===200));assert.deepEqual(inference.slice(-2).map(row=>row.model).sort(),[plain.id,capable.id].sort());
     assert.equal((await request('/api/chat',{messages,thinking:'standard'})).status,200);assert.equal(inference.at(-1).model,DEFAULT);
   });
+  await test('Concise and Detailed change shipped Chat and Agent prompts without a fixed output cap',async()=>{
+    const resolve=catalog.resolve;
+    catalog.resolve=async(...args)=>{const row=await resolve.apply(catalog,args);return {...row,generation:{...row.generation,max_tokens:-1}};};
+    try{for(const route of ['/api/chat','/api/agent']){
+      assert.equal((await request(route,{messages,model:capable.id,thinking:'standard'})).status,200);
+      const concise=inference.at(-1);assert.equal(concise.max_tokens,-1);assert.match(concise.messages[0].content,/Response style: Concise/);
+      assert.equal((await request(route,{messages,model:capable.id,thinking:'standard',longOutput:true})).status,200);
+      const detailed=inference.at(-1);assert.equal(detailed.max_tokens,-1);assert.match(detailed.messages[0].content,/Response style: Detailed/);
+      assert.notEqual(detailed.messages[0].content,concise.messages[0].content);assert.equal(detailed.model,capable.id);
+    }}finally{catalog.resolve=resolve;}
+  });
   await test('Catalog and exact selection status expose loaded and missing states',async()=>{
     assert.deepEqual((await request('/api/models')).body,catalogState);
     const selected=(await request('/api/status?model='+encodeURIComponent(plain.id))).body;

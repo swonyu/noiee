@@ -1,40 +1,8 @@
 // MODEL PICKER HELPERS BEGIN
-const LOCAL_MODEL_DEFAULT_KEY = 'saleh-local-model-default-v1';
-const LEGACY_LOCAL_MODEL = 'qwen3.8-27b-uncensored-hauhaucs-aggressive-mtp';
-const DEFAULT_LOCAL_MODEL = 'local/saleh-qwen38-uncensored-8bit';
-function modelDefault() {
-  try { const saved = localStorage.getItem(LOCAL_MODEL_DEFAULT_KEY); return saved === null ? DEFAULT_LOCAL_MODEL : saved; }
-  catch { return ''; }
-}
-function modelEligibility(catalog, id, mode, deep = false) {
-  const entry = Array.isArray(catalog?.models) ? catalog.models.find(value => value && value.id === id) : null;
-  if (catalog?.online !== true) return {ready: false, entry, reason: catalog?.message || 'Local model inventory is unavailable. Refresh models to check again.'};
-  if (!entry) return {ready: false, entry: null, reason: 'The selected model is missing from the local inventory. Choose an installed model; no substitute will be used.'};
-  if (entry.available !== true) return {ready: false, entry, reason: 'The selected local model is unavailable.'};
-  if (entry.capabilities?.[mode] !== true) return {ready: false, entry, reason: entry.reasons?.[mode] || `Compatibility with ${mode === 'coding' ? 'Coding' : mode === 'agent' ? 'Agent' : 'Chat'} is not established.`};
-  if (entry.loaded !== true) return {ready: false, entry, reason: 'Installed, but not loaded. Load this exact model in LM Studio, then refresh. This picker does not load or download models.'};
-  const reasoning = deep ? 'deep' : 'standard';
-  if (entry.capabilities?.[reasoning] !== true) return {ready: false, entry, reason: entry.reasons?.[reasoning] || `${deep ? 'Deep' : 'Standard'} reasoning is unsupported or unconfirmed for this model.`};
-  return {ready: true, entry, reason: 'Loaded locally · no API fees.'};
-}
-function modelOptions(select, catalog, selected) {
-  const choices = [], seen = new Set();
-  for (const row of Array.isArray(catalog?.models) ? catalog.models : []) {
-    if (!row || typeof row.id !== 'string' || !row.id || seen.has(row.id)) continue;
-    seen.add(row.id);
-    const state = row.state === 'unsupported' ? 'Unsupported' : row.loaded === true ? 'Loaded' : 'Installed · not loaded';
-    choices.push([row.id, `${row.id === DEFAULT_LOCAL_MODEL ? 'Uncensored 8bit' : row.label || row.id} · ${state}`]);
-  }
-  if (!seen.has(selected)) {
-    choices.push([selected, `${selected || 'No model selected'} · ${catalog?.online === null ? catalog.message || 'Inventory not checked' : 'unavailable'}`]);
-  }
-  if (select.options.length !== choices.length || choices.some(([value, label], index) => select.options[index].value !== value || select.options[index].textContent !== label)) {
-    select.replaceChildren(...choices.map(([value, label]) => {
-      const option = document.createElement('option'); option.value = value; option.textContent = label; return option;
-    }));
-  }
-  if (select.value !== selected) select.value = selected;
-}
+const LOCAL_MODEL_DEFAULT_KEY=globalThis.NoieeModelPicker.DEFAULT_KEY;
+const LEGACY_LOCAL_MODEL=globalThis.NoieeModelPolicy.DEFAULT_LOCAL_MODEL;
+const DEFAULT_LOCAL_MODEL=LEGACY_LOCAL_MODEL;
+const {savedDefault,modelDefault,catalogDefault,modelEligibility,modelOptions,connectionState,capabilityOverview}=globalThis.NoieeModelPicker.bind(localStorage);
 // MODEL PICKER HELPERS END
 
 function codingCommandOutcome(item, turn) {
@@ -373,7 +341,7 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
   const setupReviewQueueReleases = new Map();
   let engine = {available: false, provider: 'local'}, renamingId = '', pollTimer, disposed = false, pollFailed = false;
   const current = () => threads.get(selectedId);
-  let localModels = {online: null, models: [], message: bridge ? 'Checking installed local models…' : 'Open the installed app to check local models.'}, modelRefresh = 0, newModel = modelDefault();
+  let localModels = {online: null, models: [], message: bridge ? 'Checking installed local models…' : 'Open the installed app to check local models.'}, modelRefresh = 0, newModel = modelDefault(localModels,'coding'), newModelSelected = false;
   const historyPending = thread => !!thread && !!(thread.metadataPending || thread.historyReadPending || !thread.turns?.length && threadReads.has(thread.id));
   const localThread = thread => !thread?.modelProvider || ['local', 'saleh_local'].includes(thread.modelProvider);
   const codingModelState = (thread, effort = 'none') => {
@@ -383,13 +351,13 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
   };
   function renderModelControls() {
     const thread = current(), local = localThread(thread), choice = codingModelState(thread, $('effort').value), next = modelEligibility(localModels, newModel, 'coding');
-    modelOptions($('default-model'), localModels, modelDefault()); modelOptions($('new-chat-model'), localModels, newModel);
+    modelOptions($('default-model'), localModels, modelDefault(localModels,'coding')); modelOptions($('new-chat-model'), localModels, newModel);
     const busy = acting || !!activeTurn(thread) || childChat(thread);
     $('default-model').disabled = busy; $('new-chat-model').disabled = busy || $('provider').value !== 'local'; $('models-refresh').disabled = acting;
     $('new-model-status').textContent = $('provider').value === 'local' ? `${newModel || 'No model selected'} · ${next.reason}` : 'New chats use the explicitly selected cloud provider. The local model choice does not apply.';
     $('thread-model').textContent = thread?.historyOnly ? thread.model ? `Recorded model: ${thread.model}` : 'Recorded model unavailable' : thread?.model || (thread ? 'Model identity unavailable · refresh history' : 'Choose a project chat');
     const friendly=localModels.models.find(row=>row.id===thread?.model)?.label;
-    $('thread-model-name').textContent=thread?.model===DEFAULT_LOCAL_MODEL?'Uncensored 8bit':friendly||thread?.model||'Model unavailable';
+    $('thread-model-name').textContent=friendly||thread?.model||'Model unavailable';
     $('thread-model-name').title=$('thread-model').textContent;
     $('model-status').classList.toggle('sr-only',!!thread&&choice.ready&&!thread.historyOnly&&!thread.draftReadError&&!historyPending(thread));
     $('model-status').textContent = thread?.draftReadError ? 'Saved history could not be checked. Refresh history to retry.' : historyPending(thread) ? 'Loading saved chat details…' : thread?.historyOnly ? 'Saved history · read only. Viewing this chat does not require its recorded model to be loaded.' : thread && !thread.model ? 'Model identity unavailable · refresh history to check this chat.' : thread ? `${choice.reason} ${local ? 'This Coding chat is pinned to its recorded model. Start a new chat to choose another.' : 'Local defaults do not change this cloud chat.'}` : 'Choose a model for a new Coding chat. Existing chats keep their recorded model.';
@@ -397,6 +365,7 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
       $('effort').querySelector('[value=none]').disabled = choice.entry?.capabilities?.standard !== true;
       $('effort').querySelector('[value=high]').disabled = choice.entry?.capabilities?.deep !== true;
     } else for (const option of $('effort').options) option.disabled = false;
+    $('model-readiness-overview').textContent=capabilityOverview(localModels,modelDefault(localModels,'coding'));
     if(scheduleFormReady)renderScheduleModel();
   }
   async function refreshModels() {
@@ -405,7 +374,8 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
       const response = await fetch('/api/models', {cache: 'no-store'}), catalog = await response.json();
       if (!response.ok || !Array.isArray(catalog.models) || typeof catalog.online !== 'boolean') throw Error('Local model inventory is unavailable.');
       if (request !== modelRefresh) return; localModels = catalog;
-    } catch (error) {if (request !== modelRefresh) return; localModels = {online: false, models: localModels.models, message: `Local model inventory unavailable. ${error.message}`};}
+      if(!newModelSelected&&!newModel&&!savedDefault().saved){const suggested=modelDefault(localModels,'coding');if(suggested){newModel=suggested;newModelSelected=true;}}
+    } catch (error) {if (request !== modelRefresh) return; localModels = {online:false,connected:false,status:'server-error',models:localModels.models,error:{code:'LOCAL_INVENTORY_ENDPOINT_ERROR'},message:'Noiee could not refresh model inventory. Check the local app connection and retry.'};}
     controls();
   }
   const childChat = thread => !!(thread?.parentThreadId || thread?.source?.subAgent || thread?.canAcceptDirectInput === false);
@@ -2265,7 +2235,7 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
   }
   function scheduleDraft(record) {
     const cadence = record?.cadence;
-    return {name: record?.name || '', cwd: record?.cwd || current()?.cwd || '', prompt: record?.prompt || '', effort: record?.effort || 'none', model: record ? Object.hasOwn(record,'model') ? record.model : LEGACY_LOCAL_MODEL : modelDefault(), executionMode: record && Object.hasOwn(record, 'executionMode') ? record.executionMode : 'vm', type: cadence?.type || 'interval', minutes: String(cadence?.minutes || 60), at: localDate(cadence?.at || Date.now() + 3600000), days: cadence?.days || [1, 2, 3, 4, 5], time: cadence?.time || '09:00', timeZone: cadence?.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'};
+    return {name: record?.name || '', cwd: record?.cwd || current()?.cwd || '', prompt: record?.prompt || '', effort: record?.effort || 'none', model: record ? Object.hasOwn(record,'model') ? record.model : LEGACY_LOCAL_MODEL : modelDefault(localModels,'coding'), executionMode: record && Object.hasOwn(record, 'executionMode') ? record.executionMode : 'vm', type: cadence?.type || 'interval', minutes: String(cadence?.minutes || 60), at: localDate(cadence?.at || Date.now() + 3600000), days: cadence?.days || [1, 2, 3, 4, 5], time: cadence?.time || '09:00', timeZone: cadence?.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'};
   }
   function readScheduleForm() {
     return {name: $('schedule-name').value, cwd: $('schedule-project').dataset.cwd || '', prompt: $('schedule-prompt').value, effort: $('schedule-effort').value, model:$('schedule-model').value, executionMode: $('schedule-execution-mode').value, type: $('schedule-cadence').value, minutes: $('schedule-minutes').value, at: $('schedule-at').value, days: [...$('schedule-days').querySelectorAll('input:checked')].map(node => Number(node.value)), time: $('schedule-time').value, timeZone: $('schedule-timezone').value};
@@ -2858,7 +2828,10 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
     catch (error) {banner('notice', `Stop could not be confirmed: ${message(error)}`);}
     finally {controls();}
   };
-  $('new-project').onclick = () => {const selection = {provider: $('provider').value, model: newModel, executionMode: $('execution-mode').value, origin: selectedId}; return act(async () => {const result = await native({op: 'codingChooseFolder'}); if (result.cwd && !result.cancelled) await start(result.cwd, selection);});};
+  $('new-project').onclick = () => {const selection = {provider: $('provider').value, model: newModel, executionMode: $('execution-mode').value, origin: selectedId}; return act(async () => {
+    if(selection.provider==='local'){await refreshModels();const ready=modelEligibility(localModels,selection.model,'coding');if(!ready.ready)throw Error(ready.reason);}
+    const result=await native({op:'codingChooseFolder'});if(result.cwd&&!result.cancelled)await start(result.cwd,selection);
+  });};
   $('new-chat').onclick = () => {const thread = current(); if (acting || !thread?.cwd || !canStartWork(thread)) return; const selection = {provider: $('provider').value, model: newModel, executionMode: $('execution-mode').value, origin: selectedId}; return act(() => start(thread.cwd, selection));};
   $('new-tools-task').onclick = openMCPSetup;
   $('mcp-setup-close').onclick = () => {void closeMCPSetup();};
@@ -2889,15 +2862,15 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
   $('provider').onchange = controls;
   $('execution-mode').onchange = controls;
   $('models-refresh').onclick = refreshModels;
-  $('new-chat-model').onchange = () => {if (acting || activeTurn(current()) || childChat(current())) return; newModel = $('new-chat-model').value; controls();};
+  $('new-chat-model').onchange = () => {if (acting || activeTurn(current()) || childChat(current())) return; newModel = $('new-chat-model').value; newModelSelected=true; controls();};
   $('default-model').onchange = () => {
     if (acting || activeTurn(current()) || childChat(current())) return;
-    const previous = modelDefault(), next = $('default-model').value;
+    const previous = modelDefault(localModels,'coding'), next = $('default-model').value;
     try {localStorage.setItem(LOCAL_MODEL_DEFAULT_KEY, next); if (newModel === previous) newModel = next;}
     catch {banner('notice', 'The default could not be saved. Existing chats are unchanged.');}
     controls();
   };
-  window.addEventListener('storage', event => {if (event.key === LOCAL_MODEL_DEFAULT_KEY) {if (newModel === (event.oldValue === null ? DEFAULT_LOCAL_MODEL : event.oldValue)) newModel = modelDefault(); controls();}});
+  window.addEventListener('storage', event => {if (event.key === LOCAL_MODEL_DEFAULT_KEY) {if (newModel === (event.oldValue === null ? catalogDefault(localModels,'coding') : event.oldValue)) newModel = modelDefault(localModels,'coding'); controls();}});
   $('show-archived').onclick = () => act(async () => {sessionView = false; archived = !archived; await loadList(); if (listed.length) await select(listed[0]); else {selectionEpoch++;selectedId = ''; save(); renderSelection();}});
   $('prompt').oninput = () => {if (directInput(current())) {preferences.drafts[selectedId] = $('prompt').value; save();} resizePrompt();controls();};
   $('effort').onchange = () => {if (directInput(current())) {preferences.efforts[selectedId] = $('effort').value; save(); controls();}};

@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "cliVersion": "codex-cli 0.167.0-alpha.3.2",
+  "binary": {
+    "size": 270814880,
+    "sha256": "a636331ed87605efc4cf84028ac2884a75363f9d10ead63cffb57ea0016d486e"
+  },
+  "protocol": {
+    "revision": "noiee-coding-172-v1",
+    "transport": "stdio",
+    "experimentalApi": true,
+    "requiredMethods": [
+      "initialize",
+      "config/read",
+      "thread/start",
+      "thread/resume",
+      "thread/fork",
+      "turn/start",
+      "turn/interrupt"
+    ],
+    "runtimeConfig": [
+      "model_context_window",
+      "model_auto_compact_token_limit",
+      "model_auto_compact_token_limit_scope",
+      "tool_output_token_limit"
+    ],
+    "initializationFields": [
+      "codexHome",
+      "platformFamily",
+      "platformOs",
+      "userAgent"
+    ]
+  },
+  "evidence": {
+    "kind": "generated-local-protocol-schema",
+    "schemaSHA256": "b1e5d17224b9d9732b5976012438ba78e2cf7e418b67f8f8a5f5cffe301b875d",
+    "nativeModelQualification": "required-separately"
+  }
+}

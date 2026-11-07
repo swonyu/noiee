@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Noiee</title><link rel="icon" href="data:,"><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/workspace.css"><script src="/work.js" defer></script><script src="/context-compaction.js" defer></script><script src="/chat-runs.js" defer></script><script src="/attachments.js" defer></script><script src="/attachment-storage.js" defer></script><script src="/chat-storage.js" defer></script><script src="/app.js" defer></script><script src="/computer.js" defer></script><script src="/tools.js" defer></script><script src="/workspace-extensions.js" defer></script><script src="/workspace.js" defer></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Noiee</title><link rel="icon" href="data:,"><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/workspace.css"><script src="/model-policy.js" defer></script><script src="/model-picker.js" defer></script><script src="/work.js" defer></script><script src="/context-compaction.js" defer></script><script src="/chat-runs.js" defer></script><script src="/attachments.js" defer></script><script src="/attachment-storage.js" defer></script><script src="/chat-storage.js" defer></script><script src="/app.js" defer></script><script src="/computer.js" defer></script><script src="/tools.js" defer></script><script src="/workspace-extensions.js" defer></script><script src="/workspace.js" defer></script></head>
 <body class="workspace-chat">
   <div id="overlay-shade" aria-hidden="true" hidden></div>
   <aside id="sidebar" aria-label="Conversations">
@@ -100,6 +100,7 @@
         <div class="model-settings-heading"><label for="default-model">Default local model</label><button id="models-refresh" type="button" title="Refresh available local models" aria-label="Refresh available local models">↻</button></div>
         <select id="default-model" aria-describedby="default-model-note" disabled><option value="">Checking local models…</option></select>
         <p id="default-model-note">Local models · No API charges. New chats and schedules use your default. Existing ones keep their saved model. Selection never downloads a model.</p>
+        <p id="model-readiness-overview" role="status" aria-atomic="true">Checking which features are ready…</p>
       </section>
       <section class="model-settings history-settings" aria-labelledby="history-settings-title">
         <h3 id="history-settings-title">Chat history</h3>

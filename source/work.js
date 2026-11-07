@@ -65,7 +65,7 @@
   function boundContext(input,sources=[],mode='agent',currentRunStart=null,contextLength=null,headroom=4096){
     const chat=mode==='chat',messages=structuredClone(input);
     if(contextLength!==null&&(!Number.isSafeInteger(contextLength)||contextLength<(chat?8192:32768)||!Number.isSafeInteger(headroom)||headroom<0))throw new Error('Loaded model context is unavailable. Refresh models before submitting.');
-    const chatBudget=contextLength===null?24000:Math.min(96000,contextLength-4096),agentBudget=contextLength===null?70000:Math.min(70000,contextLength-headroom);
+    const chatBudget=contextLength===null?24000:Math.min(96000,contextLength-Math.max(4096,headroom)),agentBudget=contextLength===null?70000:Math.min(70000,contextLength-headroom);
     // Adapted from Goose's current-turn exclusion and complete-pair guard; see THIRD-PARTY-NOTICES.txt.
     if(currentRunStart!==null&&(chat||!Number.isInteger(currentRunStart)||currentRunStart<0||currentRunStart>messages.length))throw new Error('Invalid current run boundary.');
     const currentRun=new Set(currentRunStart===null?[]:messages.slice(currentRunStart));

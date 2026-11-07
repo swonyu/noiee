@@ -16,7 +16,7 @@ import { stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import path from 'node:path';
 import {readCompletion} from './agent-stream.mjs';
-import {DEFAULT_LOCAL_MODEL,validateModelID,bindLocalModelTransport,assertModelContext,outputPolicy} from './local-models.mjs';
+import {DEFAULT_LOCAL_MODEL,validateModelID,bindLocalModelTransport,assertModelContext,outputPolicy,responseStyleInstructions} from './local-models.mjs';
 
 const object = properties => ({type:'object',properties,required:Object.keys(properties),additionalProperties:false});
 const string = {type:'string'};
@@ -187,8 +187,8 @@ export function toolRoutes({instanceToken,hub=new MCPHub(),managedFetch,upstream
     if(choice?.finish_reason!=='stop'||message?.tool_calls?.length||message?.function_call!=null||!text(message?.content,16000))throw Error('LM Studio returned an incomplete or invalid computer proposal.');
     return {model:selected.id,content:message.content};
   }
-  function agentPayload(selected,messages,{finalize=false,stream=true,currentRunStart=null,sources=[]}={}){
-    const payload={model:selected.id,messages:[{role:'system',content:'The selected local model is '+selected.id+'. '+(finalize?FINAL_SYNTHESIS:AGENT_SYSTEM+(fullAccess?' Full Access is enabled. Operational tools run without app confirmation. Required user choices, macOS permissions, exact target checks, Stop and recovery restrictions still apply.':''))}],...(finalize?{tool_choice:'none'}:{tools:AGENT_TOOLS,tool_choice:'auto'}),parallel_tool_calls:false,temperature:0.1,...selected.generation,stream};
+  function agentPayload(selected,messages,{finalize=false,stream=true,currentRunStart=null,sources=[],style=''}={}){
+    const payload={model:selected.id,messages:[{role:'system',content:'The selected local model is '+selected.id+'. '+(finalize?FINAL_SYNTHESIS:AGENT_SYSTEM+(fullAccess?' Full Access is enabled. Operational tools run without app confirmation. Required user choices, macOS permissions, exact target checks, Stop and recovery restrictions still apply.':''))+' '+style}],...(finalize?{tool_choice:'none'}:{tools:AGENT_TOOLS,tool_choice:'auto'}),parallel_tool_calls:false,temperature:0.1,...selected.generation,stream};
     const headroom=selected.contextLength-assertModelContext(selected,payload);
     payload.messages.push(...globalThis.qwenWork.boundContext(messages,sources,'agent',currentRunStart,selected.contextLength,headroom));
     assertModelContext(selected,payload);return payload;
@@ -203,7 +203,7 @@ export function toolRoutes({instanceToken,hub=new MCPHub(),managedFetch,upstream
     const timeout=new AbortController(),timer=setTimeout(()=>timeout.abort(Error('Agent model step reached its time limit.')),policy.deadlineMs),combined=AbortSignal.any([signal,timeout.signal]);
     try{
       combined.throwIfAborted();const selected=await localModels.resolve(selectedID,{...generation,vision,signal:combined});combined.throwIfAborted();
-      const payload=agentPayload(selected,messages,{finalize,currentRunStart:input.currentRunStart??null,sources:input.sources??[]});
+      const payload=agentPayload(selected,messages,{finalize,currentRunStart:input.currentRunStart??null,sources:input.sources??[],style:responseStyleInstructions(generation)});
       const response=await fetchImpl(upstream+'/v1/chat/completions',{method:'POST',redirect:'error',signal:combined,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
       if(combined.aborted){await response.body?.cancel();combined.throwIfAborted();}
       if(response.redirected||response.status>=300&&response.status<400){await response.body?.cancel();throw Error('Local model redirects are not allowed.');}
@@ -412,7 +412,7 @@ export function toolRoutes({instanceToken,hub=new MCPHub(),managedFetch,upstream
         if(controller.signal.aborted)return true;
         const selected=await localModels.resolve(selectedID,{...generation,vision,signal:controller.signal});
         if(controller.signal.aborted||req.aborted||res.destroyed)return true;
-        const payload=agentPayload(selected,messages,{finalize,stream});
+        const payload=agentPayload(selected,messages,{finalize,stream,style:responseStyleInstructions(generation)});
         const response=await fetchImpl(`${upstream}/v1/chat/completions`,{method:'POST',redirect:'error',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
         if(response.redirected||response.status>=300&&response.status<400){await response.body?.cancel();throw Error('Local model redirects are not allowed.');}
         if(!response.ok){await response.body?.cancel();throw new Error(`LM Studio agent request failed (HTTP ${response.status}).`);}

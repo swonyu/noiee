@@ -15,7 +15,7 @@ test('loaded identity routes exact instance, using read-only loopback discovery'
  assert.equal(found.id,MODEL);assert.equal(found.key,'disk-key');assert.equal(found.state,'loaded');assert.equal(found.capabilities.coding,true);
  assert.deepEqual(found.generation,{max_tokens:-1,reasoning_effort:'high'});
  assert.equal(requests.length,1);assert.equal(requests[0].url,'http://127.0.0.1:1234/api/v1/models');assert.equal(requests[0].init.method,'GET');assert.equal(requests[0].init.redirect,'error');
- await assert.rejects(value.resolve('disk-key',{mode:'coding'}),/not loaded|unavailable/i);
+ await assert.rejects(value.resolve('disk-key',{mode:'coding'}),error=>error.code==='MODEL_SELECTION_MISSING');
 });
 test('inventory distinguishes installed unloaded and unsupported, never loads them',async()=>{
  const {value,requests}=catalog({models:[llm('unloaded',{loaded_instances:[]}),llm('embedding',{type:'embedding',capabilities:{}})]});
@@ -27,8 +27,8 @@ test('inventory distinguishes installed unloaded and unsupported, never loads th
 });
 test('missing saved model is rejected without substituting default or cloud',async()=>{
  const {value}=catalog({models:[llm()]});
- await assert.rejects(value.resolve('missing',{mode:'chat'}),/unavailable|not installed/i);
- await assert.rejects(value.resolve('https://paid.example/model',{mode:'chat'}),/unavailable|invalid/i);
+ await assert.rejects(value.resolve('missing',{mode:'chat'}),error=>error.code==='MODEL_SELECTION_MISSING');
+ await assert.rejects(value.resolve('https://paid.example/model',{mode:'chat'}),error=>error.code==='MODEL_SELECTION_MISSING');
 });
 test('chat-only text model cannot run tools or vision, and standard omits reasoning',async()=>{
  const {value}=catalog({models:[llm('text',{capabilities:{trained_for_tool_use:false,vision:false}})]});
@@ -49,7 +49,7 @@ test('context and supported reasoning settings fail closed',async()=>{
  await assert.rejects(value.resolve('small',{mode:'agent'}),/context/i);
  await assert.rejects(value.resolve('small',{mode:'coding'}),/context/i);
  await assert.rejects(value.resolve('small',{mode:'chat',effort:'high'}),/context|deep/i);
- await assert.rejects(value.resolve('always-on',{mode:'chat'}),/standard/i);
+ await assert.rejects(value.resolve('always-on',{mode:'chat'}),error=>error.code==='MODEL_STYLE_UNAVAILABLE');
  await value.resolve('always-on',{mode:'chat',effort:'high'});
 });
 test('stale inventory is rechecked before every request',async()=>{
@@ -60,12 +60,12 @@ test('stale inventory is rechecked before every request',async()=>{
 test('offline discovery is visible and never authorizes inference',async()=>{
  const {value}=catalog(null,{fetchImpl:async()=>{throw Error('offline');}});
  const result=await value.catalog();assert.equal(result.online,false);assert.deepEqual(result.models,[]);
- await assert.rejects(value.resolve(MODEL,{mode:'chat'}),/unavailable|offline/i);
+ await assert.rejects(value.resolve(MODEL,{mode:'chat'}),error=>error.code==='LOCAL_MODEL_UNREACHABLE');
 });
 test('ambiguous instance identity and malformed inventory are rejected',async()=>{
  for(const models of [[llm(),llm('other',{loaded_instances:[{id:MODEL,config:{context_length:65536}}]})],[llm('',{})],Array.from({length:257},(_,i)=>llm(String(i)))]) {
   const {value}=catalog({models});assert.equal((await value.catalog()).online,false);
-  await assert.rejects(value.resolve(MODEL,{mode:'chat'}),/unavailable|inventory/i);
+  await assert.rejects(value.resolve(MODEL,{mode:'chat'}),error=>['LOCAL_MODEL_AMBIGUOUS','LOCAL_MODEL_INVENTORY_INVALID'].includes(error.code));
  }
 });
 test('remote endpoints, redirects, credentials and oversized discovery cannot be used',async()=>{
@@ -84,7 +84,7 @@ test('a loaded instance without its own exact ID cannot borrow the disk key',asy
  for(const id of [undefined,null,'']) {
   const {value}=catalog({models:[llm(MODEL,{loaded_instances:[{id,config:{context_length:65536}}]})]});
   assert.equal((await value.catalog()).online,false);
-  await assert.rejects(value.resolve(MODEL,{mode:'coding'}),/unavailable/i);
+  await assert.rejects(value.resolve(MODEL,{mode:'coding'}),error=>error.code==='LOCAL_MODEL_INVENTORY_INVALID');
  }
 });
 test('conservative context budget reserves output and counts UTF-8 payload bytes',()=>{
@@ -98,8 +98,8 @@ test('conservative context budget reserves output and counts UTF-8 payload bytes
 test('Coding availability does not advertise unsupported always-on creation',async()=>{
  const {value}=catalog({models:[llm('always-on',{capabilities:{trained_for_tool_use:true,reasoning:{allowed_options:['on']}}})]});
  const row=(await value.catalog()).models[0];
- assert.equal(row.capabilities.coding,false);assert.match(row.reasons.coding,/Standard/i);
- await assert.rejects(value.resolve('always-on',{mode:'coding',effort:'high'}),/Standard/i);
+ assert.equal(row.capabilities.coding,false);assert.match(row.reasons.coding,/reasoning off/i);
+ await assert.rejects(value.resolve('always-on',{mode:'coding',effort:'high'}),/reasoning off/i);
  await value.resolve('always-on',{mode:'agent',effort:'high'});
 });
 test('redirected inventory or redirect refusal never authorizes a selected model',async()=>{
@@ -112,7 +112,7 @@ test('redirected inventory or redirect refusal never authorizes a selected model
    const response=Response.json({models:[llm()]});Object.defineProperty(response,'redirected',{value:true});return response;
   }});
   assert.equal((await value.catalog()).online,false);
-  await assert.rejects(value.resolve(MODEL,{mode:'coding'}),/unavailable|offline/i);
+  await assert.rejects(value.resolve(MODEL,{mode:'coding'}),error=>['LOCAL_MODEL_REDIRECT','LOCAL_MODEL_UNREACHABLE'].includes(error.code));
   assert.deepEqual(requests,['http://127.0.0.1:2345/api/v1/models','http://127.0.0.1:2345/api/v1/models']);
  }
 });

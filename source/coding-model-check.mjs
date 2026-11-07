@@ -5,7 +5,7 @@ import * as relay from './coding-local.mjs';
 
 const legacy='qwen3.8-27b-uncensored-hauhaucs-aggressive-mtp',chosen='local/alternate-65k';
 function catalog({reject=false,reasoning=true,mismatch=false}={}) {
-  return {calls:[],async resolve(id,options){const {signal,...policy}=options;if(signal!==undefined)assert(signal instanceof AbortSignal);this.calls.push({id,...policy});if(reject)throw Error('Selected local model is unavailable.');return {id:mismatch?'substitute':id,generation:{max_tokens:options.effort==='high'?32768:2048,...(reasoning?{reasoning_effort:options.effort}:{})}};}};
+  return {calls:[],async resolve(id,options){const {signal,...policy}=options;if(signal!==undefined)assert(signal instanceof AbortSignal);this.calls.push({id,...policy});if(reject)throw Error('Selected local model is unavailable.');return {id:mismatch?'substitute':id,contextLength:65536,generation:{max_tokens:options.effort==='high'?32768:2048,...(reasoning?{reasoning_effort:options.effort}:{})}};}};
 }
 class Fixture extends CodingEngine {
   constructor(localModels=catalog()){super({dataDir:'/tmp/coding-model-fixture-unused',localModels});this.calls=[];this.saved={id:'root',cwd:'/tmp',model:chosen,modelProvider:'saleh_local',turns:[]};this.familyModes.set(this.saved.id,'build'); /* Existing model tests represent a known admitted Build root. */}

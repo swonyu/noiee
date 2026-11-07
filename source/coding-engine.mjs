@@ -9,6 +9,8 @@ import { StringDecoder } from 'node:string_decoder';
 import { ExecutorCommands, executorBinding } from './coding-commands.mjs';
 import { CodingTerminal, terminalSize, terminalInput } from './coding-terminal.mjs';
 import { LocalModelCatalog, DEFAULT_LOCAL_MODEL, validateModelID } from './local-models.mjs';
+import {CodingContextProfiles} from './coding-context.mjs';
+import {verifyCodingRuntime,verifyCodingInitialization} from './coding-runtime.mjs';
 import { CodingMCPCalls } from './coding-mcp-calls.mjs';
 import {readFilesystemIdentity,isFilesystemIdentity} from './filesystem-identity.mjs';
 import './attachments.js';
@@ -93,7 +95,7 @@ function tokenUsageProvenance(p) {
   return {source:p.source,session:p.session,observedAt:p.observedAt,...(p.reportedTurnId!==undefined?{reportedTurnId:identifier(p.reportedTurnId,'reported usage turn')}:{})};
 }
 const policy = (cwd,full=false) => full?{type:'dangerFullAccess'}:({type:'workspaceWrite',writableRoots:[cwd],networkAccess:false,excludeSlashTmp:true,excludeTmpdirEnvVar:true});
-const overrides = (cwd, profile, env, full=false) => ({model:profile.model,modelProvider:profile.modelProvider,approvalPolicy:full?'never':'on-request',approvalsReviewer:'user',sandbox:full?'danger-full-access':'workspace-write',cwd,baseInstructions:HANDOFF_INSTRUCTIONS,runtimeWorkspaceRoots:[cwd],config:{...Object.fromEntries(Object.entries(env).map(([key,value])=>[`shell_environment_policy.set.${key}`,value])),'web_search':'disabled','review_model':profile.model,'sandbox_workspace_write.network_access':full,'sandbox_workspace_write.writable_roots':[cwd],'features.plugins':false,'features.default_mode_request_user_input':true,'features.multi_agent':true,'features.multi_agent_v2':AGENTS,...Object.fromEntries(FEATURES.map(k=>[`features.${k}`,false]))}});
+const overrides = (cwd, profile, env, full=false, context={}) => ({model:profile.model,modelProvider:profile.modelProvider,approvalPolicy:full?'never':'on-request',approvalsReviewer:'user',sandbox:full?'danger-full-access':'workspace-write',cwd,baseInstructions:HANDOFF_INSTRUCTIONS,runtimeWorkspaceRoots:[cwd],config:{...Object.fromEntries(Object.entries(env).map(([key,value])=>[`shell_environment_policy.set.${key}`,value])),'web_search':'disabled','review_model':profile.model,'sandbox_workspace_write.network_access':full,'sandbox_workspace_write.writable_roots':[cwd],'features.plugins':false,'features.default_mode_request_user_input':true,'features.multi_agent':true,'features.multi_agent_v2':AGENTS,...Object.fromEntries(FEATURES.map(k=>[`features.${k}`,false])),...context}});
 
 function compatibleSessionHeader(bytes,thread) {
   let header;try{header=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));}catch{throw new Error('Handoff session header is malformed.');}
@@ -398,7 +400,7 @@ export class CodingEngine {
       this.#outcomesReader=reader;this.#outcomesOwner=reader.ownerId;
     }
     if(!localModels||typeof localModels.resolve!=='function')throw new Error('Invalid trusted local model catalog.');
-    this.localModels=localModels;
+    this.localModels=localModels;this.modelProfiles=new CodingContextProfiles();this.appliedContexts=new Map();this.trustedBinaryOverride=binary!==undefined;this.runtimeVerification=null;
     if(!isAbsolute(dataDir)||!isAbsolute(providerDataDir))throw new Error('Coding data directories must be absolute.');
     Object.assign(this,{dataDir,providerDataDir,binary,spawnProcess,localBaseURL,readCloudKey,child:null,relay:null,starting:null,stopping:null,closed:false,nextId:1,pending:new Map(),questions:new Map(),questionRecords:new Map(),approvals:new Map(),items:new Map(),runs:new Map(),terminals:new Map(),loaded:new Set(),busy:new Set(),epoch:0,message:'Coding engine has not started.',preparing:Promise.resolve(),cloud:null,disposal:Promise.resolve(),cancelledStarts:new Map(),startedTurns:new Map(),receiptCache:new Map(),emittedReceipts:new Map(),receiptRefreshes:new Map(),receiptErrors:new Map(),receiptOffset:0,liveHistory:new Map(),liveHistoryEvicted:false});
     Object.assign(this,{threadInfo:new Map(),verifiedThreads:new Set(),approvalChecks:new Map(),threadReads:new Map(),discoveries:new Map(),discoveryQueue:new Set(),stopTargets:new Set(),familyStops:new Map(),cancelledOrigins:new Set(),cancelledChildren:new Set(),lastTurns:new Map()});
@@ -694,7 +696,7 @@ export class CodingEngine {
       const profile=this.profile(source.modelProvider,source.model);if(profile.model!==source.model)throw new Error('Fork source model differs from the current provider profile.');
       await this.prepare(source.cwd);check();const env=await this.temporaryEnvironment(source.cwd,epoch);check();
       await this.#forkSnapshot(saved);check();
-      const result=await this.rpc('thread/fork',{threadId:source.id,path:saved.path,...overrides(source.cwd,profile,env,this.#fullAccess),ephemeral:false,excludeTurns:true,deferGoalContinuation:true}),thread=result.thread;
+      const result=await this.rpc('thread/fork',{threadId:source.id,path:saved.path,...this.threadOverrides(source.cwd,profile,env,this.#fullAccess),ephemeral:false,excludeTurns:true,deferGoalContinuation:true}),thread=result.thread;
       const id=identifier(thread?.id,'fork root');
       if(thread.ephemeral!==false||typeof thread.path!=='string'||!thread.path.startsWith(join(this.dataDir,'sessions')+sep)||id===source.id||known.has(id)||this.childThread(thread)||thread.forkedFromId!==source.id||thread.cwd!==source.cwd||thread.model!==source.model||thread.modelProvider!==source.modelProvider)throw new Error('Fork root identity does not match its source and destination.');
       // Native workspaceWrite roots are additional to cwd and may omit cwd itself.
@@ -746,7 +748,7 @@ export class CodingEngine {
       for(const member of [...saved.members].sort((a,b)=>depth(a)-depth(b))){
         await mark('family-resume-intent',{threadId:member.id,destination});
         await this.rpc('thread/unarchive',{threadId:member.id});check();
-        const result=await this.rpc('thread/resume',{threadId:member.id,...overrides(destination,this.profile(saved.modelProvider,saved.model),env,this.#fullAccess),excludeTurns:true});check();
+        const result=await this.rpc('thread/resume',{threadId:member.id,...this.threadOverrides(destination,this.profile(saved.modelProvider,saved.model),env,this.#fullAccess),excludeTurns:true});check();
         if(result.thread?.id!==member.id)throw new Error('Handoff resume returned a different thread.');this.loaded.add(member.id);this.rememberThread(result.thread);
         if(member.archived){await mark('family-rearchive-intent',{threadId:member.id,destination});await this.rpc('thread/archive',{threadId:member.id});check();await unloaded(new Set(saved.members.filter(t=>this.within(t.id,member.id)).map(t=>t.id)));}
       }
@@ -878,7 +880,7 @@ export class CodingEngine {
       const depth=t=>{let n=0,id=t.parentThreadId;while(id){if(++n>=32)throw new Error('Invalid recovery family depth.');id=saved.members.find(t=>t.id===id)?.parentThreadId;}return n;};
       for(const member of [...saved.members].sort((a,b)=>depth(a)-depth(b))){
         await mark('family-resume-intent',{threadId:member.id,destination:target});await this.rpc('thread/unarchive',{threadId:member.id});check();
-        const result=await this.rpc('thread/resume',{threadId:member.id,...overrides(target,this.profile(saved.modelProvider,saved.model),env,this.#fullAccess),excludeTurns:true});check();if(result.thread?.id!==member.id)throw new Error('Recovery resume returned a different thread.');this.loaded.add(member.id);this.rememberThread(result.thread);
+        const result=await this.rpc('thread/resume',{threadId:member.id,...this.threadOverrides(target,this.profile(saved.modelProvider,saved.model),env,this.#fullAccess),excludeTurns:true});check();if(result.thread?.id!==member.id)throw new Error('Recovery resume returned a different thread.');this.loaded.add(member.id);this.rememberThread(result.thread);
         if(member.archived){await mark('family-rearchive-intent',{threadId:member.id,destination:target});await this.rpc('thread/archive',{threadId:member.id});check();await unloaded(new Set(saved.members.filter(t=>this.within(t.id,member.id)).map(t=>t.id)));}
       }
       for(const member of saved.members){await this.thread(member.id,false,fence);check();}
@@ -1296,12 +1298,12 @@ export class CodingEngine {
         await this.resolveModel(this.profile('local',model),effort,s);this.checkScheduled(s);
         s.claimStarted=true;await onClaim();this.checkScheduled(s);
         await this.prepare(cwd);const env=await this.temporaryEnvironment(cwd,s.epoch);this.checkScheduled(s);
-        const started=await this.rpc('thread/start',{...overrides(cwd,this.profile('local',model),env,this.#fullAccess),historyMode:'legacy',allowProviderModelFallback:false,experimentalRawEvents:false,dynamicTools:[]});
+        const started=await this.rpc('thread/start',{...this.threadOverrides(cwd,this.profile('local',model),env,this.#fullAccess),historyMode:'legacy',allowProviderModelFallback:false,experimentalRawEvents:false,dynamicTools:[]});
         s.threadId=identifier(started.thread?.id,'scheduled thread');
         if(this.childThread(started.thread)||started.thread.cwd!==cwd||started.thread.modelProvider!==PROVIDER||started.thread.model!==model)throw new Error('Scheduled root is not the expected local project.');
         // A returned native identity is still owned when cancellation wins the race.
         await onCreated(started.thread);this.checkScheduled(s);
-        this.loaded.add(s.threadId);this.rememberThread(started.thread);this.verifiedThreads.add(s.threadId);
+        this.loaded.add(s.threadId);this.markContext(s.threadId,this.profile('local',model));this.rememberThread(started.thread);this.verifiedThreads.add(s.threadId);
         await onThread(s.threadId);this.checkScheduled(s);
         await onDispatch();this.checkScheduled(s);
         s.dispatched=true;
@@ -1525,15 +1527,22 @@ export class CodingEngine {
       const selected=await this.localModels.resolve(profile.model,{mode:'coding',effort,...(vision?{vision:true}:{}),...(signal?{signal}:{})});
       signal?.throwIfAborted();
       if(selected?.id!==profile.model)throw new Error('Local model inventory returned a different model identity.');
+      this.modelProfiles.admit(profile.model,selected);
       return selected;
     }finally{if(owner?.modelLookupController===controller)delete owner.modelLookupController;}
   }
+  threadOverrides(cwd,profile,env,full=false) {
+    return overrides(cwd,profile,env,full,profile.modelProvider===PROVIDER?this.modelProfiles.config(profile.model):{});
+  }
+  contextKey(profile) {return profile.modelProvider===PROVIDER?this.modelProfiles.get(profile.model)?.contextWindow:null;}
+  markContext(threadId,profile) {const value=this.contextKey(profile);if(value!==undefined)this.appliedContexts.set(threadId,value);}
   async findBinary() {
-    if(this.binary)return this.binary;
-    for(const path of ['/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex','/Applications/Codex.app/Contents/Resources/codex']) {
-      try{await access(path,constants.X_OK);this.binary=path;return path;}catch{}
+    if(this.trustedBinaryOverride)return this.binary;
+    for(const path of this.binary?[this.binary]:['/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex','/Applications/Codex.app/Contents/Resources/codex']) {
+      try{await access(path,constants.X_OK);}catch(error){if(['ENOENT','EACCES'].includes(error.code))continue;throw error;}
+      this.runtimeVerification=await verifyCodingRuntime(path);this.binary=this.runtimeVerification.path;return this.binary;
     }
-    throw new Error('Installed Codex app-server executable was not found.');
+    throw Object.assign(new Error('Installed Codex app-server executable was not found. Open or install the supported ChatGPT desktop app, then restart Noiee.'),{code:'CODING_RUNTIME_MISSING'});
   }
   async configFile() {
     if(this.#historyOnly)await this.cwd(this.dataDir);else await mkdir(this.dataDir,{recursive:true,mode:0o700});
@@ -1573,7 +1582,7 @@ export class CodingEngine {
     await this.loadPartialHistory();await this.loadTokenUsage();const binary=await this.findBinary();await this.configFile();
     if(this.closed)throw new Error('Coding engine is closed.');
     let baseURL=this.localBaseURL??(this.#historyOnly?'http://127.0.0.1:9/v1':undefined);
-    if(!baseURL){this.#requireExecution();const {createQwenRelay}=await import('./coding-local.mjs');this.relay=await createQwenRelay({localModels:this.localModels});baseURL=this.relay.baseURL;}
+    if(!baseURL){this.#requireExecution();const {createQwenRelay}=await import('./coding-local.mjs');this.relay=await createQwenRelay({localModels:this.localModels,contextProfileForModel:model=>this.modelProfiles.require(model)});baseURL=this.relay.baseURL;}
     const url=new URL(baseURL);
     if(url.protocol!=='http:'||url.hostname!=='127.0.0.1'||url.username||url.password||url.search||url.hash)throw new Error('Local model provider must use an HTTP loopback URL.');
     const env={HOME:this.#executor||this.#historyOnly?this.dataDir:homedir(),PATH:'/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',LANG:'en_US.UTF-8',CODEX_HOME:this.dataDir,ZDOTDIR:this.dataDir};
@@ -1617,7 +1626,8 @@ export class CodingEngine {
     child.on('error',error=>{if(this.child===child)this.fail(error);});
     child.on('exit',(code,signal)=>{if(this.child===child)this.fail(new Error(`Coding process exited (${signal??code}).`));});
     this.#setupMCP(life);
-    await this.rpc('initialize',{clientInfo:{name:'saleh_uncensored',version:'20'},capabilities:{experimentalApi:true}});
+    const initialized=await this.rpc('initialize',{clientInfo:{name:'saleh_uncensored',version:'20'},capabilities:{experimentalApi:true}});
+    if(this.runtimeVerification)verifyCodingInitialization(initialized,this.dataDir);
     this.write({method:'initialized',params:{}});
     // Startup reads only the fixed app-owned home; retained project fences can
     // cover its Worktrees descendants. Project execution still uses checkConfig.
@@ -2181,7 +2191,7 @@ export class CodingEngine {
     const publications=this.cancelPublications();
     const affectedTurns=[...this.runs].map(([threadId,turnId])=>({threadId,turnId}));
     const life=this.processLife;life?.mcp?.calls.cancelProcess();this.cancelMCP();if(this.scheduled)this.scheduledFailure(this.scheduled,error,life);this.processLife=null;this.child=null;this.epoch++;this.message=error.message;
-    for(const p of this.pending.values()){clearTimeout(p.timer);p.reject(error);}this.pending.clear();this.expire();this.runs.clear();this.loaded.clear();this.items.clear();this.cancelledStarts.clear();this.startedTurns.clear();this.threadInfo.clear();this.verifiedThreads.clear();this.threadReads.clear();this.discoveryQueue.clear();this.stopTargets.clear();this.familyStops.clear();this.cancelledOrigins.clear();this.cancelledChildren.clear();this.lastTurns.clear();this.completedTurns.clear();this.turnRevisions.clear();this.reviewScopes.clear();this.settledReviewTurns.clear();this.familyModes.clear();
+    for(const p of this.pending.values()){clearTimeout(p.timer);p.reject(error);}this.pending.clear();this.expire();this.runs.clear();this.loaded.clear();this.modelProfiles.clear();this.appliedContexts.clear();this.items.clear();this.cancelledStarts.clear();this.startedTurns.clear();this.threadInfo.clear();this.verifiedThreads.clear();this.threadReads.clear();this.discoveryQueue.clear();this.stopTargets.clear();this.familyStops.clear();this.cancelledOrigins.clear();this.cancelledChildren.clear();this.lastTurns.clear();this.completedTurns.clear();this.turnRevisions.clear();this.reviewScopes.clear();this.settledReviewTurns.clear();this.familyModes.clear();
     for(const state of this.liveHistory.values()){state.metadata={};for(const turn of state.turns)if(turn.status==='inProgress'){turn.status='failed';turn.error={message:error.message};}}this.savePartialHistory();
     if(life?.commands){life.commandExitPending=!this.exitUnconfirmed;this.exitUnconfirmed=true;}
     for(const [processId,session] of this.terminals){session.stopping=true;session.screen?.transition('failed',{exitCode:null,error:error.message});if(!session.life?.commands){const work=(session.life?.exit??Promise.resolve()).then(()=>this.finishTerminal(processId,{exitCode:null,error:error.message}));this.#terminalFinalizers.add(work);void work.catch(()=>{}).finally(()=>this.#terminalFinalizers.delete(work));}}
@@ -2324,7 +2334,8 @@ export class CodingEngine {
   async resume(threadId,cwd,profile,epoch,admission) {
     const life=this.processLife,check=()=>{this.checkEpoch(epoch);this.checkAdmission(admission,cwd);if(this.#codingMCP){this.#checkMCP(life);if(this.#codingMCP.isCurrent(threadId)!==true)throw new Error('Coding MCP thread owner is no longer current.');}};
     if(this.#codingMCP)await this.#requireMCP(threadId,life);check();await this.prepare(cwd);check();const env=await this.temporaryEnvironment(cwd,epoch);check();
-    if(!this.loaded.has(threadId)){const r=await this.rpc('thread/resume',{threadId,...overrides(cwd,profile,env,this.#fullAccess),excludeTurns:true});if(r.thread?.id!==threadId||r.thread?.model!==profile.model||r.thread?.modelProvider!==profile.modelProvider)throw new Error('Resumed thread returned a different model or thread identity.');this.loaded.add(threadId);}check();
+    const context=this.contextKey(profile);
+    if(!this.loaded.has(threadId)||this.appliedContexts.get(threadId)!==context){const r=await this.rpc('thread/resume',{threadId,...this.threadOverrides(cwd,profile,env,this.#fullAccess),excludeTurns:true});if(r.thread?.id!==threadId||r.thread?.model!==profile.model||r.thread?.modelProvider!==profile.modelProvider)throw new Error('Resumed thread returned a different model or thread identity.');this.loaded.add(threadId);this.markContext(threadId,profile);}check();
   }
   async begin(threadId,method,params,epoch,admission,followup) {
     this.#requireExecution();this.checkEpoch(epoch);this.checkAdmission(admission,params.cwd);
@@ -2651,10 +2662,10 @@ export class CodingEngine {
         const profile=startProfile??this.profile(input.provider,input.model);this.checkEpoch(epoch);this.checkAdmission(admission,input.cwd);
         await this.prepare(input.cwd);const env=await this.temporaryEnvironment(input.cwd,epoch);this.checkEpoch(epoch);
         const life=this.processLife,b=this.#codingMCP,intent=b?await b.state.beginStart(b.registry.snapshot()):null;this.checkEpoch(epoch);this.checkAdmission(admission,input.cwd);if(b){this.#verifyMCPOwner(intent);this.#checkMCP(life);}
-        const r=await this.rpc('thread/start',{...overrides(input.cwd,profile,env,this.#fullAccess),historyMode:'legacy',allowProviderModelFallback:false,experimentalRawEvents:false,dynamicTools:b?.registry.dynamicTools??[]});
+        const r=await this.rpc('thread/start',{...this.threadOverrides(input.cwd,profile,env,this.#fullAccess),historyMode:'legacy',allowProviderModelFallback:false,experimentalRawEvents:false,dynamicTools:b?.registry.dynamicTools??[]});
         if(r.thread?.model!==profile.model||r.thread?.modelProvider!==profile.modelProvider)throw new Error('Started thread returned a different model or provider identity.');
         if(b){this.#checkMCP(life);this.checkEpoch(epoch);identifier(r.thread.id,'MCP started thread');if(r.thread.cwd!==input.cwd)throw new Error('Started MCP thread returned a different project.');this.#verifyMCPOwner(await b.state.commitStart(intent,r.thread.id),r.thread.id);this.#checkMCP(life);this.checkEpoch(epoch);}
-        this.loaded.add(r.thread.id);this.rememberThread(r.thread);this.verifiedThreads.add(r.thread.id);this.familyModes.set(r.thread.id,'build');return r;
+        this.loaded.add(r.thread.id);this.markContext(r.thread.id,profile);this.rememberThread(r.thread);this.verifiedThreads.add(r.thread.id);this.familyModes.set(r.thread.id,'build');return r;
       }
       const thread=await this.thread(threadId),cwd=thread.cwd;this.checkEpoch(epoch);this.checkAdmission(admission,cwd);
       if(action==='git')return this.git(cwd,epoch);
@@ -2682,7 +2693,7 @@ export class CodingEngine {
       text(thread.model,'saved model',200);if(thread.modelProvider===PROVIDER)validateModelID(thread.model);
       const profile=this.profile(thread.modelProvider,thread.model);
       if(thread.model&&thread.model!==profile.model)throw new Error('Thread model differs from the current provider profile; restore the original model before continuing.');
-      if(action==='fork'){await this.prepare(cwd);this.checkEpoch(epoch);this.checkAdmission(admission,cwd);const env=await this.temporaryEnvironment(cwd,epoch);this.checkEpoch(epoch);this.checkAdmission(admission,cwd);const r=await this.rpc('thread/fork',{threadId,...overrides(cwd,profile,env,this.#fullAccess),excludeTurns:true,deferGoalContinuation:true});if(r.thread?.model!==profile.model||r.thread?.modelProvider!==profile.modelProvider)throw new Error('Forked thread returned a different model or provider identity.');this.loaded.add(r.thread.id);this.rememberThread(r.thread);this.verifiedThreads.add(r.thread.id);return r;}
+      if(action==='fork'){await this.prepare(cwd);this.checkEpoch(epoch);this.checkAdmission(admission,cwd);const env=await this.temporaryEnvironment(cwd,epoch);this.checkEpoch(epoch);this.checkAdmission(admission,cwd);const r=await this.rpc('thread/fork',{threadId,...this.threadOverrides(cwd,profile,env,this.#fullAccess),excludeTurns:true,deferGoalContinuation:true});if(r.thread?.model!==profile.model||r.thread?.modelProvider!==profile.modelProvider)throw new Error('Forked thread returned a different model or provider identity.');this.loaded.add(r.thread.id);this.rememberThread(r.thread);this.verifiedThreads.add(r.thread.id);return r;}
       if(this.runs.has(threadId))throw new Error('A turn is already running; use steer.');
       if(action==='review'&&!this.familyModes.has(threadId)){
         const {taskMode}=await this.rolloutReceipts(thread);this.checkEpoch(epoch);this.checkAdmission(admission,cwd);

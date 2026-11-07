@@ -1,42 +1,9 @@
 (async () => {
 // MODEL PICKER HELPERS BEGIN
-const LOCAL_MODEL_DEFAULT_KEY = 'saleh-local-model-default-v1';
-const LEGACY_LOCAL_MODEL = 'qwen3.8-27b-uncensored-hauhaucs-aggressive-mtp';
-const DEFAULT_LOCAL_MODEL = 'local/saleh-qwen38-uncensored-8bit';
-function modelDefault() {
-  try { const saved = localStorage.getItem(LOCAL_MODEL_DEFAULT_KEY); return saved === null ? DEFAULT_LOCAL_MODEL : saved; }
-  catch { return ''; }
-}
-function modelEligibility(catalog, id, mode, deep = false, longOutput = false) {
-  const entry = Array.isArray(catalog?.models) ? catalog.models.find(value => value && value.id === id) : null;
-  if (catalog?.online !== true) return {ready: false, entry, reason: catalog?.message || 'Local model inventory is unavailable. Refresh models to check again.'};
-  if (!entry) return {ready: false, entry: null, reason: 'The selected model is missing from the local inventory. Choose an installed model; no substitute will be used.'};
-  if (entry.available !== true) return {ready: false, entry, reason: 'The selected local model is unavailable.'};
-  if (entry.capabilities?.[mode] !== true) return {ready: false, entry, reason: entry.reasons?.[mode] || `Compatibility with ${mode === 'coding' ? 'Coding' : mode === 'agent' ? 'Agent' : 'Chat'} is not established.`};
-  if (entry.loaded !== true) return {ready: false, entry, reason: 'Installed, but not loaded. Load this exact model in LM Studio, then refresh. This picker does not load or download models.'};
-  const reasoning = deep ? 'deep' : 'standard';
-  if (entry.capabilities?.[reasoning] !== true) return {ready: false, entry, reason: entry.reasons?.[reasoning] || `${deep ? 'Deep' : 'Standard'} reasoning is unsupported or unconfirmed for this model.`};
-  if (longOutput && (deep || !(entry.contextLength >= 65536))) return {ready: false, entry, reason: 'Long answer needs reasoning off and a loaded context of at least 65,536 tokens.'};
-  return {ready: true, entry, reason: 'Loaded locally · no API fees.'};
-}
-function modelOptions(select, catalog, selected) {
-  const choices = [], seen = new Set();
-  for (const row of Array.isArray(catalog?.models) ? catalog.models : []) {
-    if (!row || typeof row.id !== 'string' || !row.id || seen.has(row.id)) continue;
-    seen.add(row.id);
-    const state = row.state === 'unsupported' ? 'Unsupported' : row.loaded === true ? 'Loaded' : 'Installed · not loaded';
-    choices.push([row.id, `${row.id === DEFAULT_LOCAL_MODEL ? 'Uncensored 8bit' : row.label || row.id} · ${state}`]);
-  }
-  if (!seen.has(selected)) {
-    choices.push([selected, `${selected || 'No model selected'} · ${catalog?.online === null ? catalog.message || 'Inventory not checked' : 'unavailable'}`]);
-  }
-  if (select.options.length !== choices.length || choices.some(([value, label], index) => select.options[index].value !== value || select.options[index].textContent !== label)) {
-    select.replaceChildren(...choices.map(([value, label]) => {
-      const option = document.createElement('option'); option.value = value; option.textContent = label; return option;
-    }));
-  }
-  if (select.value !== selected) select.value = selected;
-}
+const LOCAL_MODEL_DEFAULT_KEY=globalThis.NoieeModelPicker.DEFAULT_KEY;
+const LEGACY_LOCAL_MODEL=globalThis.NoieeModelPolicy.DEFAULT_LOCAL_MODEL;
+const DEFAULT_LOCAL_MODEL=LEGACY_LOCAL_MODEL;
+const {savedDefault,modelDefault,catalogDefault,modelEligibility,modelOptions,connectionState,capabilityOverview}=globalThis.NoieeModelPicker.bind(localStorage);
 // MODEL PICKER HELPERS END
 
 const $ = id => document.getElementById(id);
@@ -53,7 +20,8 @@ window.salehCanNavigate=()=>false;
 window.addEventListener('pagehide',()=>{pageDisposed=true;clearTimeout(saveTimer);});
 let chats = [], selectedId, saveTimer, originalData, lastSavedSnapshot, storageBlocked = false, unreadableData = false, computerBusy = false, agentView = null;
 let textRunsReady=false,textRunGeneration=null;const textInspections=new Map(),textReads=new Set(),deletingChats=new Set(),activeRuns=new Map();
-const newChat = catalog => { const model = modelDefault(); return { id: crypto.randomUUID(), title: 'New chat', updated: Date.now(), draft: '', project: '', notes: '', model, thinking: catalog?.models?.some(row => row?.id === model && row.capabilities?.deep === true) ? 'deep' : 'standard', mode: window.webkit?.messageHandlers?.tools ? 'agent' : 'chat', file: null, messages: [] }; };
+const pendingModelDefaults=new WeakSet();
+const newChat = catalog => { const model = modelDefault(catalog),chat={ id: crypto.randomUUID(), title: 'New chat', updated: Date.now(), draft: '', project: '', notes: '', model, thinking: catalog?.models?.some(row => row?.id === model && row.capabilities?.deep === true) ? 'deep' : 'standard', mode: window.webkit?.messageHandlers?.tools ? 'agent' : 'chat', file: null, messages: [] };if(!model&&!savedDefault().saved)pendingModelDefaults.add(chat);return chat; };
 function boundedReceiptText(text, limit) {
   const notice = '\n[Preview truncated; Export keeps the saved receipt.]';
   return text.length > limit ? text.slice(0, limit - notice.length) + notice : text;
@@ -133,7 +101,7 @@ const chatModelState = chat => {
 };
 function renderModelControls() {
   const chat = current(), eligibility = chatModelState(chat), row = eligibility.entry;
-  modelOptions($('default-model'), localModels, modelDefault());
+  modelOptions($('default-model'), localModels, modelDefault(localModels));
   modelOptions($('chat-model'), localModels, chat.model);
   $('default-model').disabled = activeRuns.size>0 || computerBusy;
   $('chat-model').disabled = !!activeFor(chat) || computerBusy;
@@ -142,17 +110,17 @@ function renderModelControls() {
   $('model-status').classList.toggle('sr-only',eligibility.ready);
   document.querySelector('.exact-model').textContent = chat.model || 'No model selected';
   $('loaded-context').textContent = row?.loaded === true && Number.isFinite(row.contextLength) ? `${row.contextLength.toLocaleString()} tokens` : 'Not reported for this selection';
-  $('reasoning-capability').textContent = ['standard', 'deep'].map(key => `${key === 'deep' ? 'Deep' : 'Standard'}: ${row?.capabilities?.[key] === true ? 'supported' : row?.reasons?.[key] || 'unavailable or unconfirmed'}`).join(' · ');
+  $('reasoning-capability').textContent = ['standard', 'deep'].map(key => `${key === 'deep' ? 'Deep reasoning' : 'Concise / Detailed'}: ${row?.capabilities?.[key] === true ? 'supported' : row?.reasons?.[key] || 'unavailable or unconfirmed'}`).join(' · ');
   $('thinking').querySelector('[value=standard]').disabled = row?.capabilities?.standard !== true;
   $('thinking').querySelector('[value=deep]').disabled = row?.capabilities?.deep !== true;
   const long = modelEligibility(localModels, chat.model, chat.mode, false, true);
   $('thinking').querySelector('[value=long]').disabled = !long.ready;
-  $('thinking').querySelector('[value=long]').title = long.ready ? 'Reasoning off · no fixed token cap · 30-minute model-request limit.' : long.reason;
-  $('thinking').title = 'Fast and Long answer turn reasoning off. Deep reasoning turns it on. No fixed response token cap; model context, saved-data limits and a 30-minute model-request limit still apply.'+(long.ready?'':' '+long.reason);
-  const pending = localModels.online === null;
-  const label = pending ? 'Checking local models…' : eligibility.ready ? 'Local model ready' : localModels.online ? 'Model unavailable' : 'Local models offline';
-  $('connection-text').textContent = label; $('connection').className = pending ? '' : eligibility.ready ? 'online' : 'offline';
-  $('connection').title = eligibility.reason; $('connection').setAttribute('aria-label', `${label}. Refresh local model inventory`);
+  $('thinking').querySelector('[value=long]').title = long.ready ? 'Detailed instructions · reasoning off · no fixed response cap.' : long.reason;
+  $('thinking').title = 'Concise and Detailed change answer instructions with reasoning off. Deep reasoning turns it on. No fixed response cap; context and the 30-minute model-request limit still apply.';
+  const connection=connectionState(localModels,eligibility);
+  $('connection-text').textContent=connection.label;$('connection').className=connection.state==='checking'?'':connection.state==='online'?'online':'offline';
+  $('connection').title=eligibility.reason;$('connection').setAttribute('aria-label',connection.label+'. Refresh local model inventory');
+  $('model-readiness-overview').textContent=capabilityOverview(localModels,modelDefault(localModels));
 }
 async function refreshModels() {
   const request = ++modelRefresh;
@@ -161,7 +129,10 @@ async function refreshModels() {
     if (!response.ok || !Array.isArray(catalog.models) || typeof catalog.online !== 'boolean') throw Error('Local model inventory is unavailable.');
     if (request !== modelRefresh) return;
     localModels = catalog;
-  } catch (error) {if (request !== modelRefresh) return; localModels = {online: false, models: localModels.models, message: `Local model inventory unavailable. ${error.message}`};}
+    const suggested=modelDefault(localModels);let changed=false;
+    if(suggested)for(const chat of chats)if(pendingModelDefaults.has(chat)&&!chat.model&&!activeFor(chat)){chat.model=suggested;pendingModelDefaults.delete(chat);changed=true;}
+    if(changed)void save();
+  } catch (error) {if (request !== modelRefresh) return; localModels = {online:false,connected:false,status:'server-error',models:localModels.models,error:{code:'LOCAL_INVENTORY_ENDPOINT_ERROR'},message:'Noiee could not refresh model inventory. Check the local app connection and retry.'};}
   controls();
 }
 const attachmentReads = new Map();
@@ -765,7 +736,8 @@ async function generateRun(chat,selection,preserveDraft) {
     if(previousPlan)context.splice(Math.max(0,context.length-1),0,{role:'assistant',content:qwenWork.planLabel+JSON.stringify(qwenWork.normalizePlan(previousPlan))});
     if(chat.notes||chat.project||chat.file)context.unshift({role:'user',content:['Context supplied for this conversation:',chat.project&&`Project: ${chat.project}`,chat.notes&&`Working notes:\n${chat.notes}`,chat.file&&`File: ${chat.file.name}\n${chat.file.text}`].filter(Boolean).join('\n\n')});
     const sources=qwenWork.normalizeSources(chat.messages.flatMap(message=>message.sources||[]));
-    const messages=qwenWork.boundContext(context,sources,selection.mode,null,selection.contextLength);
+    const budget=globalThis.NoieeModelPolicy.contextProfile(selection.contextLength,{mode:selection.mode,effort:selection.thinking==='deep'?'high':'none',longOutput:selection.longOutput===true});
+    const messages=qwenWork.boundContext(context,sources,selection.mode,null,selection.contextLength,budget.responseReserve+2048);
     const raw=rawContext.map(message=>JSON.stringify(message));let retained=0;for(const message of messages)if(JSON.stringify(message)===raw[retained])retained++;
     if(retained!==raw.length)throw Error('Unsettled original history does not fit this request without omission. Your draft is kept; inspect the earlier outcome before continuing.');
     const input={runId,chatId:chat.id,userMessageId:user.id,assistantMessageId:reply.id,messages,model:selection.model,thinking:selection.thinking,...(selection.longOutput===true?{longOutput:true}:{}),...(selection.mode==='agent'?{kind:'agent',sources}:{})};
@@ -880,7 +852,7 @@ $('prompt').addEventListener('input', () => { current().draft = $('prompt').valu
 $('prompt').addEventListener('keydown', event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); $('composer').requestSubmit(); } });
 $('chat-mode').onchange=()=>{if(activeFor(current()))return;current().mode=$('chat-mode').value;void save();controls();};
 $('thinking').onchange = () => { if (activeFor(current())) return; const value=$('thinking').value;if(!['standard','long','deep'].includes(value))return;current().thinking=value==='long'?'standard':value;if(value==='long')current().longOutput=true;else delete current().longOutput;void save();controls(); };
-$('chat-model').onchange = () => {if (activeFor(current()) || computerBusy) return; current().model = $('chat-model').value; void save(); controls();};
+$('chat-model').onchange = () => {if (activeFor(current()) || computerBusy) return; current().model = $('chat-model').value; pendingModelDefaults.delete(current()); void save(); controls();};
 $('default-model').onchange = () => {if (activeRuns.size || computerBusy) return; try {localStorage.setItem(LOCAL_MODEL_DEFAULT_KEY, $('default-model').value);} catch {notice('The default could not be saved. Your chat model is unchanged.');} controls();};
 $('models-refresh').onclick = refreshModels;
 $('stop').onclick = async () => {const active=activeFor(current());if(active){if(active.kind==='compact'){active.cancelled=true;const own=compactionAdmissions.get(active.runId);if(own)own.cancelled=true;}if(active.admitting){active.cancelled=true;notice('Stopping the pending text admission; the draft is kept until its outcome is known.');}const id=active.runId;$('stop').disabled=true;try{await window.SalehChatRuns.stop(id);}catch(error){notice('Stop is unconfirmed. '+error.message);}finally{$('stop').disabled=false;}return;}};
@@ -890,7 +862,7 @@ $('open-coding').onclick = async () => {
 };
 $('new-chat').onclick = () => {
   if(storageHydrating||storageBlocked||restoring||structuralPending)return;
-  const empty = chats.find(c => !c.archived && c.model === modelDefault() && !attachmentReads.has(c) && !c.messages.length && !c.draft && !c.notes && !c.project && !c.file && !draftAttachments(c).length && (c.thinking !== 'deep' || localModels.models.find(row => row?.id === c.model)?.capabilities?.deep === true));
+  const empty = chats.find(c => !c.archived && c.model === modelDefault(localModels) && !attachmentReads.has(c) && !c.messages.length && !c.draft && !c.notes && !c.project && !c.file && !draftAttachments(c).length && (c.thinking !== 'deep' || localModels.models.find(row => row?.id === c.model)?.capabilities?.deep === true));
   if(!empty&&chats.length>=5000){notice('The 5,000 saved-chat limit is reached. Export a backup before removing chats to make room.');return;}
   const chat = empty || newChat(localModels); if (!empty) chats.unshift(chat); selectedId = chat.id;
   document.body.classList.remove('sidebar-open'); sidebarState(); void save(); render(); $('prompt').focus();
