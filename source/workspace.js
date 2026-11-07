@@ -269,6 +269,7 @@
     command('compact-context','Compact context','Summarize earlier context using the existing compaction flow','Chat','summary memory','', 'Wait for current work or storage checks, or review a stale summary.'),
     command('compaction-full-history','Use full history','Keep saved summaries while using original messages','Chat','summary originals reset'),
     command('compaction-rebuild','Rebuild context summary','Create a new summary from the original history','Chat','compact stale memory'),
+    command('goal-toggle','Goal','Inspect the task objective, completion criteria and continuation limit','Tasks','objective done completion pause resume'),
     command('changes-toggle','Project changes','Inspect changes in the current project','Project','git diff review'),
     command('terminal-toggle','Project terminal','Open the current project’s terminal panel','Project','shell console'),
     command('worktrees-toggle','Worktrees','Inspect managed project copies and retained recovery','Project','git branches handoff restore'),

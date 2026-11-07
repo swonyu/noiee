@@ -31,6 +31,7 @@ FILES.set('/chat-runs.js',['chat-runs.js','text/javascript']);
 FILES.set('/context-compaction.js',['context-compaction.js','text/javascript']);
 FILES.set('/coding-terminal.js',['coding-terminal.js','text/javascript']);
 FILES.set('/coding-submission.js',['coding-submission.js','text/javascript']);
+FILES.set('/coding-goals.js',['coding-goals.js','text/javascript']);
 FILES.set('/coding-mcp-setup.js',['coding-mcp-setup.js','text/javascript']);
 FILES.set('/coding-metrics.js',['coding-metrics.js','text/javascript']);
 FILES.set('/coding-skills.js',['coding-skills.js','text/javascript']);

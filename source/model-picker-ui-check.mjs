@@ -248,7 +248,7 @@ test('real frontend selectors and dispatch through a routed browser fixture', {s
   }
   const errors = [], nativeCalls = [], chatCalls = [], runs=new Map(), admissions=new Map(),generation=crypto.randomUUID();
   const assetNames = {'/': 'index.html', '/coding': 'coding.html', '/xterm.js': 'node_modules/@xterm/xterm/lib/xterm.js', '/xterm-fit.js': 'node_modules/@xterm/addon-fit/lib/addon-fit.js', '/xterm.css': 'node_modules/@xterm/xterm/css/xterm.css'};
-  const assets = new Set(['model-policy.js','model-picker.js','chat-storage.js','chat-runs.js','coding-submission.js', 'attachments.js','attachment-storage.js','coding-metrics.js','coding-skills.js','coding-mcp-setup.js','workspace.css','workspace-extensions.js','workspace.js','index.html', 'app.js', 'style.css', 'tools.js', 'computer.js', 'work.js', 'coding.html', 'coding.js', 'coding.css', 'coding-terminal.js']);
+  const assets = new Set(['model-policy.js','model-picker.js','chat-storage.js','chat-runs.js','coding-submission.js','coding-goals.js', 'attachments.js','attachment-storage.js','coding-metrics.js','coding-skills.js','coding-mcp-setup.js','workspace.css','workspace-extensions.js','workspace.js','index.html', 'app.js', 'style.css', 'tools.js', 'computer.js', 'work.js', 'coding.html', 'coding.js', 'coding.css', 'coding-terminal.js']);
   // Match the real app's trustworthy loopback origin; nonlocal HTTP disables crypto.randomUUID.
   const setup = async context => context.route('**/*', async route => {
     const url = new URL(route.request().url());

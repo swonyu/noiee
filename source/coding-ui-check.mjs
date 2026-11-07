@@ -23,7 +23,7 @@ const server = createServer(async (req, res) => {
   if(req.url==='/api/models'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify({online:true,models:[{id:fixtureModel,label:'Fixture model',available:true,loaded:true,capabilities:{coding:true,standard:true,deep:true}},...(process.argv.some(arg=>['--polish-layout-only','--schedule-mode-only'].includes(arg))?[{id:'local/saleh-qwen38-uncensored-8bit',label:'Saleh Qwen38 Uncensored 8bit',available:true,loaded:true,contextLength:131072,capabilities:{coding:true,standard:true,deep:true}}]:[])]}));return;}
   const name = req.url === '/coding' ? 'coding.html' : req.url.slice(1);
   const assets = {'xterm.js':'node_modules/@xterm/xterm/lib/xterm.js','xterm-fit.js':'node_modules/@xterm/addon-fit/lib/addon-fit.js','xterm.css':'node_modules/@xterm/xterm/css/xterm.css'};
-  if (!['coding.html', 'coding.js', 'model-policy.js', 'model-picker.js', 'chat-runs.js', 'work.js', 'coding.css', 'coding-terminal.js', 'coding-submission.js', 'attachments.js', 'attachment-storage.js', 'coding-metrics.js', 'coding-skills.js', 'coding-mcp-setup.js', 'workspace.css', 'workspace-extensions.js', 'workspace.js', ...Object.keys(assets)].includes(name)) {res.writeHead(404).end(); return;}
+  if (!['coding.html', 'coding.js', 'model-policy.js', 'model-picker.js', 'chat-runs.js', 'work.js', 'coding.css', 'coding-terminal.js', 'coding-submission.js','coding-goals.js', 'attachments.js', 'attachment-storage.js', 'coding-metrics.js', 'coding-skills.js', 'coding-mcp-setup.js', 'workspace.css', 'workspace-extensions.js', 'workspace.js', ...Object.keys(assets)].includes(name)) {res.writeHead(404).end(); return;}
   res.setHeader('Content-Type', name.endsWith('.js') ? 'text/javascript' : name.endsWith('.css') ? 'text/css' : 'text/html');
   res.end(await readFile(new URL(assets[name] || name, root)));
 });
@@ -74,6 +74,68 @@ const emit = (method, params) => events.push({sequence: ++sequence, method, para
 const copy = value => structuredClone(value);
 const rootId = id => {const seen=new Set(); while(threads.get(id)?.parentThreadId&&!seen.has(id)){seen.add(id);id=threads.get(id).parentThreadId;}return id;};
 const subtree = id => [...threads.values()].filter(thread=>{const seen=new Set();let next=thread.id;while(next&&!seen.has(next)){if(next===id)return true;seen.add(next);next=threads.get(next)?.parentThreadId;}return false;});
+
+const goalFixtures = new Map(); let goalHoldAction = '', goalRelease = null, goalThrow = '', goalMalformed = false, goalBadReply = '', goalReorderBinding = false, goalBlocked = false;
+const goalReply = id => {const goal = goalFixtures.get(id);return {goal:goal ? copy(goal) : null,revision:goal?.revision || 0};};
+async function goalFixture(p,thread) {
+  assert(process.argv.includes('--goals-only'));
+  assert(thread && !thread.parentThreadId && (p.action === 'goalInspect' || !thread.archived));
+  let goal = goalFixtures.get(thread.id), turn = null;
+  if (goalBadReply && p.action === 'goalSave') {
+    if (goalBadReply === 'empty') return {goal:null,revision:0};
+    const fake=copy(goal);
+    if(goalBadReply!=='unchanged')fake.revision++;
+    if(goalBadReply==='wrong-thread')fake.binding.rootThreadId='different-task';
+    if(goalBadReply==='wrong-id')fake.id=randomUUID();
+    if(goalBadReply==='wrong-values')fake.objective='Different objective';
+    return {goal:fake,revision:fake.revision};
+  }
+  if (p.action === 'goalInspect') {
+    if (goal) for (const attempt of goal.attempts) {
+      const known = thread.turns.find(value => value.id === attempt.turnId);
+      if (attempt.status === 'running' && known && ['completed','interrupted','failed'].includes(known.status)) {
+        attempt.status = known.status;attempt.endedAt = Date.now();goal.revision++;goal.updatedAt = Date.now();
+        if (goal.state === 'ready' && goal.attemptsRemaining === 0) goal.state = 'budgetLimited';
+      }
+    }
+  } else {
+    assert.equal(p.expectedRevision,goal?.revision || 0,'The UI must send the exact observed revision');
+    if (goalThrow === p.action) {goalThrow = '';throw Error('Fixture action refused before dispatch');}
+    if (p.action === 'goalSave') {
+      assert(Number.isInteger(p.maxTurns) && p.maxTurns >= 1 && p.maxTurns <= 20);
+      assert(typeof p.objective === 'string' && typeof p.completionCriteria === 'string');
+      const prior = goal;
+      assert.notEqual(prior?.state,'complete');
+      goal = {...prior,id:prior?.id || randomUUID(),binding:prior?.binding || {rootThreadId:thread.id,ownerId:savedOwner,cwd:thread.cwd,model:fixtureModel,provider:'local',executionMode:'native'},revision:(prior?.revision || 0)+1,state:prior?.state === 'budgetLimited' ? 'paused' : prior?.state || 'ready',
+        objective:p.objective,completionCriteria:p.completionCriteria,maxTurns:p.maxTurns,attempts:prior?.attempts || [],
+        attemptsUsed:prior?.attemptsUsed || 0,attemptsRemaining:p.maxTurns-(prior?.attemptsUsed || 0),
+        completionEvidence:prior?.completionEvidence || null,createdAt:prior?.createdAt || Date.now(),updatedAt:Date.now()};
+      goalFixtures.set(thread.id,goal);
+    } else {
+      assert(goal);
+      if (p.action === 'goalContinue') {
+        assert.equal(goal.state,'ready');assert(goal.attemptsRemaining > 0);
+        assert(['plan','build'].includes(p.mode));assert(['none','high'].includes(p.effort));
+        turn = {id:'goal-turn-'+(++turnCounter),status:'inProgress',items:[{id:'goal-user-'+turnCounter,type:'userMessage',content:[{type:'text',text:'Continue saved goal: '+goal.objective}]}]};
+        thread.turns.push(turn);emit('turn/started',{threadId:thread.id,turn:copy(turn)});
+        goal.attempts.push({id:randomUUID(),claimedAt:Date.now(),contractRevision:goal.revision,contractHash:'a'.repeat(64),maxTurnsAtDispatch:goal.maxTurns,turnId:turn.id,status:'running',mode:p.mode,effort:p.effort,observedUsage:null});
+        goal.attemptsUsed++;goal.attemptsRemaining--;
+      } else if (p.action === 'goalPause') goal.state = 'paused';
+      else if (p.action === 'goalResume') {assert.equal(goal.state,'paused');goal.state = 'ready';}
+      else if (p.action === 'goalComplete') {assert(p.evidence.trim());goal.state = 'complete';goal.completionEvidence = p.evidence;}
+      else throw Error('Unhandled Goal fixture action');
+      goal.revision++;goal.updatedAt = Date.now();
+    }
+  }
+  const result = {...goalReply(thread.id),...(turn ? {turn:copy(turn)} : {})};
+  if (goalBlocked) {result.available=false;result.blockedReason='Fixture owner binding is available for inspection only.';}
+  if (goalReorderBinding && result.goal) result.goal.binding=Object.fromEntries(Object.entries(result.goal.binding).reverse());
+  if (goalMalformed && result.goal) result.goal.attemptsUsed = 999;
+  if (goalHoldAction === p.action) {goalHoldAction = '';await new Promise(resolve => {goalRelease = resolve;});}
+  if (goalThrow === p.action+'-after-start') {goalThrow = '';throw Error('The Goal reply was lost after dispatch; inspect before continuing');}
+  return result;
+}
+
 const metadata = thread => ({model:fixtureModel,...copy(thread), turns: [], status:{type:thread.turns.some(turn=>turn.status==='inProgress')?'active':'idle'}});
 let startupOutcome='cancelled',startupRelease=null,fixtureOwners=[],fixtureListWarning='';
 await page.exposeBinding('codingNative', async (_, body) => {
@@ -208,6 +270,7 @@ await page.exposeBinding('codingNative', async (_, body) => {
     }
     assert.equal(body.op, 'coding');
     const p = body.input, thread = threads.get(p.threadId);
+    if (p.action.startsWith('goal')) return await goalFixture(p,thread);
     switch (p.action) {
       case 'mcpOutcomes': {if(holdMCP){holdMCP=false;await new Promise(resolve=>{releaseMCP=resolve;});}if(mcpOutcomeError)throw Error(mcpOutcomeError);if(mcpOutcomeFixtures.has(p.threadId))return copy(mcpOutcomeFixtures.get(p.threadId));throw Error('Unhandled fixture action mcpOutcomes');}
       case 'terminalResults': {
@@ -223,7 +286,7 @@ await page.exposeBinding('codingNative', async (_, body) => {
         if(p.recordId&&holdSavedCommand===p.threadId){holdSavedCommand='';await new Promise(resolve=>{releaseSavedCommand=resolve;});}
         return result;
       }
-      case 'status': {const wasActive=terminalActive;if(finishTerminalAtStatus){finishTerminalAtStatus=false;terminalActive=false;emit('coding/terminal/completed',{threadId:terminalThreadId,processId:terminalProcessId,exitCode:0});} const result = {available: true, running: true, owners:copy(fixtureOwners), workspaceSync: copy([...workspaceSync.values()]), workspaceSyncCursor: sequence, activeTurns: [...threads.values()].flatMap(t => t.turns.filter(turn => turn.status === 'inProgress').map(turn => ({threadId:t.id,turnId:turn.id,rootThreadId:rootId(t.id),parentThreadId:t.parentThreadId}))), stoppingFamilies:[...familyStopping], model: 'Local Qwen', provider: 'local', terminals: [...(wasActive ? [{threadId: terminalThreadId, processId: terminalProcessId}] : []), ...(interactive ? [{...interactive,screen:undefined}] : [])], providers: [{id: 'local', name: 'Local Qwen', available: true}, ...(allowCloud ? [{id:'cloud',name:'Fixture cloud',available:true}] : [])], message: 'Local engine available'};if(holdStatus){holdStatus=false;await new Promise(resolve=>{releaseStatus=resolve;});}return result;}
+      case 'status': {const wasActive=terminalActive;if(finishTerminalAtStatus){finishTerminalAtStatus=false;terminalActive=false;emit('coding/terminal/completed',{threadId:terminalThreadId,processId:terminalProcessId,exitCode:0});} const result = {available: true, running: true, goals:process.argv.includes('--goals-only'), owners:copy(fixtureOwners), workspaceSync: copy([...workspaceSync.values()]), workspaceSyncCursor: sequence, activeTurns: [...threads.values()].flatMap(t => t.turns.filter(turn => turn.status === 'inProgress').map(turn => ({threadId:t.id,turnId:turn.id,rootThreadId:rootId(t.id),parentThreadId:t.parentThreadId}))), stoppingFamilies:[...familyStopping], model: 'Local Qwen', provider: 'local', terminals: [...(wasActive ? [{threadId: terminalThreadId, processId: terminalProcessId}] : []), ...(interactive ? [{...interactive,screen:undefined}] : [])], providers: [{id: 'local', name: 'Local Qwen', available: true}, ...(allowCloud ? [{id:'cloud',name:'Fixture cloud',available:true}] : [])], message: 'Local engine available'};if(holdStatus){holdStatus=false;await new Promise(resolve=>{releaseStatus=resolve;});}return result;}
       case 'list': return {threads: [...threads.values()].filter(t => !hideAllThreads && !t.parentThreadId && t.archived === !!p.archived && (!omitEmpty || t.id === 'saved' || t.turns.length) && !(handoffReadBlocked && handoffs.some(h=>h.rootThreadId===t.id))).map(metadata), nextCursor: null, ...(fixtureListWarning ? {historyIncomplete:true,historyWarning:fixtureListWarning} : {}), ...(handoffReadBlocked ? {historyIncomplete:true,historyWarning:'Some worktree handoffs remain incomplete. Their history is unavailable; verified saved chats are listed.'} : {})};
       case 'historyPage': {assert(process.argv.includes('--delegated-receipts-only'));assert(thread);return {threadId:thread.id,pageCursor:p.cursor??null,nextCursor:null,truncated:false,turn:copy(thread.turns.at(-1)??null)};}
       case 'family': {if(!thread)throw new Error('Thread not found');const root=rootId(thread.id), all=subtree(root).filter(t=>t.id!==root), offset=Number(p.cursor||0);const result={rootThreadId:root,root:metadata(threads.get(root)),threads:all.slice(offset,offset+1).map(metadata),nextCursor:repeatFamilyCursor?'1':offset+1<all.length?String(offset+1):null,stopping:[...familyStopping].some(id=>rootId(id)===root),stoppingTargets:[...familyStopping].filter(id=>rootId(id)===root)};if(p.threadId===heldFamily){heldFamily='';await new Promise(resolve=>{releaseFamily=resolve;});}return result;}
@@ -251,7 +314,7 @@ await page.exposeBinding('codingNative', async (_, body) => {
       case 'review': {const turn = {id: `turn-${++turnCounter}`, status: 'inProgress', items: []}; thread.turns.push(turn); const result={turn: copy(turn), reviewThreadId: thread.id};if(holdReview){holdReview=false;emit('turn/started',{threadId:thread.id,turn:copy(turn)});await new Promise(resolve=>{releaseReview=resolve;});}return result;}
       case 'events': {
         if (eventBusy) {eventBusy = false; throw new Error('Native tools are busy; try again.');}
-        const result = {events: copy(events.filter(e => e.sequence > p.after)), cursor: sequence, gap, approvals: copy(approvals),...(process.argv.includes('--polish-layout-only')?{questions:[]}:{} )}; gap = false;if(holdEvents){holdEvents=false;await new Promise(resolve=>{releaseEvents=resolve;});}return result;
+        const result = {events: copy(events.filter(e => e.sequence > p.after)), cursor: sequence, gap, approvals: copy(approvals),...(process.argv.some(arg=>['--polish-layout-only','--goals-only'].includes(arg))?{questions:[]}:{} )}; gap = false;if(holdEvents){holdEvents=false;await new Promise(resolve=>{releaseEvents=resolve;});}return result;
       }
       case 'approval': {const i = approvals.findIndex(a => a.id === p.id); assert(i >= 0); if(p.id === heldApproval) await new Promise(resolve => {releaseApproval=resolve;}); const currentIndex=approvals.findIndex(a=>a.id===p.id);if(currentIndex>=0)approvals.splice(currentIndex, 1); return {message: p.decision === 'accept' ? 'Approved once; execution outcome pending.' : 'Declined.'};}
       case 'git': return {branch: 'fixture-branch', status: ' M app.js\n?? new.txt', diff: 'diff --git a/app.js b/app.js\n+<img src=x onerror=alert(1)>', truncated: true};
@@ -1189,13 +1252,252 @@ async function checkFileDiffView(){
   assert.equal(writes(),before,'File navigation never dispatches a Git mutation');assert.deepEqual(errors,[]);
 }
 
+async function checkGoalsUI() {
+  const checks = [], record = name => {assert(!checks.includes(name));checks.push(name);};
+  const executions = () => calls.filter(call => call.op === 'coding' && ['start','send','steer','review','goalContinue'].includes(call.input?.action));
+  const actions = name => calls.filter(call => call.op === 'coding' && call.input?.action === name);
+  const finish = id => {const thread = threads.get(id),turn = thread.turns.at(-1);assert(turn);turn.status='completed';turn.items.push({id:'goal-result-'+turn.id,type:'agentMessage',text:'Fixture result; review completion criteria.'});emit('turn/completed',{threadId:id,turn:copy(turn)});};
+  const preserved = async () => assert.equal(await page.locator('#prompt').inputValue(),'KEEP_GOAL_COMPOSER_175');
+  const objective = 'Fix the task summary · هدف واضح <img src=x onerror=alert(1)>';
+  const criteria = 'Archived tasks do not count.\nThe three focused tests pass.\nNo unrelated files change.';
+  await page.waitForFunction(() => !document.querySelector('#goal-toggle').disabled);
+  await until(() => actions('goalInspect').length > 0);
+  assert.equal(executions().length,0);
+  await page.locator('#prompt').fill('KEEP_GOAL_COMPOSER_175');
+  await page.locator('#goal-toggle').click();
+  await page.locator('#goal-editor').waitFor({state:'visible'});
+  await page.locator('#goal-objective-input').fill(objective);
+  await page.locator('#goal-criteria-input').fill(criteria);
+  await page.locator('#goal-limit-input').fill('2');
+  assert.equal(executions().length,0);await preserved();
+  record('inspect and editing start no work; message draft remains independent');
+  const draftBefore = await page.evaluate(() => JSON.parse(localStorage.getItem('qwen-coding-ui-v1')).goalDrafts.saved);
+  assert.equal(draftBefore.objective,objective);assert.equal(draftBefore.completionCriteria,criteria);assert.equal(draftBefore.revision,0);
+  await page.reload();await page.locator('#goal-editor').waitFor({state:'visible'});
+  assert.equal(await page.locator('#goal-objective-input').inputValue(),objective);
+  assert.equal(await page.locator('#goal-criteria-input').inputValue(),criteria);
+  await preserved();assert.equal(executions().length,0);
+  record('unsaved goal editor and composer survive reload without submission');
+  await page.locator('#goal-save').click();await text('#goal-state','Ready to continue');
+  assert.equal(actions('goalSave').length,1);assert.equal(executions().length,0);
+  assert.equal(await page.locator('#goal-objective').textContent(),objective);
+  assert.equal(await page.locator('#goal-objective img').count(),0);
+  assert.equal(goalFixtures.get('saved').maxTurns,2);
+  await preserved();record('save persists exact objective criteria and limit as text without starting');
+  assert.equal(await page.locator('#goal-heading').evaluate(node=>node===document.activeElement),true);
+  assert.equal(await page.locator('#goal-panel').evaluate(node=>node.scrollTop),0);
+  record('successful Save restores focus and scroll to the saved goal summary');
+  goalReorderBinding=true;await page.locator('#goal-refresh').click();await text('#goal-state','Ready to continue');
+  assert(!(await page.locator('#goal-continue').isDisabled()));assert(!(await page.locator('#goal-notice').textContent()).includes('could not be verified'));
+  goalReorderBinding=false;await page.locator('#goal-refresh').click();await text('#goal-state','Ready to continue');
+  record('native dictionary key ordering does not change the exact Goal binding');
+  const editsBeforeBlocked=actions('goalPause').length;
+  goalBlocked=true;await page.locator('#goal-refresh').click();await text('#goal-notice','inspection only');
+  assert(await page.locator('#goal-continue').isDisabled());assert(await page.locator('#goal-edit').isDisabled());
+  await page.locator('#goal-pause').evaluate(node=>node.dispatchEvent(new MouseEvent('click',{bubbles:true})));
+  assert.equal(actions('goalPause').length,editsBeforeBlocked);await preserved();
+  goalBlocked=false;await page.locator('#goal-refresh').click();await text('#goal-state','Ready to continue');
+  record('backend read-only availability holds actions even when a disabled event is dispatched');
+  await page.locator('#goal-pause').click();await text('#goal-state','Paused');
+  assert.equal(executions().length,0);
+  await page.reload();await page.waitForFunction(() => !document.querySelector('#goal-toggle').disabled);
+  await text('#goal-bar-state','Paused');assert.equal(executions().length,0);
+  await page.locator('#goal-toggle').click();await text('#goal-state','Paused');await preserved();
+  record('paused goal survives page restart with no automatic continuation');
+  await page.locator('#goal-resume').click();await text('#goal-state','Ready to continue');
+  assert.equal(executions().length,0);assert.equal(actions('goalResume').length,1);
+  record('resume changes readiness only');
+  await page.locator('#task-mode').selectOption('plan');await page.locator('#effort').selectOption('high');
+  await text('#goal-continuation-note','Plan turn with Deep');
+  goalHoldAction='goalContinue';goalRelease=null;
+  await page.locator('#goal-continue').click();await until(() => goalRelease);
+  await text('#coding-request-status','Continuing goal');
+  assert(await page.locator('#goal-continue').isDisabled());
+  await page.locator('#goal-continue').evaluate(node=>node.click());
+  assert.equal(actions('goalContinue').length,1);
+  assert.equal(actions('goalContinue')[0].input.mode,'plan');assert.equal(actions('goalContinue')[0].input.effort,'high');
+  await preserved();goalRelease();await text('#goal-state','Working');
+  await page.waitForFunction(() => !document.querySelector('#goal-pause').disabled);
+  record('one explicit continuation carries reviewed mode effort and exact revision');
+  assert.equal(goalFixtures.get('saved').attemptsUsed,1);assert.equal(executions().length,1);
+  record('pending double activation cannot dispatch a duplicate continuation');
+  const stops=actions('interruptFamily').length+actions('interrupt').length;
+  await page.locator('#goal-pause').click();await text('#goal-state','current work continues');
+  assert.equal(actions('interruptFamily').length+actions('interrupt').length,stops);
+  assert(await page.locator('#goal-resume').isDisabled());
+  assert(!(await page.locator('#stop').isHidden()));await preserved();
+  record('pause holds the next continuation and accurately retains current Stop');
+  finish('saved');await page.locator('#goal-refresh').click();await text('#goal-state','Paused');
+  await page.locator('#goal-attempts summary').click();await text('#goal-attempt-list','Turn finished');
+  assert.equal(executions().length,1);
+  await page.locator('#goal-resume').click();await text('#goal-state','Ready to continue');
+  await page.locator('#task-mode').selectOption('build');await page.locator('#effort').selectOption('none');
+  await page.locator('#goal-continue').click();await text('#goal-state','Working');
+  assert.equal(actions('goalContinue').length,2);
+  finish('saved');await page.locator('#goal-refresh').click();await text('#goal-state','Turn limit reached');
+  assert(await page.locator('#goal-continue').isHidden());assert.equal(executions().length,2);await preserved();
+  record('completed attempts consume the saved limit without automatic chaining');
+  await page.locator('#goal-edit').click();await page.locator('#goal-limit-input').fill('3');
+  await page.locator('#goal-save').click();await text('#goal-state','Paused');
+  assert.equal(goalFixtures.get('saved').attemptsUsed,2);assert.equal(goalFixtures.get('saved').attemptsRemaining,1);
+  assert.equal(executions().length,2);
+  record('increasing the limit retains prior usage and requires explicit resume');
+  await page.waitForFunction(()=>!document.querySelector('#run-status').textContent.includes('Working'));
+  const shotIndex=process.argv.indexOf('--screenshots'),shotDir=shotIndex>=0?process.argv[shotIndex+1]:null;
+  if(shotDir){assert(shotDir.startsWith('/'));await mkdir(shotDir,{recursive:true,mode:0o700});await page.screenshot({path:shotDir+'/goal-paused-wide.png'});}
+  for(const width of [1360,760,440]){
+    await page.setViewportSize({width,height:900});
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    assert(await page.locator('#goal-panel').isVisible());
+    const layout=await page.locator('#goal-panel').evaluate(node=>({client:node.clientWidth,scroll:node.scrollWidth,rect:node.getBoundingClientRect().toJSON(),width:innerWidth}));
+    assert(layout.scroll<=layout.client+1,JSON.stringify(layout));
+    assert(layout.rect.right<=layout.width+1&&layout.rect.left>=-1);
+    if(shotDir&&width===760)await page.screenshot({path:shotDir+'/goal-paused-narrow.png'});
+  }
+  await page.setViewportSize({width:1360,height:900});
+  record('goal panel stays within wide tablet and narrow windows without horizontal overflow');
+  await page.locator('#goal-review-complete').click();
+  await page.locator('#goal-evidence-input').fill('Reviewed fixture result and the three source-bound checks. Manual review only.');
+  assert(await page.locator('#goal-complete').isDisabled());
+  await page.locator('#goal-reviewed').check();await page.locator('#goal-complete').click();
+  await text('#goal-state','Marked complete');await text('#goal-evidence','Manual review only.');
+  assert(await page.locator('#goal-edit').isHidden());assert(await page.locator('#goal-continue').isHidden());
+  assert.equal(executions().length,2);await preserved();
+  record('completion requires reviewed evidence and remains distinct from automatic verification');
+  await page.reload();await page.waitForFunction(()=>!document.querySelector('#goal-toggle').disabled);
+  await text('#goal-bar-state','Marked complete');await page.locator('#goal-toggle').click();
+  await text('#goal-evidence','Manual review only.');assert.equal(executions().length,2);await preserved();
+  record('completed goal history and evidence survive reload without resend');
+  threads.get('saved').archived=true;
+  await page.locator('#show-archived').click();await page.getByRole('button',{name:'Saved chat',exact:true}).click();
+  await text('#thread-title','Saved chat');await page.waitForFunction(()=>!document.querySelector('#goal-toggle').disabled);
+  if(await page.locator('#goal-panel').isHidden())await page.locator('#goal-toggle').click();
+  await text('#goal-evidence','Manual review only.');assert(await page.locator('#goal-edit').isHidden());assert.equal(executions().length,2);
+  threads.get('saved').archived=false;await page.locator('#show-archived').click();await page.getByRole('button',{name:'Saved chat',exact:true}).click();
+  if(await page.locator('#goal-panel').isHidden())await page.locator('#goal-toggle').click();
+  record('archived root Goal evidence remains inspectable without mutation eligibility');
+  threads.set('goal-other',{id:'goal-other',cwd:'/fixture/goal-other',name:'Other Goal task',turns:[],archived:false});
+  await page.locator('#refresh').click();await page.getByRole('button',{name:'Other Goal task',exact:true}).waitFor();
+  goalHoldAction='goalInspect';goalRelease=null;await page.locator('#goal-refresh').click();await until(()=>goalRelease);
+  await page.getByRole('button',{name:'Other Goal task',exact:true}).click();await text('#thread-title','Other Goal task');
+  goalRelease();await page.waitForFunction(()=>!document.querySelector('#goal-toggle').disabled);
+  await page.locator('#goal-toggle').click();await page.locator('#goal-editor').waitFor({state:'visible'});
+  assert.equal(await page.locator('#goal-objective-input').inputValue(),'');
+  assert(await page.locator('#goal-bar').isHidden());assert.equal(executions().length,2);
+  record('late inspection response cannot leak the previous task goal into a new selection');
+  await page.locator('#goal-objective-input').fill('Second independent goal');
+  await page.locator('#goal-criteria-input').fill('Keep its criteria separate.');await page.locator('#goal-save').click();
+  await text('#goal-state','Ready to continue');
+  await page.locator('#goal-edit').click();await page.locator('#goal-objective-input').fill('KEEP_UNSAVED_STALE_GOAL');
+  goalFixtures.get('goal-other').objective='Changed elsewhere';goalFixtures.get('goal-other').revision++;
+  await page.locator('#goal-refresh').click();await text('#goal-edit-note','changed after your draft');
+  assert(await page.locator('#goal-save').isDisabled());
+  assert.equal(await page.locator('#goal-objective-input').inputValue(),'KEEP_UNSAVED_STALE_GOAL');
+  await page.locator('#goal-cancel-edit').click();await text('#goal-objective','Changed elsewhere');
+  record('stale goal edits retain their text and cannot overwrite a newer revision');
+  goalThrow='goalContinue-after-start';await page.locator('#goal-continue').click();
+  await text('#goal-notice','reply was lost');assert(await page.locator('#goal-continue').isDisabled());
+  const afterLost=actions('goalContinue').length;await page.locator('#goal-refresh').click();await text('#goal-state','Working');
+  assert.equal(actions('goalContinue').length,afterLost);
+  finish('goal-other');await page.locator('#goal-refresh').click();await text('#goal-state','Ready to continue');
+  record('lost continuation acknowledgement holds retries and inspection never resubmits');
+  goalMalformed=true;await page.locator('#goal-refresh').click();await text('#goal-notice','could not be verified');
+  assert(await page.locator('#goal-continue').isDisabled());assert.equal(actions('goalContinue').length,afterLost);
+  goalMalformed=false;await page.locator('#goal-refresh').click();await text('#goal-state','Ready to continue');
+  record('malformed goal receipts hold actions while preserving the last saved display');
+  await page.locator('#goal-edit').click();await page.locator('#goal-objective-input').focus();await page.keyboard.press('Enter');
+  assert.equal(actions('goalContinue').length,afterLost);assert.equal(actions('send').length,0);
+  await page.locator('#goal-cancel-edit').click();
+  await page.locator('#prompt').fill('IME_UNSENT');
+  await page.locator('#prompt').evaluate(node=>{for(const init of [{isComposing:true},{keyCode:229},{repeat:true}])node.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true,...init}));});
+  assert.equal(actions('send').length,0);assert.equal(await page.locator('#prompt').inputValue(),'IME_UNSENT');
+  record('goal editor Enter and composing or repeated task Enter cannot send a task message');
+  threads.set('goal-child',{id:'goal-child',cwd:'/fixture/goal-other',name:'Goal read-only child',parentThreadId:'goal-other',canAcceptDirectInput:false,turns:[],archived:false});
+  emit('coding/family/updated',{threadId:'goal-other',rootThreadId:'goal-other'});
+  await text('#family-list','Goal read-only child');await page.getByRole('button',{name:'Goal read-only child',exact:true}).click();
+  await text('#thread-title','Goal read-only child');assert(await page.locator('#goal-toggle').isDisabled());
+  assert(await page.locator('#goal-panel').isHidden());assert.equal(actions('goalInspect').filter(call=>call.input.threadId==='goal-child').length,0);
+  record('delegated child histories cannot read or mutate the root Goal contract');
+  await page.locator('#return-to-parent').click();await text('#thread-title','Other Goal task');
+  await page.locator('#goal-toggle').click();await page.locator('#goal-edit').click();
+  const savedBeforeStorageFailure=copy(goalFixtures.get('goal-other'));
+  await page.evaluate(()=>localStorage.setItem('qwen-coding-ui-v1',localStorage.getItem('qwen-coding-ui-v1')+' '));
+  await page.locator('#goal-objective-input').fill('KEEP_UNSAVED_AFTER_CAS_FAILURE');
+  await text('#goal-notice','could not be saved');assert(await page.locator('#goal-save').isDisabled());
+  assert.equal(await page.locator('#goal-objective-input').inputValue(),'KEEP_UNSAVED_AFTER_CAS_FAILURE');
+  assert.deepEqual(goalFixtures.get('goal-other'),savedBeforeStorageFailure);
+  assert.equal(await page.locator('#prompt').inputValue(),'IME_UNSENT');
+  record('draft storage CAS failure preserves visible edits and blocks goal mutation');
+  threads.set('goal-invalid',{id:'goal-invalid',cwd:'/fixture/goal-invalid',name:'Malformed goal draft task',turns:[],archived:false});
+  const invalidDraft={unexpected:'GENERATED_DRAFT_TO_PRESERVE'};
+  await page.evaluate(value=>sessionStorage.setItem('coding-fixture-preferences',JSON.stringify({selectedId:'goal-invalid',goalDrafts:{'goal-invalid':value}})),invalidDraft);
+  await page.reload();await page.waitForFunction(()=>!document.querySelector('#goal-toggle').disabled);
+  const savesBeforeInvalid=actions('goalSave').length;
+  await page.locator('#goal-toggle').click();await text('#goal-notice','draft could not be read');
+  assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('qwen-coding-ui-v1')).goalDrafts['goal-invalid']),invalidDraft);
+  assert.equal(actions('goalSave').length,savesBeforeInvalid);
+  assert(await page.locator('#goal-new').isDisabled());await page.locator('#goal-refresh').click();
+  assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('qwen-coding-ui-v1')).goalDrafts['goal-invalid']),invalidDraft);
+  record('opening or refreshing an empty goal never overwrites a malformed retained editor draft');
+  const currentOther=goalFixtures.get('goal-other'),baseEdit={objective:'OLD_PERSISTED_OBJECTIVE',completionCriteria:'OLD_CRITERIA',maxTurns:'3',evidence:'OLD_EVIDENCE',revision:currentOther.revision,editing:true,completing:false};
+  await page.evaluate(value=>sessionStorage.setItem('coding-fixture-preferences',JSON.stringify({selectedId:'goal-other',goalDrafts:{'goal-other':value}})),baseEdit);
+  await page.reload();await page.locator('#goal-editor').waitFor({state:'visible'});
+  const goalBeforeForgedReply=copy(goalFixtures.get('goal-other'));
+  for(const badReply of ['empty','unchanged','wrong-thread','wrong-id','wrong-values']){
+    goalBadReply=badReply;
+    await page.locator('#goal-save').click();await text('#goal-notice','action reply could not be verified');
+    assert.equal(await page.locator('#goal-objective-input').inputValue(),'OLD_PERSISTED_OBJECTIVE');
+    assert.equal(await page.locator('#goal-criteria-input').inputValue(),'OLD_CRITERIA');
+    assert.deepEqual(goalFixtures.get('goal-other'),goalBeforeForgedReply);
+    await page.locator('#goal-refresh').click();await text('#goal-state','Ready to continue');
+  }
+  goalBadReply='';
+  record('absent stale mis-scoped replacement and mismatched mutation replies retain the exact editor draft');
+  const savesBeforeForcedFailure=actions('goalSave').length;
+  await page.evaluate(()=>{
+    window.goalOriginalSetItem=Storage.prototype.setItem;
+    Storage.prototype.setItem=function(key,value){if(key==='qwen-coding-ui-v1')throw Error('Generated storage failure');return window.goalOriginalSetItem.call(this,key,value);};
+    document.getElementById('goal-objective-input').value='NEW_VISIBLE_OBJECTIVE_TO_PRESERVE';
+    document.getElementById('goal-editor').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
+  });
+  await text('#goal-notice','draft could not be saved');
+  assert.equal(actions('goalSave').length,savesBeforeForcedFailure);
+  assert.equal(await page.locator('#goal-objective-input').inputValue(),'NEW_VISIBLE_OBJECTIVE_TO_PRESERVE');
+  await page.locator('#goal-continue').evaluate(node=>node.dispatchEvent(new MouseEvent('click',{bubbles:true})));
+  assert.equal(actions('goalContinue').length,afterLost);
+  record('failed persistence during Save cannot submit an older draft or bypass the hold');
+  await page.evaluate(value=>{
+    Storage.prototype.setItem=window.goalOriginalSetItem;
+    sessionStorage.setItem('coding-fixture-preferences',JSON.stringify({selectedId:'goal-other',goalDrafts:{'goal-other':value}}));
+  },{...baseEdit,editing:false,completing:true});
+  await page.reload();await page.locator('#goal-complete-form').waitFor({state:'visible'});
+  const completionsBeforeFailure=actions('goalComplete').length;
+  await page.evaluate(()=>{
+    window.goalOriginalSetItem=Storage.prototype.setItem;
+    Storage.prototype.setItem=function(key,value){if(key==='qwen-coding-ui-v1')throw Error('Generated evidence storage failure');return window.goalOriginalSetItem.call(this,key,value);};
+    document.getElementById('goal-evidence-input').value='NEW_VISIBLE_EVIDENCE_TO_PRESERVE';
+    document.getElementById('goal-reviewed').checked=true;
+    document.getElementById('goal-complete-form').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
+  });
+  await text('#goal-notice','draft could not be saved');
+  assert.equal(actions('goalComplete').length,completionsBeforeFailure);
+  assert.equal(await page.locator('#goal-evidence-input').inputValue(),'NEW_VISIBLE_EVIDENCE_TO_PRESERVE');
+  assert.equal(goalFixtures.get('goal-other').state,'ready');
+  await page.evaluate(()=>{Storage.prototype.setItem=window.goalOriginalSetItem;});
+  record('failed completion-evidence persistence cannot complete with stale evidence');
+  assert.deepEqual(errors,[]);record('actual task page loads every asset with no browser exceptions');
+  return checks;
+}
+
 try {
   if(process.argv.includes('--git-publishing-cap-only'))await context.addInitScript(()=>{if(!localStorage.getItem('qwen-coding-ui-v1'))localStorage.setItem('qwen-coding-ui-v1',JSON.stringify({selectedId:'saved',publishDrafts:Object.fromEntries(Array.from({length:128},(_,i)=>[i.toString(16).padStart(64,'0'),{title:'KEEP_TITLE_'+i,body:'KEEP_BODY_'+i}]))}));});
   await page.goto(`http://127.0.0.1:${server.address().port}/coding`);
   await text('#thread-title', 'Saved chat');
   assert.equal(await page.locator('#worktrees-toggle').count(),1,'Managed worktrees are accessible without replacing the selected chat');
   assert.equal(await page.locator('#schedules-toggle').count(),1,'Scheduled work is accessible without replacing the selected chat');
-  if (process.argv.includes('--coding-parity-only')) {
+  if (process.argv.includes('--goals-only')) {
+    const checks=await checkGoalsUI();console.log(JSON.stringify({schemaVersion:1,name:'coding-goals-ui',passed:checks.length,failed:0,checks}));
+  } else if (process.argv.includes('--coding-parity-only')) {
     const checks=await checkCodingParity();console.log(JSON.stringify({schemaVersion:1,name:'coding-ui-parity',passed:checks.length,failed:0,checks}));
   } else if (process.argv.includes('--recovery-startup-only')) {
     await text('#workspace-access-chip','Full access · Recovery');

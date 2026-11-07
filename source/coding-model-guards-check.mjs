@@ -10,7 +10,7 @@ import test from 'node:test';
 // Optional positional argument selects the exact integrated coding.js under test.
 const sourcePath = process.argv[2] ? resolve(process.argv[2]) : process.env.MODEL_PICKER_SOURCE ? resolve(process.env.MODEL_PICKER_SOURCE, 'coding.js') : fileURLToPath(new URL('./coding.js', import.meta.url));
 const source = readFileSync(sourcePath, 'utf8');
-const submissionSource = readFileSync(resolve(dirname(sourcePath), 'coding-submission.js'), 'utf8');
+const submissionSource = readFileSync(resolve(dirname(sourcePath), 'coding-submission.js','coding-goals.js'), 'utf8');
 const noOp = () => {};
 function statement(start) {
   for (let end = source.indexOf('\n', start); end >= 0; end = source.indexOf('\n', end + 1)) {

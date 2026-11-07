@@ -394,6 +394,7 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
   let setupProject = '', setupChoice = null;
   const setupCreatedRoots = new Set();
   const setupReviewQueueReleases = new Map();
+  let goals = null;
   let engine = {available: false, provider: 'local'}, renamingId = '', pollTimer, disposed = false, pollFailed = false;
   const current = () => threads.get(selectedId);
   let localModels = {online: null, models: [], message: bridge ? 'Checking installed local models…' : 'Open the installed app to check local models.'}, modelRefresh = 0, newModel = modelDefault(localModels,'coding'), newModelSelected = false;
@@ -537,7 +538,7 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
     if(lastSavedSnapshot!==null){
       const map=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
       if(!map(stored))throw Error('Invalid saved Coding preferences.');
-      for(const key of ['drafts','attachmentDrafts','efforts','taskModes','pendingThreads','terminalDrafts','unread','scheduleDrafts','gitDrafts','publishDrafts','worktreeGitDrafts','handoffChats','followupEdits'])if(Object.hasOwn(stored,key)&&!map(stored[key]))throw Error('Invalid saved Coding draft map.');
+      for(const key of ['drafts','attachmentDrafts','efforts','taskModes','pendingThreads','terminalDrafts','unread','scheduleDrafts','gitDrafts','publishDrafts','worktreeGitDrafts','handoffChats','followupEdits','goalDrafts'])if(Object.hasOwn(stored,key)&&!map(stored[key]))throw Error('Invalid saved Coding draft map.');
       if(Object.hasOwn(stored,'taskModes')&&Object.keys(stored.taskModes).length>4096)throw Error('Saved task modes exceed the storage limit.');
     }
     if(attachmentStorage.hasRefs(stored,'coding')){storageHydrating=true;document.body.inert=true;banner('storage-notice','Loading saved images…');stored=await attachmentStorage.hydrate(stored,'coding');if(disposed)return;if(localStorage.getItem(storageKey)!==lastSavedSnapshot)throw Error('Saved Coding drafts changed while images were loading.');}
@@ -562,6 +563,7 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
         }
       }
       if(Object.hasOwn(stored,'followupEdits'))preferences.followupEdits=stored.followupEdits;
+      if(Object.hasOwn(stored,'goalDrafts')){if(Object.keys(stored.goalDrafts).length>128)throw Error('Saved goal drafts exceed the storage limit.');preferences.goalDrafts=stored.goalDrafts;}
       if (stored.worktreeGitDrafts && typeof stored.worktreeGitDrafts === 'object') for (const [id, draft] of Object.entries(stored.worktreeGitDrafts).slice(0, 128)) if (id.length <= 160) preferences.worktreeGitDrafts[id] = worktreeGitText(draft);
       if (stored.handoffChats && typeof stored.handoffChats === 'object') for (const [id, value] of Object.entries(stored.handoffChats).slice(0, 128)) if (validHandoffChat(id, value)) preferences.handoffChats[id] = value;
       scheduleEditor = preferences.scheduleSelectedId = typeof stored.scheduleSelectedId === 'string' ? stored.scheduleSelectedId : '';
@@ -630,7 +632,7 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
       if (cancellation?.cancelled) return {cancelled:true};
       if (body.op === 'coding' && body.input?.action === 'answer' && cancellation) cancellation.dispatched = true;
       if (review) {review.dispatched = true;setupReviewQueueReleases.set(body.input.setupId,review);}
-      if (body.op === 'coding' && ['start','send','steer','review','fork','rename','archive','unarchive','terminalStart','git'].includes(body.input?.action)) {
+      if (body.op === 'coding' && ['start','send','goalContinue','steer','review','fork','rename','archive','unarchive','terminalStart','git'].includes(body.input?.action)) {
         pending = {...captureCodingRequest(body.input, threads.get(body.input.threadId), performance.now(), cancellation), requestId: null, progressRevision: 0, progress: null}; codingRequest = pending; controls();
       }
       return bridge.postMessage(body);
@@ -675,7 +677,7 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
   }
   function codingRequestPresentation(request, now, stageMessage) {
     if (!request) return null;
-    const actions = {start:'Starting chat',send:'Sending message',steer:'Steering current turn',review:'Requesting review',fork:'Forking chat',rename:'Renaming chat',archive:'Archiving chat',unarchive:'Unarchiving chat',terminalStart:'Starting terminal',git:'Requesting Git action'};
+    const actions = {start:'Starting chat',send:'Sending message',goalContinue:'Continuing goal',steer:'Steering current turn',review:'Requesting review',fork:'Forking chat',rename:'Renaming chat',archive:'Archiving chat',unarchive:'Unarchiving chat',terminalStart:'Starting terminal',git:'Requesting Git action'};
     const seconds = Number.isFinite(request.startedAt) && Number.isFinite(now) ? Math.max(0, Math.floor((now - request.startedAt) / 1000)) : null;
     return {
       headline:request.stopping ? 'Stop requested · waiting for the original request' : `Request pending · ${actions[request.action] || 'Waiting for native reply'}`,
@@ -933,8 +935,47 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
     renderFollowups();renderSubmission();
     renderMetrics();
     codingSkillsControlState();
-    renderMCPSetup(); renderChildResult(); renderStartupRecovery();
+    renderMCPSetup(); renderChildResult(); renderStartupRecovery(); goals?.update();
   }
+  // Goals use the same draft CAS and foreground request queue as the task workspace.
+  function goalContext() {
+    const thread = current(), taskMode = taskModeFor(selectedId);
+    const inspectable = !!bridge && engine.goals === true && ownedChat(thread) &&
+      !thread.pendingMaterialization && !thread.missingDraft && !thread.metadataPending && !thread.draftReadError;
+    const submission = submissionStore.current(selectedId) || submissionDispatches.has(selectedId);
+    const queuePending = queueHasPending(selectedId), model = codingModelState(thread,$('effort').value);
+    const blockedReason = !inspectable ? '' : storageBlocked ? 'Saved draft storage needs review before goal actions.' :
+      workspaceBlocked(selectedId) || checkoutNotice(thread?.cwd) ? 'Resolve the project workspace state before continuing this goal.' :
+      submission ? 'Review the pending message submission before continuing this goal.' :
+      queuePending ? 'Finish or remove queued follow-ups before continuing this goal.' :
+      taskMode === null ? 'The saved task mode needs review before continuing.' :
+      !model.ready ? model.reason || 'The saved model must be ready before continuing.' : '';
+    const canEdit = inspectable && directInput(thread) && !storageBlocked && !setupBlocking() && !workspaceBlocked(selectedId) &&
+      !checkoutNotice(thread?.cwd) && !threadReads.has(selectedId) && !submission;
+    return {threadId:selectedId,canInspect:inspectable,canEdit,
+      canContinue:canEdit && engine.available !== false && !queuePending && !familyBusy(selectedId) &&
+        !familyStopping(workspaceStopTarget(selectedId)) && taskMode !== null && model.ready,
+      busy:acting,blockedReason,mode:taskMode || 'build',effort:$('effort').value === 'high' ? 'high' : 'none'};
+  }
+  function saveGoalDraft(id,value) {
+    if (!/^[A-Za-z0-9_.-]{1,160}$/.test(id) || value !== null && !globalThis.NoieeCodingGoals.validDraft(value)) return false;
+    const prior = preferences.goalDrafts || {};
+    if (value !== null && !Object.hasOwn(prior,id) && Object.keys(prior).length >= 128) {
+      banner('storage-notice','Saved goal drafts are full. Finish or cancel an earlier goal edit before creating another.');return false;
+    }
+    const next = {...preferences,goalDrafts:{...prior}};
+    if (value === null) delete next.goalDrafts[id]; else next.goalDrafts[id] = structuredClone(value);
+    if (!persistPreferences(next)) return false;
+    preferences = next; return true;
+  }
+  goals = globalThis.NoieeCodingGoals.create({getContext:goalContext,call,
+    getDraft:id => preferences.goalDrafts?.[id],saveDraft:saveGoalDraft,run:fn => act(fn),
+    onTurn:async (id,result) => {
+      if (result.turn?.id) acceptTurn(id,result.turn,true);
+      await readThread(id); await readFamily(id);
+      if (selectedId === id) {renderMessages();renderFamily();}
+      renderSidebar();
+    },onChange:controls});
   // Setup authority stays in memory and never enters saved draft/submission state.
   function selectedSetupChoice() {
     const provider = $('provider').value, option = $('provider').selectedOptions[0];
@@ -2927,6 +2968,7 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
       if (sidebarState() !== before) renderSidebar();
       settleFamilyStops(); renderFamily(); renderApprovals(); controls();
       if(!acting&&followupEnabled()&&(queueHasPending(selectedId)||!followupStates.has(selectedId)||followupStates.get(selectedId)?.error))void refreshFollowups();
+      goals?.tick();
       if (panel === 'schedules' && !acting && !scheduleRead && Date.now() - scheduleLastRead > 5000) refreshSchedules().catch(error => banner('schedules-notice', message(error)));
     } catch (error) {suspendQuestions();if (!/busy|approval.*pending/i.test(message(error))) {if (!pollFailed) mcpOutcomes.invalidate('Live updates interrupted. Checking saved MCP outcomes.');pollFailed = true; banner('event-notice', `Live updates interrupted: ${message(error)} ${historyNotice() ? 'Saved history can still be read.' : 'Retrying…'}`); renderMessages(); renderMetrics();}}
     finally {if (!disposed) pollTimer = setTimeout(poll, 1000);}
@@ -3021,7 +3063,7 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
     controls();
   };
   window.addEventListener('storage', event => {if (event.key === SalehSubmission.storageKey || event.key === null) {submissionStore.refresh(); controls();}});
-  $('prompt').onkeydown = event => {if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {event.preventDefault(); if (!$('send').disabled) $('composer').requestSubmit();}};
+  $('prompt').onkeydown = event => {if (event.key === 'Enter' && !event.shiftKey) {if(event.isComposing || event.keyCode === 229)return;event.preventDefault();if(!event.repeat && !$('send').disabled)$('composer').requestSubmit($('send'));}};
   $('followup-mode').onchange=controls;
   $('followup-refresh').onclick=()=>void refreshFollowups();
   $('followup-pause').onclick=async()=>{try{await changeFollowup('pause',{threadId:selectedId});}catch(error){banner('notice',message(error));}};
