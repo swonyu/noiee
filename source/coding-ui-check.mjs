@@ -147,6 +147,13 @@ await page.exposeBinding('codingNative', async (_, body) => {
   if (ordinary) {ordinaryActive++; maxOrdinary = Math.max(maxOrdinary, ordinaryActive);}
   try {
     if(previewClear)return {cleared:true};
+    if(body.op==='cancel' && process.argv.includes('--goals-only')){
+      assert.deepEqual(body,{op:'cancel'});
+      for(const thread of threads.values())for(const turn of thread.turns)if(turn.status==='inProgress'){
+        turn.status='interrupted';emit('turn/completed',{threadId:thread.id,turn:copy(turn)});
+      }
+      return {stopped:true};
+    }
     if(body.op==='codingRecovery'){
       assert.deepEqual(body.input,{model:fixtureModel});
       if(startupOutcome==='hold'){await new Promise(resolve=>{startupRelease=resolve;});}
@@ -1307,6 +1314,27 @@ async function checkGoalsUI() {
   await page.locator('#goal-resume').click();await text('#goal-state','Ready to continue');
   assert.equal(executions().length,0);assert.equal(actions('goalResume').length,1);
   record('resume changes readiness only');
+  for(const stopEvent of ['agent-stopped','tools-stopped','pagehide']){
+    heldFamily='saved';releaseFamily=null;emit('coding/family/updated',{threadId:'saved',rootThreadId:'saved'});
+    await until(()=>releaseFamily);
+    await page.waitForFunction(()=>!document.querySelector('#goal-continue').disabled);
+    await page.locator('#goal-continue').click();
+    assert(await page.locator('#goal-continue').isDisabled());assert.equal(actions('goalContinue').length,0);
+    await page.evaluate(name=>window.dispatchEvent(new Event(name)),stopEvent);
+    releaseFamily();
+    if(stopEvent==='pagehide'){
+      await until(()=>ordinaryActive===0);
+      await page.reload();await page.waitForFunction(()=>!document.querySelector('#goal-toggle').disabled);
+      await page.locator('#goal-toggle').click();await text('#goal-state','Ready to continue');
+    }else{
+      await text('#goal-notice','request was cancelled');
+      assert(await page.locator('#goal-continue').isDisabled());
+      await page.locator('#goal-refresh').click();await text('#goal-state','Ready to continue');
+    }
+    assert.equal(actions('goalContinue').length,0);assert.equal(actions('send').length,0);await preserved();
+    assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('qwen-coding-ui-v1')).drafts.saved),'KEEP_GOAL_COMPOSER_175');
+    record(stopEvent+' revokes queued Goal continuation before the native bridge and retains the composer');
+  }
   await page.locator('#task-mode').selectOption('plan');await page.locator('#effort').selectOption('high');
   await text('#goal-continuation-note','Plan turn with Deep');
   goalHoldAction='goalContinue';goalRelease=null;
@@ -1412,6 +1440,20 @@ async function checkGoalsUI() {
   await page.locator('#prompt').evaluate(node=>{for(const init of [{isComposing:true},{keyCode:229},{repeat:true}])node.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true,...init}));});
   assert.equal(actions('send').length,0);assert.equal(await page.locator('#prompt').inputValue(),'IME_UNSENT');
   record('goal editor Enter and composing or repeated task Enter cannot send a task message');
+  goalHoldAction='goalContinue';goalRelease=null;
+  await page.locator('#goal-continue').click();await until(()=>goalRelease);
+  const dispatchedStopsBefore=calls.filter(call=>call.op==='cancel').length;
+  await page.locator('#coding-request-stop').click();
+  await until(()=>calls.filter(call=>call.op==='cancel').length===dispatchedStopsBefore+1);
+  await text('#coding-request-status','Stop requested');assert(await page.locator('#coding-request-stop').isDisabled());
+  assert.equal(await page.locator('#prompt').inputValue(),'IME_UNSENT');
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('qwen-coding-ui-v1')).drafts['goal-other']),'IME_UNSENT');
+  goalRelease();await text('#goal-notice','request was cancelled');
+  assert(await page.locator('#goal-continue').isDisabled());assert.equal(actions('goalContinue').length,afterLost+1);
+  await page.locator('#goal-refresh').click();await text('#goal-state','Ready to continue');
+  assert.equal(actions('goalContinue').length,afterLost+1);assert.equal(await page.locator('#prompt').inputValue(),'IME_UNSENT');
+  record('request Stop bypasses a pending native reply and late acknowledgement cannot retry or consume the message draft');
+  const afterDispatchedStop=actions('goalContinue').length;
   threads.set('goal-child',{id:'goal-child',cwd:'/fixture/goal-other',name:'Goal read-only child',parentThreadId:'goal-other',canAcceptDirectInput:false,turns:[],archived:false});
   emit('coding/family/updated',{threadId:'goal-other',rootThreadId:'goal-other'});
   await text('#family-list','Goal read-only child');await page.getByRole('button',{name:'Goal read-only child',exact:true}).click();
@@ -1464,7 +1506,7 @@ async function checkGoalsUI() {
   assert.equal(actions('goalSave').length,savesBeforeForcedFailure);
   assert.equal(await page.locator('#goal-objective-input').inputValue(),'NEW_VISIBLE_OBJECTIVE_TO_PRESERVE');
   await page.locator('#goal-continue').evaluate(node=>node.dispatchEvent(new MouseEvent('click',{bubbles:true})));
-  assert.equal(actions('goalContinue').length,afterLost);
+  assert.equal(actions('goalContinue').length,afterDispatchedStop);
   record('failed persistence during Save cannot submit an older draft or bypass the hold');
   await page.evaluate(value=>{
     Storage.prototype.setItem=window.goalOriginalSetItem;

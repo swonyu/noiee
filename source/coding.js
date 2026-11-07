@@ -2989,7 +2989,7 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
   window.addEventListener('pagehide', () => cancelHistorySearch());
   $('coding-request-stop').onclick = async () => {
     const pending = codingRequest; if (!pending || pending.stopping) return;
-    clearStopNotice();pending.stopping = true; controls();
+    clearStopNotice();pending.stopping = true;goals?.cancelPending(); controls();
     try {await native({op:'cancel'});}
     catch (error) {banner('notice', `Stop could not be confirmed: ${message(error)}`);}
     finally {controls();}

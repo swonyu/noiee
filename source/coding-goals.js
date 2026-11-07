@@ -47,7 +47,7 @@
   }
   function create({getContext,call,getDraft,saveDraft,run,onTurn,onChange}) {
     const $ = name => document.getElementById('goal-' + name);
-    let scope = '', epoch = 0, view = null, inspected = false, loading = false, pending = null;
+    let scope = '', epoch = 0, view = null, inspected = false, loading = false, pending = null, disposed = false;
     let error = '', notice = '', opened = false, draftError = false, hydratedDraft = null, lastReadAt = 0, lastAttempts = null;
     const active = goal => goal?.attempts?.some(attempt => ['starting','running'].includes(attempt.status));
     const draft = () => getDraft(scope);
@@ -94,7 +94,7 @@
     }
     async function refresh() {
       const context = getContext();
-      if (!scope || !context.canInspect || loading || pending) return;
+      if (disposed || !scope || !context.canInspect || loading || pending) return;
       const selected = scope, generation = epoch;
       loading = true; render();
       try {
@@ -112,17 +112,19 @@
     }
     async function change(action, extra = {}, capturedDraft = null) {
       const context = getContext(), selected = scope, generation = epoch;
-      if (!view || view.available === false || error || draftError || draft() != null && !usableDraft() || pending || loading || context.busy || !context.canEdit ||
+      if (disposed || !view || view.available === false || error || draftError || draft() != null && !usableDraft() || pending || loading || context.busy || !context.canEdit ||
           action === 'goalContinue' && !context.canContinue) return;
       const revision = view.revision, previousGoal = view.goal, focused = document.activeElement;
       let acknowledgedAction = false;
       if (capturedDraft && capturedDraft.revision !== revision) {error = 'The goal changed while you were editing. Your draft is kept; cancel the edit to review the latest goal.';render();return;}
-      pending = {threadId:selected,action}; notice = ''; render();
+      const cancellation = {cancelled:false};
+      pending = {threadId:selected,action,cancellation}; notice = ''; render();
       await run(async () => {
         try {
-          const result = await call(action,{threadId:selected,expectedRevision:revision,...extra});
-          if (result.cancelled === true) {
-            if (scope === selected) notice = 'The request was cancelled. Refresh the goal to check its saved state.';
+          const result = await call(action,{threadId:selected,expectedRevision:revision,...extra},cancellation);
+          if (disposed) return;
+          if (cancellation.cancelled || result.cancelled === true) {
+            if (scope === selected) error = 'The request was cancelled. Refresh the goal to check its saved state before continuing.';
             return;
           }
           const acknowledged = scopedView(result,selected,previousGoal) && result.goal && result.revision > revision;
@@ -149,8 +151,8 @@
         } catch (caught) {
           if (scope === selected && epoch === generation) error = caught?.message || 'The goal action could not be confirmed. Refresh before continuing.';
         } finally {
-          pending = null; render(); onChange();
-          if (acknowledgedAction && scope === selected && epoch === generation && !draftError && ['goalSave','goalComplete'].includes(action)) {
+          pending = null; if (!disposed) {render(); onChange();}
+          if (!disposed && acknowledgedAction && scope === selected && epoch === generation && !draftError && ['goalSave','goalComplete'].includes(action)) {
             $('panel').scrollTop = 0;
             if (document.activeElement === focused || document.activeElement === document.body || !document.activeElement?.isConnected) $('heading').focus({preventScroll:true});
           }
@@ -183,6 +185,7 @@
       $('attempts').hidden = !goal?.attempts?.length;
     }
     function render() {
+      if (disposed) return;
       const context = getContext(), goal = view?.goal, saved = usableDraft();
       const storedInvalid = draft() != null && !saved, busy = !!pending || loading || context.busy;
       const held = !!error || storedInvalid || draftError || view?.available === false || !context.canEdit;
@@ -235,6 +238,7 @@
       hydrate(); renderAttempts(goal);
     }
     function update() {
+      if (disposed) return;
       const context = getContext(), next = context.threadId || '';
       if (scope !== next) {
         scope = next; epoch++; view = null; inspected = false; loading = false;
@@ -246,9 +250,18 @@
       if (context.canInspect && !inspected && !loading && !pending) void refresh();
     }
     function tick() {
-      if (getContext().canInspect && view?.goal && !getContext().busy && Date.now() - lastReadAt > 4000 &&
+      if (!disposed && getContext().canInspect && view?.goal && !getContext().busy && Date.now() - lastReadAt > 4000 &&
           (active(view.goal) || view.goal.state === 'needsReview')) void refresh();
     }
+    function cancelPending() {
+      if (!pending) return;
+      pending.cancellation.cancelled = true;
+      if (scope === pending.threadId) notice = 'Stop requested. The saved outcome remains unconfirmed until the original request settles.';
+      render();
+    }
+    window.addEventListener('agent-stopped',cancelPending);
+    window.addEventListener('tools-stopped',cancelPending);
+    window.addEventListener('pagehide',() => {cancelPending();disposed = true;epoch++;},{once:true});
     $('toggle').onclick = () => opened ? close() : open();
     $('open-saved').onclick = open;
     $('close').onclick = close;
@@ -281,7 +294,7 @@
       if (!$('reviewed').checked || !saved?.completing || !saved.evidence?.trim()) return;
       void change('goalComplete',{evidence:saved.evidence},structuredClone(saved));
     };
-    return Object.freeze({update,refresh,tick,hasPending:() => !!pending});
+    return Object.freeze({update,refresh,tick,cancelPending,hasPending:() => !!pending});
   }
   globalThis.NoieeCodingGoals = Object.freeze({create,validView,validDraft});
 })();
