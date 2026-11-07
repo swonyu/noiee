@@ -25,13 +25,16 @@ SELF = Path(__file__).resolve()
 DEFAULT_PROJECT = SELF.parents[1]
 CHROME_LAUNCHER = Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
 SUITES = ("compaction-recovery", "model-stabilization", "startup-diagnostics",
-          "presentation", "mcp-skills", "fetch", "worktrees", "release-inputs")
+          "presentation", "goals", "submission-origin", "mcp-skills", "fetch",
+          "worktrees", "release-inputs")
 SCOPES = {
     "release-inputs": "Generated release-adapter input gates only. No release phase, app, model, installed bundle or original data is opened.",
     "compaction-recovery": "Generated compaction state, CAS, races, browser and extracted native recovery fixtures. Fake inference and dialogs only.",
     "model-stabilization": "Generated inventories, in-memory model/engine routing and real headless browser pages with every request and native call faked. No live model.",
     "startup-diagnostics": "Compiled current startup diagnostics with generated processes, configuration and sockets; generated build and backup-inventory fixtures.",
     "presentation": "Current Chat/Tasks rendering, shared command palette, tool-authority labels and delegated-result views in fresh headless browsers, plus generated receipt/state cases. Requests and native calls are faked; no inference or original browser profile.",
+    "goals": "Generated durable Goal state and guarded dispatch cases, plus fresh headless Tasks UI fixtures. Fake engine callbacks and requests; no live Codex, model or original stores.",
+    "submission-origin": "Generated Chat receipt checks and headless browser input-origin, composition and duplicate-submit cases with fake streaming upstream. Temporary receipts and IndexedDB only; no installed app, native accessibility or live model.",
     "mcp-skills": "Fresh generated MCP lifecycle/recovery and project-skills native, Agent and UI checks. Fake transports; no original stores.",
     "fetch": "Dependent installer, native, guard, durable, UI, admission and recovery fixtures. Only generated bundled payload copies; no external install.",
     "worktrees": "Generated current V3 consumer cases, unchanged disabled historical map-producer pure cases, and read-only static-map reproduction. No current-boot admission claim."
@@ -149,6 +152,43 @@ def parse_json_lines(text):
         except ValueError:
             pass
     return values
+
+def assertion_names(value, label):
+    require(type(value) is list and value
+            and all(type(name) is str and name.strip() for name in value)
+            and len(value) == len(set(value)),
+            label + " must report nonempty unique assertion names")
+    return value
+
+def named_check_result(text, name):
+    rows = [row for row in parse_json_lines(text) if row.get("name") == name]
+    require(len(rows) == 1, "Expected one fresh " + name + " result")
+    row = rows[0]
+    checks = assertion_names(row.get("checks"), name)
+    require(type(row.get("schemaVersion")) is int and row["schemaVersion"] == 1
+            and type(row.get("passed")) is int and row["passed"] == len(checks)
+            and type(row.get("failed")) is int and row["failed"] == 0,
+            name + " assertions did not all complete")
+    return len(checks), {"assertions": checks}
+
+def submission_result(text, browser=False):
+    rows = [row for row in parse_json_lines(text)
+            if (row.get("submissionOrigin") is True if browser
+                else "passed" in row and "cases" in row)]
+    require(len(rows) == 1, "Expected one fresh submission-origin result")
+    row = rows[0]
+    checks = assertion_names(row.get("checks" if browser else "cases"), "Submission origin")
+    require(row.get("passed") is True and row.get("installedAppTouched") is False,
+            "Submission-origin fixture did not pass in isolation")
+    if browser:
+        require(row.get("oldChatAndDraftsPreserved") is True
+                and row.get("nativeAccessibilityExercised") is False
+                and type(row.get("upstreamCalls")) is int and row["upstreamCalls"] >= 0,
+                "Submission-origin browser preservation/scope differs")
+    else:
+        require(type(row.get("realModelCalls")) is int and row["realModelCalls"] == 0,
+                "Submission-origin receipt checks must not invoke a real model")
+    return len(checks), {"assertions": checks}
 
 def tap_counts(text):
     def count(label):
@@ -428,6 +468,17 @@ class Suite:
                 return len(checks), {"assertions": checks, "preservedExpected": 26}
             self.case("coding-parity", node("source/coding-ui-check.mjs") + ["--coding-parity-only"],
                       coding_parity)
+        elif name == "goals":
+            self.case("goals-state-and-guards", node("source/coding-goals-check.mjs"),
+                      lambda text: named_check_result(text, "coding-goals"))
+            self.case("goals-ui", node("source/coding-goals-ui-check.mjs"),
+                      lambda text: named_check_result(text, "coding-goals-ui"))
+        elif name == "submission-origin":
+            self.case("submission-receipts", node("source/chat-runs-check.mjs"),
+                      submission_result)
+            self.case("submission-origin-ui", node("source/chat-runs-ui-check.mjs") +
+                      [str(self.source), "--submission-origin-only"],
+                      lambda text: submission_result(text, browser=True))
         elif name == "release-inputs":
             self.case("release-inputs", [self.python, "-B", "-m", "unittest", "discover", "-s",
                       "tooling/tests", "-p", "test_release_inputs.py", "-v"],

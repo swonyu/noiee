@@ -49,7 +49,9 @@ The schema1 qualification report must contain:
 }
 ```
 
-The illustrative count above is not an expected test count. Use the actual fresh count; zero counts and failures are rejected. Required unique names are `compaction-recovery`, `model-stabilization`, `startup-diagnostics`, `presentation`, `mcp-skills`, `fetch`, and `worktrees`. All seven must be freshly exercised against the final integrated source. No earlier pass count is inherited. The runner also executes the generated `release-inputs` suite against the current adapter.
+The illustrative count above is not an expected test count. Use the actual fresh count; zero counts and failures are rejected. Required unique names are `compaction-recovery`, `model-stabilization`, `startup-diagnostics`, `presentation`, `goals`, `submission-origin`, `mcp-skills`, `fetch`, and `worktrees`. All nine must be freshly exercised against the final integrated source. No earlier pass count is inherited. The runner also executes the generated `release-inputs` suite against the current adapter.
+
+The `goals` suite executes the generated Goal ledger/dispatch checks and the dedicated Tasks UI checks. The `submission-origin` suite executes the Chat receipt checks and the dedicated browser composition/input-origin checks. Both retain actual unique assertion names and counts. These cases use generated state and fake engine/upstream callbacks; they do not establish native accessibility, real inference or installed-app acceptance.
 
 Each suite's real execution result has numeric `exitCode: 0`, `sourceDirectory`, `sourceUnchanged: true`, and `sourcePins`; pass/failure counts can be at the top level or under `result` for the startup fixture. If command/log/name/commit fields are recorded, they must match the normalized row. Aggregate constituent rows retain their actual commands and exit codes; recorded count totals must agree. Source pins may be complete source basenames or a subset using source basenames/tracked project-relative fixture paths.
 

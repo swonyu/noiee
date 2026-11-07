@@ -51,7 +51,7 @@ GENERATED = {"legacy-admission.json", "legacy-boot-helper"}
 ARTIFACT_ROOTS = (PROJECT / ".artifacts", ROOT / 'updates/build175', RELEASE)
 SYSTEM_BUILD_ROOTS = (Path("/Applications"), Path("/Library/Developer"), Path("/usr/bin"))
 REQUIRED_SUITES = {"compaction-recovery", "model-stabilization", "startup-diagnostics",
-                   "presentation", "mcp-skills", "fetch", "worktrees"}
+                   "presentation", "goals", "submission-origin", "mcp-skills", "fetch", "worktrees"}
 NATIVE_FRAMEWORKS = ("AppKit", "WebKit", "UniformTypeIdentifiers", "ScreenCaptureKit",
                      "ApplicationServices", "Contacts", "Security", "ImageIO", "PDFKit")
 

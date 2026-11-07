@@ -12,6 +12,10 @@ CAPTURE = ADAPTER.with_name("capture_closed_boundary.py")
 capture_spec = importlib.util.spec_from_file_location("noiee_closed_boundary_fixture", CAPTURE)
 capture = importlib.util.module_from_spec(capture_spec)
 capture_spec.loader.exec_module(capture)
+QUALIFY = ADAPTER.with_name("qualify.py")
+qualify_spec = importlib.util.spec_from_file_location("noiee_release_qualification_fixture", QUALIFY)
+qualify = importlib.util.module_from_spec(qualify_spec)
+qualify_spec.loader.exec_module(qualify)
 
 
 class Inputs(unittest.TestCase):
@@ -128,13 +132,15 @@ class Inputs(unittest.TestCase):
     def test_distinct_source_bound_suites_pass(self):
         result = self.check_report(self.qualification())
         self.assertEqual(set(result["passedBySuite"]), release.REQUIRED_SUITES)
-        self.assertEqual(sum(result["passedBySuite"].values()), 14)
+        self.assertEqual(sum(result["passedBySuite"].values()), 2 * len(release.REQUIRED_SUITES))
 
     def test_missing_suite_refused(self):
-        q = self.qualification()
-        q["suites"].pop()
-        with self.assertRaisesRegex(RuntimeError, "Missing"):
-            self.check_report(q)
+        for name in sorted(release.REQUIRED_SUITES):
+            with self.subTest(missing=name):
+                q = self.qualification()
+                q["suites"] = [row for row in q["suites"] if row["name"] != name]
+                with self.assertRaisesRegex(RuntimeError, "Missing"):
+                    self.check_report(q)
 
     def test_duplicate_suite_refused(self):
         q = self.qualification()
@@ -350,6 +356,75 @@ class Inputs(unittest.TestCase):
         receipt["binary"] = self.save(self.root / "foreign-binary", b"fixture")
         with self.assertRaisesRegex(RuntimeError, "outside"):
             self.check_native(base, receipt)
+
+
+class WorkflowResults(unittest.TestCase):
+    def named(self, **changes):
+        value = {"schemaVersion": 1, "name": "coding-goals", "passed": 2,
+                 "failed": 0, "checks": ["generated create", "generated pause"]}
+        value.update(changes)
+        return json.dumps(value)
+
+    def test_new_workflow_suites_are_required_by_runner_and_adapter(self):
+        for name in ("goals", "submission-origin"):
+            self.assertIn(name, qualify.SUITES)
+            self.assertIn(name, release.REQUIRED_SUITES)
+            self.assertIn(name, qualify.SCOPES)
+
+    def test_named_result_retains_actual_assertions(self):
+        count, extra = qualify.named_check_result("generated fixture output\n" + self.named(), "coding-goals")
+        self.assertEqual(count, 2)
+        self.assertEqual(extra["assertions"], ["generated create", "generated pause"])
+
+    def test_named_result_refuses_missing_or_duplicate_execution(self):
+        for text in (self.named(name="unrelated"), self.named() + "\n" + self.named()):
+            with self.subTest(text=text), self.assertRaises(RuntimeError):
+                qualify.named_check_result(text, "coding-goals")
+
+    def test_named_result_refuses_incomplete_or_invalid_assertions(self):
+        for changes in ({"passed": True}, {"passed": 1}, {"failed": 1}, {"failed": False},
+                        {"schemaVersion": True}, {"checks": []}, {"checks": ["repeat", "repeat"]},
+                        {"checks": ["generated create", " "]}, {"checks": ["generated create", {}]}):
+            with self.subTest(changes=changes), self.assertRaises(RuntimeError):
+                qualify.named_check_result(self.named(**changes), "coding-goals")
+
+    def submission(self, browser=False, **changes):
+        value = {"passed": True, "installedAppTouched": False}
+        if browser:
+            value.update(submissionOrigin=True, checks=["generated composition", "generated duplicate"],
+                         oldChatAndDraftsPreserved=True, nativeAccessibilityExercised=False, upstreamCalls=1)
+        else:
+            value.update(cases=["generated receipt", "generated provenance"], realModelCalls=0)
+        value.update(changes)
+        return json.dumps(value)
+
+    def test_submission_results_retain_actual_assertions(self):
+        for browser in (False, True):
+            count, extra = qualify.submission_result(self.submission(browser), browser=browser)
+            self.assertEqual(count, 2)
+            self.assertEqual(len(extra["assertions"]), 2)
+
+    def test_submission_results_refuse_failure_ambiguous_and_duplicate_assertions(self):
+        for browser in (False, True):
+            key = "checks" if browser else "cases"
+            for text in (self.submission(browser, passed=False),
+                         self.submission(browser, installedAppTouched=True),
+                         self.submission(browser, **{key: []}),
+                         self.submission(browser, **{key: ["duplicate", "duplicate"]}),
+                         self.submission(browser) + "\n" + self.submission(browser)):
+                with self.subTest(browser=browser, text=text), self.assertRaises(RuntimeError):
+                    qualify.submission_result(text, browser=browser)
+
+    def test_submission_receipts_refuse_live_or_untyped_model_counts(self):
+        for count in (1, False, "0"):
+            with self.subTest(count=count), self.assertRaises(RuntimeError):
+                qualify.submission_result(self.submission(realModelCalls=count))
+
+    def test_submission_browser_requires_preservation_and_truthful_scope(self):
+        for changes in ({"oldChatAndDraftsPreserved": False}, {"nativeAccessibilityExercised": True},
+                        {"submissionOrigin": False}, {"upstreamCalls": False}, {"upstreamCalls": -1}):
+            with self.subTest(changes=changes), self.assertRaises(RuntimeError):
+                qualify.submission_result(self.submission(True, **changes), browser=True)
 
 
 if __name__ == "__main__":
