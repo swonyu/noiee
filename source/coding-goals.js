@@ -45,10 +45,20 @@
       typeof draft.maxTurns === 'string' && draft.maxTurns.length <= 6 && integer(draft.revision) &&
       typeof draft.editing === 'boolean' && typeof draft.completing === 'boolean';
   }
-  function create({getContext,call,getDraft,saveDraft,run,onTurn,onChange}) {
+  function create({getContext,call,getDraft,saveDraft,run,onTurn,onChange,onViewTurn,onOpen}) {
     const $ = name => document.getElementById('goal-' + name);
     let scope = '', epoch = 0, view = null, inspected = false, loading = false, pending = null, disposed = false;
     let error = '', notice = '', opened = false, draftError = false, hydratedDraft = null, lastReadAt = 0, lastAttempts = null;
+    let opener = null, viewing = null, resultNotice = '', openGeneration = 0;
+    const workspace = document.getElementById('workspace');
+    function syncPresentation() {
+      const panel = $('panel'), side = workspace.getBoundingClientRect().width >= 920;
+      panel.dataset.presentation = side ? 'side' : 'overlay';
+      panel.setAttribute('role',side ? 'complementary' : 'dialog');
+      if (side) panel.removeAttribute('aria-modal'); else panel.setAttribute('aria-modal','false');
+    }
+    const resizeObserver = new ResizeObserver(syncPresentation);
+    resizeObserver.observe(workspace);
     const active = goal => goal?.attempts?.some(attempt => ['starting','running'].includes(attempt.status));
     const draft = () => getDraft(scope);
     const usableDraft = () => validDraft(draft()) ? draft() : null;
@@ -81,16 +91,49 @@
       if (!view || view.available === false || pending || loading || draftError || draft() != null && !usableDraft() || getContext().busy || !getContext().canEdit || view.goal?.state === 'complete') return;
       const saved = usableDraft();
       if (!store(saved?.editing ? saved : {...snapshot(),editing:true})) return;
-      opened = true; render(); $('objective-input').focus();
+      if (!opened) {opener = document.activeElement; opened = true; openGeneration++; onOpen?.();}
+      render(); $('objective-input').focus();
     }
     function open() {
-      if (!getContext().canInspect) return;
-      opened = true;
-      if (view && !view.goal && draft() == null) startEdit();
-      render();
+      if (disposed || !getContext().canInspect) return;
+      if (!opened) {opener = document.activeElement; opened = true; openGeneration++; onOpen?.();}
+      if (view && !view.goal && draft() == null) {startEdit(); return;}
+      render(); $('heading').focus({preventScroll:true});
     }
-    function close() {
-      opened = false; render(); $('toggle').focus();
+    function close({restoreFocus = true} = {}) {
+      const focusedInside = $('panel').contains(document.activeElement);
+      opened = false; openGeneration++; render();
+      if (restoreFocus && focusedInside) {
+        const target = opener?.isConnected && !opener.disabled && !opener.closest('[hidden],[inert]') ? opener : $('toggle');
+        if (!target.disabled) target.focus({preventScroll:true});
+      }
+    }
+    function resultAvailable(target) {
+      const context = getContext(), goal = view?.goal;
+      return !disposed && typeof onViewTurn === 'function' && context.threadId === scope && context.canInspect &&
+        inspected && !loading && !pending && !context.busy && !error && view?.available !== false &&
+        target.threadId === scope && target.epoch === epoch && goal?.id === target.goalId &&
+        sameBinding(goal.binding,target.binding) &&
+        goal.attempts.some(attempt => attempt.id === target.attemptId && id(attempt.turnId) && attempt.turnId === target.turnId);
+    }
+    async function viewResult(target) {
+      if (viewing || !resultAvailable(target)) return;
+      const ticket = {target,openGeneration}, goal = view.goal;
+      viewing = ticket; resultNotice = ''; render();
+      const isCurrent = () => viewing === ticket && opened && openGeneration === ticket.openGeneration && resultAvailable(target);
+      try {
+        const result = await onViewTurn({threadId:scope,goalId:goal.id,attemptId:target.attemptId,
+          turnId:target.turnId,goalRevision:goal.revision,binding:structuredClone(goal.binding)},{isCurrent});
+        if (!isCurrent()) return;
+        if (result?.shown === true) {
+          if (opened && openGeneration === ticket.openGeneration && $('panel').dataset.presentation === 'overlay') close({restoreFocus:false});
+        } else resultNotice = typeof result?.reason === 'string' && result.reason.length <= 1000 ? result.reason :
+          'This recorded turn could not be shown. Refresh the goal or inspect saved task history.';
+      } catch {
+        if (isCurrent()) resultNotice = 'This recorded turn could not be shown. Refresh the goal or inspect saved task history.';
+      } finally {
+        if (viewing === ticket) {viewing = null; if (!disposed) render();}
+      }
     }
     async function refresh() {
       const context = getContext();
@@ -160,7 +203,7 @@
       });
     }
     function renderAttempts(goal) {
-      const key = JSON.stringify(goal?.attempts || []);
+      const key = JSON.stringify([scope,epoch,goal?.id,goal?.binding,goal?.attempts || []]);
       if (key === lastAttempts) return;
       lastAttempts = key;
       const rows = document.createDocumentFragment();
@@ -177,6 +220,14 @@
           const explanation = document.createElement('p');explanation.textContent = attempt.message;row.append(explanation);
         }
         if (attempt.turnId) {const turn = document.createElement('p');turn.className = 'goal-attempt-id';turn.textContent = 'Turn ' + attempt.turnId;row.append(turn);}
+        const target = {threadId:scope,epoch,goalId:goal.id,attemptId:attempt.id,turnId:attempt.turnId,binding:structuredClone(goal.binding)};
+        const result = document.createElement('button');
+        result.type = 'button'; result.className = 'goal-view-result'; result.dataset.goalResult = attempt.id;
+        result.textContent = 'View result'; result.setAttribute('aria-label','View result for attempt ' + (index + 1));
+        result.onclick = () => void viewResult(target); result.goalTarget = target; row.append(result);
+        if (!attempt.turnId) {
+          const missing = document.createElement('p'); missing.textContent = 'No acknowledged turn is available for this attempt.'; row.append(missing);
+        }
         const tokens = attempt.observedUsage?.last?.totalTokens;
         if (integer(tokens)) {const usage = document.createElement('p');usage.textContent = 'Reported token snapshot: ' + tokens.toLocaleString();row.append(usage);}
         rows.append(row);
@@ -193,6 +244,8 @@
       $('toggle').disabled = !context.canInspect;
       $('toggle').setAttribute('aria-expanded',String(opened && context.canInspect));
       $('panel').hidden = !opened || !context.canInspect;
+      $('open-saved').setAttribute('aria-expanded',String(opened && context.canInspect));
+      syncPresentation();
       $('bar').hidden = !goal || !context.canInspect;
       $('bar-title').textContent = goal?.objective || '';
       $('bar-state').textContent = status(goal);
@@ -209,8 +262,16 @@
       $('criteria').textContent = goal?.completionCriteria || '';
       $('state').textContent = status(goal);
       $('budget').textContent = goal ? goal.attemptsUsed + ' of ' + goal.maxTurns + ' continuation attempts used.' : '';
-      $('continuation-note').textContent = 'Continue starts one ' + (context.mode === 'plan' ? 'Plan' : 'Build') +
+      $('revision').textContent = goal ? 'Saved revision ' + goal.revision + ' · Turn limit ' + goal.maxTurns : '';
+      $('continuation-note').textContent = goal?.state === 'complete' ?
+        'This goal is marked complete. Review its recorded turn results and your saved completion evidence.' :
+        active(goal) ? 'A continuation is in progress. Review its result when it settles. Pause holds the next continuation; Stop interrupts current work.' :
+        goal?.state === 'needsReview' ? 'An attempt is unconfirmed. Review its recorded result and task state before deciding what to do next.' :
+        goal?.state === 'budgetLimited' ? 'The saved turn limit is reached. Review the results, then edit the limit or review completion.' :
+        goal?.state === 'paused' ? 'This goal is paused. Resume marks it ready; work starts only when you then choose Continue goal.' :
+        'Continue starts one ' + (context.mode === 'plan' ? 'Plan' : 'Build') +
         ' turn with ' + (context.effort === 'high' ? 'Deep' : 'Standard') + ' reasoning. Review its result before continuing.';
+      $('result-notice').textContent = resultNotice; $('result-notice').hidden = !resultNotice;
       $('continue').hidden = !goal || goal.state !== 'ready';
       $('continue').disabled = busy || held || edit || completing || active(goal) || !context.canContinue || !goal?.attemptsRemaining;
       $('pause').hidden = !goal || goal.state !== 'ready';
@@ -229,20 +290,29 @@
       const stale = saved && saved.revision !== view?.revision;
       $('edit-note').textContent = stale ? 'This goal changed after your draft was saved. Cancel this edit to review the latest goal; your draft is kept until you choose Cancel.' :
         'Opening or saving a goal starts no work. Started or uncertain attempts count toward the turn limit.';
-      for (const name of ['objective-input','criteria-input','limit-input','evidence-input','reviewed']) $(name).disabled = busy || held;
+      // A read-only refresh must not blur an editor or discard its selection.
+      for (const name of ['objective-input','criteria-input','limit-input','evidence-input','reviewed']) $(name).disabled = !!pending || context.busy || held;
       $('save').disabled = busy || held || stale;
       $('complete').disabled = busy || held || stale || !$('reviewed').checked;
       $('cancel-edit').disabled = !!pending;
       $('cancel-complete').disabled = !!pending;
       $('pause-note').hidden = !goal || goal.state === 'complete';
       hydrate(); renderAttempts(goal);
+      for (const button of $('attempt-list').querySelectorAll('[data-goal-result]')) {
+        button.disabled = !resultAvailable(button.goalTarget);
+        button.setAttribute('aria-disabled',String(button.disabled || !!viewing));
+        button.setAttribute('aria-busy',String(viewing?.target.attemptId === button.goalTarget.attemptId));
+        button.title = !button.goalTarget.turnId ? 'This attempt has no acknowledged turn.' :
+          button.disabled ? 'Refresh this goal before opening its recorded result.' : 'Read this exact continuation in the conversation.';
+      }
     }
     function update() {
       if (disposed) return;
       const context = getContext(), next = context.threadId || '';
       if (scope !== next) {
         scope = next; epoch++; view = null; inspected = false; loading = false;
-        error = ''; notice = ''; draftError = false; hydratedDraft = null; lastAttempts = null;
+        error = ''; notice = ''; resultNotice = ''; viewing = null; opener = null; openGeneration++;
+        draftError = false; hydratedDraft = null; lastAttempts = null;
         opened = !!usableDraft()?.editing || !!usableDraft()?.completing;
         $('reviewed').checked = false;
       }
@@ -261,10 +331,15 @@
     }
     window.addEventListener('agent-stopped',cancelPending);
     window.addEventListener('tools-stopped',cancelPending);
-    window.addEventListener('pagehide',() => {cancelPending();disposed = true;epoch++;},{once:true});
+    window.addEventListener('pagehide',() => {cancelPending();disposed = true;epoch++;resizeObserver.disconnect();},{once:true});
+    $('panel').addEventListener('keydown',event => {
+      if (event.key === 'Escape' && !event.isComposing && !event.defaultPrevented) {
+        event.preventDefault(); event.stopPropagation(); close();
+      }
+    });
     $('toggle').onclick = () => opened ? close() : open();
     $('open-saved').onclick = open;
-    $('close').onclick = close;
+    $('close').onclick = () => close();
     $('refresh').onclick = () => void refresh();
     $('new').onclick = startEdit; $('edit').onclick = startEdit;
     for (const name of ['objective-input','criteria-input','limit-input','evidence-input']) $(name).oninput = persistFields;
@@ -294,7 +369,7 @@
       if (!$('reviewed').checked || !saved?.completing || !saved.evidence?.trim()) return;
       void change('goalComplete',{evidence:saved.evidence},structuredClone(saved));
     };
-    return Object.freeze({update,refresh,tick,cancelPending,hasPending:() => !!pending});
+    return Object.freeze({update,refresh,tick,cancelPending,open,close,isOpen:() => opened,hasPending:() => !!pending});
   }
   globalThis.NoieeCodingGoals = Object.freeze({create,validView,validDraft});
 })();

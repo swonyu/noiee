@@ -1259,6 +1259,197 @@ async function checkFileDiffView(){
   assert.equal(writes(),before,'File navigation never dispatches a Git mutation');assert.deepEqual(errors,[]);
 }
 
+
+async function checkGoalInspectorUI(record,shotDir) {
+  // Use the real Tasks page and Goal component. Only the native transport and
+  // result-navigation callback are fixtures; root integration is checked separately.
+  const fixtureId = 'goal-inspector-176', otherId = 'goal-inspector-other-176';
+  const turnIds = ['goal-inspector-earlier-176','goal-inspector-latest-176'];
+  const turns = turnIds.map((id,index) => ({id,status:'completed',items:[
+    {id:id+'-question',type:'userMessage',content:[{type:'text',text:'Generated Goal continuation '+(index+1)}]},
+    {id:id+'-answer',type:'agentMessage',text:('RESULT '+(index+1)+' — exact recorded continuation.\n').repeat(16)}
+  ]}));
+  threads.set(fixtureId,{id:fixtureId,cwd:'/fixture/goal-inspector-176',name:'Inspector QA task',turns,archived:false});
+  threads.set(otherId,{id:otherId,cwd:'/fixture/goal-inspector-other-176',name:'Other inspector QA task',turns:[],archived:false});
+  const goal = {id:randomUUID(),binding:{rootThreadId:fixtureId,ownerId:savedOwner,cwd:'/fixture/goal-inspector-176',model:fixtureModel,provider:'local',executionMode:'native'},
+    revision:7,state:'ready',objective:'Improve the task review experience while keeping the recorded conversation readable. '.repeat(4).trim(),
+    completionCriteria:'The exact recorded result can be reviewed. Drafts and text selection survive refresh and window resizing. No continuation starts from inspection. The remaining limits are clearly stated.',
+    maxTurns:4,attempts:turnIds.map((turnId,index)=>({id:randomUUID(),turnId,status:'completed',mode:index?'build':'plan',effort:index?'none':'high',
+      claimedAt:1700000000000+index*1000,endedAt:1700000000500+index*1000,contractRevision:index?4:1,maxTurnsAtDispatch:index?4:3,observedUsage:null})),
+    attemptsUsed:2,attemptsRemaining:2,completionEvidence:null,createdAt:1700000000000,updatedAt:1700000002000};
+  goalFixtures.set(fixtureId,goal);
+  const executionCount = () => calls.filter(call=>call.op==='coding'&&['start','send','steer','review','goalContinue'].includes(call.input?.action)).length;
+  const mutationCount = () => calls.filter(call=>call.op==='coding'&&['goalSave','goalPause','goalResume','goalComplete'].includes(call.input?.action)).length;
+  const beforeExecution = executionCount(), beforeMutations = mutationCount();
+  await context.addInitScript(() => {
+    let factory;
+    window.goalResultCalls = []; window.goalResultMode = 'shown'; window.goalResultRelease = null;
+    Object.defineProperty(window,'NoieeCodingGoals',{configurable:true,get:()=>factory,set:original=>{
+      factory=Object.freeze({...original,create(options){
+        const controller=original.create({...options,onViewTurn:async(target,lifetime)=>{
+          window.goalResultCalls.push(structuredClone(target)); window.goalResultLifetime=lifetime;
+          const mode=window.goalResultMode;
+          if(mode==='hold')await new Promise(resolve=>{window.goalResultRelease=resolve;});
+          if(!lifetime.isCurrent())return {shown:false,reason:'The original inspector view is no longer current.'};
+          if(mode==='missing')return {shown:false,reason:'This exact recorded fixture turn is unavailable.'};
+          // This checks the component's focus handoff, not root history resolution.
+          document.getElementById('thread').focus({preventScroll:true});
+          return {shown:true};
+        }});
+        window.goalInspectorFixture=controller; return controller;
+      }});
+    }});
+  });
+  await page.evaluate(id=>sessionStorage.setItem('coding-fixture-preferences',JSON.stringify({selectedId:id,drafts:{[id]:'KEEP_INSPECTOR_COMPOSER_176'}})),fixtureId);
+  await page.setViewportSize({width:1380,height:925});
+  await page.reload(); await text('#thread-title','Inspector QA task'); await text('#goal-bar-state','Ready to continue');
+  await page.waitForFunction(()=>!document.getElementById('goal-toggle').disabled);
+  const paint = () => page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  const refreshGoal = () => page.evaluate(()=>window.goalInspectorFixture.refresh());
+  const resultCalls = () => page.evaluate(()=>window.goalResultCalls);
+  const firstResult = () => page.locator('[data-goal-result="'+goal.attempts[0].id+'"]');
+  const draft = async () => assert.equal(await page.locator('#prompt').inputValue(),'KEEP_INSPECTOR_COMPOSER_176');
+  const rect = selector => page.locator(selector).evaluate(node=>node.getBoundingClientRect().toJSON());
+  const closedThread = await rect('#thread');
+  await page.locator('#goal-toggle').click(); await paint();
+  const openThread = await rect('#thread'), inspector = await rect('#goal-panel');
+  assert(inspector.left >= openThread.right-1,'The wide inspector must sit beside the transcript');
+  assert(openThread.width >= 520,'The wide conversation keeps readable width');
+  if(openThread.height<closedThread.height*.90){
+    console.error('INSPECTOR_LAYOUT',JSON.stringify({closedThread,openThread,inspector,composer:await rect('#composer'),bar:await rect('#goal-bar')}));
+    if(shotDir)await page.screenshot({path:shotDir+'/goal-inspector-layout-failure.png'});
+  }
+  assert(openThread.height>=closedThread.height*.90,'Opening Goal review must preserve at least 90% of transcript reading height; other notices may wrap');
+  assert(openThread.height >= 350,'The saved answer retains useful vertical reading space');
+  assert.equal(await page.locator('#goal-panel').getAttribute('role'),'complementary');
+  assert((await rect('#composer')).bottom <= 925); await draft();
+  record('wide Goal inspector preserves useful reading height and width beside review');
+  await page.locator('#goal-attempts summary').click();
+  assert.equal(await page.locator('#goal-attempts').getAttribute('open'),'');
+  const transcriptScroll = await page.locator('#thread').evaluate(node=>node.scrollTop);
+  await page.locator('#goal-panel').evaluate(node=>{node.scrollTop=node.scrollHeight;});
+  const closeRect = await rect('#goal-close');
+  assert(closeRect.top>=inspector.top && closeRect.bottom<=inspector.bottom,'Close remains visible while inspector content scrolls');
+  assert.equal(await page.locator('#thread').evaluate(node=>node.scrollTop),transcriptScroll);
+  await refreshGoal();
+  assert.equal(await page.locator('#goal-attempts').getAttribute('open'),'');
+  assert.match(await page.locator('#goal-revision').textContent(),/Saved revision 7.*Turn limit 4/);
+  assert.match(await page.locator('#goal-attempt-list').textContent(),/Saved goal revision 1.*turn limit 3/);
+  if(shotDir){await page.locator('#goal-panel').evaluate(node=>{node.scrollTop=0;});await page.screenshot({path:shotDir+'/goal-inspector-wide.png'});}
+  record('history expansion scroll and saved contract provenance survive read-only refresh');
+  await firstResult().click();
+  const firstRequest = (await resultCalls()).at(-1);
+  assert.deepEqual(firstRequest,{threadId:fixtureId,goalId:goal.id,attemptId:goal.attempts[0].id,turnId:turnIds[0],goalRevision:7,binding:copy(goal.binding)});
+  assert.notEqual(firstRequest.turnId,turnIds.at(-1),'Result navigation must not substitute the newest turn');
+  assert(await page.locator('#goal-panel').isVisible(),'Wide review stays beside the revealed result');
+  assert.equal(await page.evaluate(()=>document.activeElement.id),'thread'); await draft();
+  record('View result passes the exact acknowledged historical attempt and current complete binding');
+  await page.evaluate(()=>{window.goalResultMode='missing';});
+  await firstResult().click(); await text('#goal-result-notice','exact recorded fixture turn is unavailable');
+  assert.equal(await firstResult().evaluate(node=>node===document.activeElement),true);
+  assert(await page.locator('#goal-panel').isVisible()); await draft();
+  record('failed result navigation keeps inspector draft and focus without a guessed fallback');
+  await page.locator('#goal-edit').click();
+  const unsaved = 'KEEP_UNSAVED_INSPECTOR_SELECTION_176';
+  await page.locator('#goal-objective-input').fill(unsaved);
+  await page.locator('#goal-objective-input').evaluate(node=>{
+    window.goalEditingNode=node;node.focus();node.setSelectionRange(5,23);
+  });
+  await refreshGoal();
+  assert.deepEqual(await page.locator('#goal-objective-input').evaluate(node=>({same:node===window.goalEditingNode,focused:node===document.activeElement,start:node.selectionStart,end:node.selectionEnd,value:node.value})),
+    {same:true,focused:true,start:5,end:23,value:unsaved});
+  record('read-only refresh preserves the actual edit node focus selection and unsaved text');
+  for(const width of [1024,760,390]){
+    await page.setViewportSize({width,height:900});await paint();
+    const layout=await page.locator('#goal-panel').evaluate(node=>({client:node.clientWidth,scroll:node.scrollWidth,rect:node.getBoundingClientRect().toJSON(),width:innerWidth,height:innerHeight}));
+    assert(layout.scroll<=layout.client+1 && layout.rect.left>=0 && layout.rect.right<=width+1 && layout.rect.top>=0 && layout.rect.bottom<=900+1,JSON.stringify(layout));
+    assert.equal(await page.locator('#goal-panel').getAttribute('role'),'dialog');
+    assert.equal(await page.locator('#goal-panel').getAttribute('aria-modal'),'false');
+    assert.deepEqual(await page.locator('#goal-objective-input').evaluate(node=>({same:node===window.goalEditingNode,focused:node===document.activeElement,start:node.selectionStart,end:node.selectionEnd,value:node.value})),
+      {same:true,focused:true,start:5,end:23,value:unsaved});
+    assert.equal(await page.locator('#goal-attempts').getAttribute('open'),'');
+    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+    if(shotDir&&width!==1024)await page.screenshot({path:shotDir+'/goal-inspector-'+width+'.png'});
+    await draft();
+  }
+  record('responsive inspector stays bounded without rebuilding editor or losing selection and expansion');
+  await page.keyboard.press('Escape');assert(await page.locator('#goal-panel').isHidden());
+  assert.equal(await page.evaluate(()=>document.activeElement.id),'goal-toggle');
+  await refreshGoal();assert(await page.locator('#goal-panel').isHidden(),'Polling cannot undo an intentional close');
+  assert.equal(await page.evaluate(id=>JSON.parse(localStorage.getItem('qwen-coding-ui-v1')).goalDrafts[id].objective,fixtureId),unsaved);
+  await page.locator('#goal-open-saved').click();
+  assert.equal(await page.locator('#goal-objective-input').inputValue(),unsaved);
+  assert.equal(await page.locator('#goal-attempts').getAttribute('open'),'');
+  await page.locator('#goal-cancel-edit').click();
+  record('Escape and explicit reopening preserve the edit while refresh respects an intentional close');
+  for(const width of [760,390]){
+    await page.locator('#goal-close').click();await page.setViewportSize({width,height:900});await paint();
+    const before=await rect('#thread');await page.locator('#goal-open-saved').click();await paint();const after=await rect('#thread');
+    assert(Math.abs(before.height-after.height)<2 && Math.abs(before.width-after.width)<2,'Contained review leaves underlying transcript geometry unchanged at '+width);
+    await page.locator('#goal-panel').evaluate(node=>{node.scrollTop=node.scrollHeight;});
+    const close=await rect('#goal-close');assert(close.top>=0 && close.bottom<=900);
+  }
+  record('narrow review and long history keep underlying reading space and a reachable Close control');
+  await page.evaluate(()=>{window.goalResultMode='shown';});
+  await firstResult().click();await page.locator('#goal-panel').waitFor({state:'hidden'});
+  assert.equal(await page.evaluate(()=>document.activeElement.id),'thread','Narrow close must retain callback result focus');
+  await draft();record('successful narrow result handoff closes review without restoring opener focus');
+  await page.locator('#goal-open-saved').click();
+  await page.evaluate(()=>{window.goalResultMode='hold';window.goalResultRelease=null;});
+  const beforeHeld=(await resultCalls()).length;await firstResult().click();
+  await page.waitForFunction(()=>typeof window.goalResultRelease==='function');
+  assert.equal(await page.evaluate(()=>window.goalResultLifetime.isCurrent()),true);
+  await firstResult().evaluate(node=>node.dispatchEvent(new MouseEvent('click',{bubbles:true})));
+  assert.equal((await resultCalls()).length,beforeHeld+1,'A held result request cannot duplicate lookup');
+  await page.locator('#goal-close').click();await page.locator('#goal-open-saved').click();
+  assert.equal(await page.evaluate(()=>window.goalResultLifetime.isCurrent()),false,'Reopening invalidates the earlier result read');
+  await page.locator('#goal-edit').click();await page.locator('#goal-objective-input').focus();
+  await page.evaluate(()=>window.goalResultRelease());await paint();
+  assert(await page.locator('#goal-panel').isVisible());
+  assert.equal(await page.evaluate(()=>document.activeElement.id),'goal-objective-input');
+  assert.equal(await page.locator('#goal-result-notice').textContent(),'');
+  await page.locator('#goal-cancel-edit').click();
+  record('close and reopen revoke held result focus and notices while repeated activation is held');
+  const unack = {id:randomUUID(),turnId:null,status:'unknown',mode:'build',effort:'none',claimedAt:1700000003000};
+  goal.attempts.push(unack);goal.attemptsUsed=3;goal.attemptsRemaining=1;goal.state='needsReview';goal.revision++;
+  await refreshGoal();
+  const unavailable=page.locator('[data-goal-result="'+unack.id+'"]'),beforeUnack=(await resultCalls()).length;
+  assert(await unavailable.isDisabled());
+  await unavailable.evaluate(node=>node.dispatchEvent(new MouseEvent('click',{bubbles:true})));
+  assert.equal((await resultCalls()).length,beforeUnack);
+  assert.match(await page.locator('#goal-attempt-list').textContent(),/No acknowledged turn is available/);
+  goalMalformed=true;await refreshGoal();assert(await firstResult().isDisabled());
+  await firstResult().evaluate(node=>node.dispatchEvent(new MouseEvent('click',{bubbles:true})));
+  assert.equal((await resultCalls()).length,beforeUnack);
+  goalMalformed=false;await refreshGoal();
+  record('unacknowledged attempts and stale failed inspections cannot invoke result navigation');
+  await firstResult().evaluate(node=>{window.staleGoalResult=node;});
+  const oldTurn=goal.attempts[0].turnId;goal.attempts[0].turnId='goal-inspector-rebound-176';goal.revision++;await refreshGoal();
+  await page.evaluate(()=>window.staleGoalResult.dispatchEvent(new MouseEvent('click',{bubbles:true})));
+  assert.equal((await resultCalls()).length,beforeUnack,'A detached older attempt button cannot use a changed turn mapping');
+  goal.attempts[0].turnId=oldTurn;goal.attempts.pop();goal.attemptsUsed=2;goal.attemptsRemaining=2;goal.state='complete';goal.completionEvidence='Manual review of the exact results and criteria; fixture evidence only.';goal.revision++;
+  await refreshGoal();
+  assert.match(await page.locator('#goal-continuation-note').textContent(),/marked complete.*completion evidence/);
+  assert(!/Continue starts|Resume marks/.test(await page.locator('#goal-continuation-note').textContent()));
+  assert(await page.locator('#goal-continue').isHidden());assert(await page.locator('#goal-resume').isHidden());
+  assert.match(await page.locator('#goal-saved-evidence').textContent(),/No automatic verification is implied/);
+  record('completed goals show review guidance and manual attestation instead of continuation advice');
+  await page.evaluate(()=>{window.goalResultMode='hold';window.goalResultRelease=null;});
+  await firstResult().click();await page.waitForFunction(()=>typeof window.goalResultRelease==='function');
+  await page.setViewportSize({width:1380,height:925});await paint();
+  await page.getByRole('button',{name:'Other inspector QA task',exact:true}).click();await text('#thread-title','Other inspector QA task');
+  await page.locator('#goal-toggle').click();await page.locator('#goal-editor').waitFor({state:'visible'});
+  await page.locator('#goal-objective-input').fill('KEEP_OTHER_INSPECTOR_DRAFT_176');
+  assert.equal(await page.evaluate(()=>window.goalResultLifetime.isCurrent()),false);
+  await page.evaluate(()=>window.goalResultRelease());await paint();
+  assert.equal(await page.evaluate(()=>document.activeElement.id),'goal-objective-input');
+  assert.equal(await page.locator('#goal-objective-input').inputValue(),'KEEP_OTHER_INSPECTOR_DRAFT_176');
+  assert.equal(await page.locator('#goal-result-notice').textContent(),'');
+  record('task selection revokes a held result request without leaking feedback or focus into another draft');
+  assert.equal(executionCount(),beforeExecution);assert.equal(mutationCount(),beforeMutations);
+  record('inspector layout navigation refresh and completion review fixtures start no work or Goal mutation');
+}
+
 async function checkGoalsUI() {
   const checks = [], record = name => {assert(!checks.includes(name));checks.push(name);};
   const executions = () => calls.filter(call => call.op === 'coding' && ['start','send','steer','review','goalContinue'].includes(call.input?.action));
@@ -1527,6 +1718,7 @@ async function checkGoalsUI() {
   assert.equal(goalFixtures.get('goal-other').state,'ready');
   await page.evaluate(()=>{Storage.prototype.setItem=window.goalOriginalSetItem;});
   record('failed completion-evidence persistence cannot complete with stale evidence');
+  await checkGoalInspectorUI(record,shotDir);
   assert.deepEqual(errors,[]);record('actual task page loads every asset with no browser exceptions');
   return checks;
 }

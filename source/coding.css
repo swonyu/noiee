@@ -63,27 +63,33 @@ main{display:flex;flex-direction:column;flex:1;min-width:0;min-height:0}header{d
 .startup-recovery{flex:none;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:8px 24px;border-bottom:1px solid var(--line);font-size:12px;line-height:1.5;max-height:25vh;overflow:auto;color:var(--muted)}.startup-recovery>div{min-width:0}.startup-recovery summary{cursor:pointer;color:var(--text)}.startup-recovery p{margin:6px 0;max-width:85ch;overflow-wrap:anywhere}.startup-recovery button{flex:none;border:1px solid var(--line);font-size:11px}.startup-recovery #startup-recovery-current{color:#e3cab0}
 @media(max-width:600px){.child-result{margin:8px 12px 12px;padding:10px 12px}.child-result-heading{gap:4px}.child-actions{gap:7px}.startup-recovery{padding:8px 12px;gap:8px}.startup-recovery button{max-width:125px;white-space:normal}.execution-summary{gap:3px 8px}}
 
-/* Saved goals share the task column; the conversation and unsent draft stay available. */
+/* Goal review has its own reading space; opening it never takes transcript height. */
 #goal-toggle[aria-expanded=true]{background:var(--hover)}
 .goal-bar{display:flex;align-items:center;gap:10px;flex-shrink:0;min-width:0;margin:10px 24px 0;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:#272a28;font-size:11px;color:var(--muted)}
 #goal-open-saved{display:flex;align-items:center;gap:10px;min-width:0;flex:1;text-align:left;padding:3px;color:var(--text)}
 .goal-label{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);flex-shrink:0}
 #goal-bar-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
 #goal-bar-state,#goal-bar-budget{flex-shrink:0}
-.goal-panel{flex:0 1 auto;min-height:0;max-height:min(58vh,590px);overflow:auto;overscroll-behavior:contain;margin:12px 24px 0;padding:20px;border:1px solid #48514b;border-radius:12px;background:#282c29;scrollbar-width:thin}
-.goal-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px}
+.goal-panel{align-self:stretch;min-height:0;min-width:0;overflow:auto;overscroll-behavior:contain;padding:0 18px 20px;border-left:1px solid #48514b;background:#282c29;scrollbar-width:thin;scroll-padding-block:90px 20px}
+.goal-panel[data-presentation="side"]{flex:0 0 360px;width:360px}
+.goal-panel[data-presentation="overlay"]{position:fixed;z-index:4;inset:12px 12px 12px auto;width:min(420px,calc(100vw - 24px));max-height:calc(100dvh - 24px);border:1px solid #566159;border-radius:12px;box-shadow:0 16px 64px #0008}
+.goal-panel[data-presentation="side"] #goal-layout-note{display:none}
+.goal-heading{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 -18px 16px;padding:16px 18px;border-bottom:1px solid #414b43;background:#282c29}
 .goal-heading h2{margin:4px 0 0;font-size:20px;font-weight:600;letter-spacing:-.4px}
 .goal-eyebrow{color:var(--muted);font-size:11px}
+.goal-heading>.goal-actions{flex-wrap:nowrap}
 .goal-actions{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
-.goal-actions button,#goal-new{border:1px solid #535c56;font-size:12px;padding:7px 10px}
+.goal-actions button,#goal-new,.goal-view-result{border:1px solid #535c56;font-size:12px;padding:7px 10px}
 .goal-actions .goal-primary{background:#e2e9e4;color:#1e2721;border-color:#e2e9e4;font-weight:600}
 .goal-actions .goal-primary:hover{background:#f0f5f1}
 .goal-actions .goal-primary:disabled{background:#89938c;border-color:#89938c}
-#goal-close{font-size:20px;border:0;width:30px;padding:2px}
+#goal-close{font-size:22px;border:0;width:34px;min-height:34px;padding:2px}
 .goal-panel h3{font-size:16px;font-weight:550;line-height:1.45;letter-spacing:-.15px;margin:10px 0 18px;white-space:pre-wrap;overflow-wrap:anywhere}
 .goal-panel h4{font-size:12px;font-weight:600;margin:16px 0 5px}
 .goal-text{font-size:13px;line-height:1.65;margin:0 0 10px;white-space:pre-wrap;overflow-wrap:anywhere}
 .goal-state{font-size:11px;color:#c5d7ca;margin:0}
+#goal-revision{font-size:11px;color:#c5d7ca;margin:12px 0 4px}
+#goal-budget{margin:4px 0 12px}
 .goal-panel .goal-notice{padding:10px 12px;margin:8px 0 14px;border-left:2px solid #b8c6ba;background:#303731;font-size:12px;line-height:1.6;overflow-wrap:anywhere}
 #goal-editor,#goal-complete-form{margin-top:15px;padding-top:14px;border-top:1px solid #414b43}
 #goal-editor>label,#goal-complete-form>label:not(.goal-reviewed){display:block;font-size:12px;font-weight:550;margin:0 0 7px}
@@ -94,10 +100,15 @@ main{display:flex;flex-direction:column;flex:1;min-width:0;min-height:0}header{d
 .goal-reviewed{display:flex;align-items:flex-start;gap:9px;font-size:12px;line-height:1.6;margin:4px 0 14px}
 .goal-reviewed input{margin:4px 0 0}
 #goal-attempts{border-top:1px solid #414b43;padding-top:12px;margin-top:16px}
-#goal-attempts summary{font-size:12px;cursor:pointer;padding:4px 0}
+#goal-attempts summary{font-size:12px;cursor:pointer;padding:6px 0}
 #goal-attempt-list{padding:0;list-style:none;margin:12px 0 0}
-#goal-attempt-list li{margin:0;padding:10px 0;border-top:1px solid #3f4841;font-size:12px}
+#goal-attempt-list li{margin:0;padding:12px 0;border-top:1px solid #3f4841;font-size:12px}
 #goal-attempt-list p{margin:5px 0 0;color:var(--muted);font-size:11px;line-height:1.5}
 #goal-attempt-list .goal-attempt-id{overflow-wrap:anywhere}
+.goal-view-result{margin-top:10px}
+.goal-view-result[aria-disabled="true"]{opacity:.55}
 #goal-saved-evidence{padding-top:5px;border-top:1px solid #414b43;margin-top:15px}
-@media(max-width:850px){.goal-bar{margin:8px 12px 0;gap:8px;flex-wrap:wrap}#goal-open-saved{min-width:60%;}.goal-panel{margin:10px 12px 0;padding:16px;max-height:55vh}.goal-heading{align-items:flex-start}.goal-heading>.goal-actions{justify-content:flex-end}#goal-bar-state{font-size:10px}}
+.workspace-coding .turn:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:8px}
+.workspace-coding .turn[tabindex="-1"]{scroll-margin-block:24px}
+@media(max-width:850px){.goal-bar{margin:8px 12px 0;gap:8px;flex-wrap:wrap}#goal-open-saved{min-width:60%}#goal-bar-state{font-size:10px}}
+@media(max-width:500px){.goal-panel[data-presentation="overlay"]{inset:8px 8px 8px auto;width:calc(100vw - 16px);max-height:calc(100dvh - 16px)}}
