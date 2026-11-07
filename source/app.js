@@ -946,7 +946,7 @@ $('export').onclick = () => { window.dispatchEvent(new Event('workspace-reveal-m
   const data = { ...snapshotFields, exportedAt: new Date().toISOString(), chats, selectedId, ...(unreadableData && originalData ? { unreadableOriginalBackup: originalData } : {}) };
   const files=qwenWork.backupFiles(data),panel=$('backup-downloads');backupURLs.forEach(url=>URL.revokeObjectURL(url));backupURLs=[];panel.replaceChildren();panel.hidden=files.length===1;
   if(files.length>1){const info=document.createElement('p');info.textContent=`Download all ${files.length} parts. To restore, select these files together in Restore backup.`;panel.append(info);}
-  for(const [i,text] of files.entries()){const url=URL.createObjectURL(new Blob([text],{type:'application/json'}));backupURLs.push(url);const link=document.createElement('a');link.href=url;link.download=`qwen-chats-${new Date().toISOString().slice(0,10)}${files.length>1?`-part-${i+1}-of-${files.length}`:''}.json`;link.textContent=`Download part ${i+1} of ${files.length}`;if(files.length===1)link.click();else panel.append(link);}
+  for(const [i,text] of files.entries()){const url=URL.createObjectURL(new Blob([text],{type:'application/json'}));backupURLs.push(url);const link=document.createElement('a');link.href=url;link.download=`noiee-chats-${new Date().toISOString().slice(0,10)}${files.length>1?`-part-${i+1}-of-${files.length}`:''}.json`;link.textContent=`Download part ${i+1} of ${files.length}`;if(files.length===1)link.click();else panel.append(link);}
   if(files.length>1){document.body.classList.remove('sidebar-open');setContext(false);panel.querySelector('a').focus();}
 }catch(error){notice('Backup not exported. '+error.message);} };
 async function checkConnection() { await refreshModels(); }

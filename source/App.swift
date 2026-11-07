@@ -27,6 +27,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     private let home = URL(string: "http://127.0.0.1:8787")!
 
     private var diagnosticRunning = false
+    private let startupStderr = NoieeBoundedCapture()
+    private var startupRuntime: NoieeVerifiedRuntime?
+    private var startupReportURL: URL?
+    private var startupReportSummary = "The startup check has not finished."
+    private var startupReady = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.applicationIconImage = NSImage(size: NSSize(width: 1024, height: 1024), flipped: false) { _ in
@@ -67,6 +72,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
         view.addItem(withTitle: "Shutdown Status…", action: #selector(inspectShutdown), keyEquivalent: "")
         viewItem.submenu = view; menu.addItem(viewItem); NSApp.mainMenu = menu
         let diagnosticItem = NSMenuItem(), diagnosticMenu = NSMenu(title: "Diagnostics")
+        diagnosticMenu.addItem(withTitle: "Startup Report…", action: #selector(showStartupReport), keyEquivalent: "")
         diagnosticMenu.addItem(withTitle: "Check known Chrome window (read only)", action: #selector(diagnoseChromeWindow), keyEquivalent: "")
         diagnosticItem.submenu = diagnosticMenu; menu.addItem(diagnosticItem)
 
@@ -112,10 +118,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     }
 
     private func start() async {
-        let paths = ["/opt/homebrew/bin/node", "/usr/local/bin/node"]
-        guard let node = paths.first(where: { FileManager.default.isExecutableFile(atPath: $0) }),
-              let resources = Bundle.main.resourceURL else {
-            showError("Node.js is needed to run this local app. The installed runtime could not be found."); return
+        guard let resources = Bundle.main.resourceURL else {
+            startupFailed(NoieeStartupFailure(.missingResources), phase: "preflight"); return
+        }
+        do {
+            startupRuntime = try await Task.detached(priority: .userInitiated) {
+                try NoieeStartupPreflight.prepare(resources: resources)
+            }.value
+        } catch {
+            startupFailed(error as? NoieeStartupFailure ?? NoieeStartupFailure(.runtimeProbeFailed), phase: "preflight")
+            return
+        }
+        guard let runtime = startupRuntime else {
+            startupFailed(NoieeStartupFailure(.runtimeProbeFailed), phase: "preflight"); return
         }
         let mutationBlocked:Bool
         do {
@@ -128,8 +143,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
             } else if request != nil {
                 window.subtitle=accessMode.label+" · Recovery prepared · Mac restart required"
             }
-        } catch {showError("Tool access could not be verified: "+error.localizedDescription);return}
-        let process = Process(); process.executableURL = URL(fileURLWithPath: node)
+        } catch {
+            recordStartup(NoieeStartupFailure(.accessUnavailable), phase: "access", stderr: startupStderr.finish())
+            showError("Tool access could not be verified: " + error.localizedDescription); return
+        }
+        let process = Process(); process.executableURL = runtime.executable
         process.arguments = [resources.appendingPathComponent("server.mjs").path]
         process.currentDirectoryURL = resources
         var environment = ProcessInfo.processInfo.environment; environment["QWEN_LOCAL_INSTANCE_TOKEN"] = instanceToken
@@ -138,17 +156,76 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
         environment["SALEH_UNCONFINED_BOOT"] = mutationBlocked ? "true":"false"
         environment["SALEH_RECOVERY_STARTUP"] = recoveryStartup ? "true":"false"
         process.environment = environment
-        process.terminationHandler = { [weak self] _ in Task { @MainActor in self?.tools.stop() } }
+        process.terminationHandler = { [weak self] child in Task { @MainActor in
+            guard let self else { return }
+            self.tools.stop()
+            if self.startupReady && !self.terminationPending {
+                self.startupReady = false
+                self.startupFailed(NoieeStartupFailure(.unexpectedBackendExit, exit: child.terminationStatus), phase: "server-exit")
+            }
+        } }
         process.standardInput = serverInput
-        process.standardOutput = FileHandle.nullDevice; process.standardError = FileHandle.nullDevice
-        do { try process.run(); server = process }
-        catch { showError("The local chat server could not start: \(error.localizedDescription)"); return }
+        let errors = Pipe(), capture = startupStderr
+        errors.fileHandleForReading.readabilityHandler = { handle in
+            let data = handle.availableData
+            if data.isEmpty { handle.readabilityHandler = nil } else { capture.append(data) }
+        }
+        process.standardOutput = FileHandle.nullDevice; process.standardError = errors
+        do {
+            try process.run(); server = process
+            try? errors.fileHandleForWriting.close()
+        } catch {
+            errors.fileHandleForReading.readabilityHandler = nil
+            startupFailed(NoieeStartupFailure(.backendExited), phase: "server-launch"); return
+        }
         for _ in 0..<30 {
-            if await ready() { webView.load(URLRequest(url: home)); return }
+            if await ready() {
+                guard process.isRunning else { break }
+                startupReady = true
+                recordStartup(nil, phase: "ready", stderr: startupStderr.finish())
+                webView.load(URLRequest(url: home)); return
+            }
             if !process.isRunning { break }
             try? await Task.sleep(for: .milliseconds(200))
         }
-        showError("The local chat could not start on port 8787. Another app may be using that port. Quit it and reopen Noiee.")
+        let summary = startupStderr.finish()
+        let failure = NoieeStartupPreflight.backendFailure(exited: !process.isRunning,
+            status: process.isRunning ? nil : process.terminationStatus, stderr: summary)
+        recordStartup(failure, phase: "server-readiness", stderr: summary)
+        showError(failure.localizedDescription + "\n\nDiagnostics → Startup Report contains the redacted result.")
+    }
+
+    private func recordStartup(_ failure: NoieeStartupFailure?, phase: String, stderr: NoieeStderrSummary) {
+        let rawBuild = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
+        let build = rawBuild.range(of: "^[0-9]{1,12}$", options: .regularExpression) != nil ? rawBuild : "development"
+        let receipt = NoieeStartupReceipt(recordedAt: ISO8601DateFormatter().string(from: Date()),
+            build: build, outcome: failure == nil ? "ready" : "failed", phase: phase,
+            failureCode: failure?.code, exitStatus: failure?.exitStatus,
+            requiredNodeVersion: failure?.requiredVersion ?? startupRuntime?.version,
+            observedNodeVersion: failure?.observedVersion ?? startupRuntime?.version,
+            nodeExecutableSHA256: startupRuntime?.executableSHA256,
+            runtimeContractSHA256: startupRuntime?.contractSHA256, stderr: failure?.runtimeDiagnostics ?? stderr)
+        startupReportSummary = failure?.localizedDescription ?? "Noiee confirmed its local server and qualified Node runtime."
+        if let failure { startupReportSummary += "\nCategory: \(failure.code.rawValue)." }
+        if let status = failure?.exitStatus { startupReportSummary += "\nExit status: \(status)." }
+        if let runtime = startupRuntime { startupReportSummary += "\nNode runtime: \(runtime.version)." }
+        do { startupReportURL = try NoieeStartupReports.write(receipt) }
+        catch { startupReportURL = nil; startupReportSummary += "\nThe support receipt could not be saved." }
+    }
+
+    private func startupFailed(_ failure: NoieeStartupFailure, phase: String) {
+        recordStartup(failure, phase: phase, stderr: startupStderr.finish())
+        showError(failure.localizedDescription + "\n\nOpen Diagnostics → Startup Report for the redacted result.")
+    }
+
+    @objc private func showStartupReport() {
+        let alert = NSAlert(); alert.messageText = "Noiee Startup Report"
+        alert.informativeText = startupReportSummary + "\n\nReports contain startup categories and runtime metadata. Raw diagnostics, prompts, credentials and tool output are omitted."
+        alert.addButton(withTitle: "Close")
+        if startupReportURL != nil { alert.addButton(withTitle: "Show Receipt in Finder") }
+        if alert.runModal() == .alertSecondButtonReturn, let url = startupReportURL {
+            NSWorkspace.shared.activateFileViewerSelecting([url])
+        }
     }
 
     private func showError(_ message: String) {
@@ -205,7 +282,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
             result["screenshots"] = false
             result["input_sent"] = false
             result["permissions_changed"] = false
-            let output = URL(fileURLWithPath:"/Users/saleh/Documents/Codex/2026-10-13/task/update-build-33-window-fix/results",isDirectory:true)
+            let output = NoieeStartupReports.defaultRoot
                 .appendingPathComponent("chrome-window-" + UUID().uuidString + ".json")
             var saved = false
             do {
@@ -396,13 +473,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     }
     func webView(_ webView: WKWebView, runOpenPanelWith parameters: WKOpenPanelParameters, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping ([URL]?) -> Void) {
         let panel = NSOpenPanel(); panel.canChooseDirectories = false; panel.allowsMultipleSelection = parameters.allowsMultipleSelection
-        panel.message = "Choose text or PNG/JPEG attachments, or a Qwen JSON backup to restore."
+        panel.message = "Choose text or PNG/JPEG attachments, or a Noiee chat backup to restore."
         completionHandler(panel.runModal() == .OK ? panel.urls : nil)
     }
     func webView(_ webView: WKWebView, navigationAction: WKNavigationAction, didBecome download: WKDownload) { download.delegate = self }
     func download(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String, completionHandler: @escaping (URL?) -> Void) {
         let panel = NSSavePanel(); panel.nameFieldStringValue = suggestedFilename; panel.allowedContentTypes = [.json]
-        panel.message = "Save a backup of your Qwen conversations."
+        panel.message = "Save a backup of your Noiee conversations. Tasks histories are not included."
         completionHandler(panel.runModal() == .OK ? panel.url : nil)
     }
     func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {

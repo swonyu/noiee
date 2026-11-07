@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "node": {
+    "version": "v26.13.0",
+    "executableSHA256": "7296c3dda88793e08d1089d839a782178c4bba6bb22f5c40ab2a75263fb071bd",
+    "candidates": [
+      "/opt/homebrew/bin/node",
+      "/usr/local/bin/node"
+    ]
+  },
+  "backend": {
+    "host": "127.0.0.1",
+    "port": 8787
+  }
+}
