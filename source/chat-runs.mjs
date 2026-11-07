@@ -11,6 +11,10 @@ const attachments=globalThis.SalehAttachments;
 const work=globalThis.qwenWork;
 
 const RECORD=16*1024*1024,TOTAL=128*1024*1024,UNFINISHED=128,INVENTORY=128,TEXT=2*1024*1024;
+// New compaction results must fit the next round's carried-summary budget.
+// Historical v5 receipts retain their original 32,000-byte validation bound.
+export const COMPACTION_SUMMARY_BYTES=12000;
+export const COMPACTION_CARRY_JSON_BYTES=16000;
 const fields=['version','runId','chatId','userMessageId','assistantMessageId','inputDigest','userMessage','requestedModel','resolvedModel','thinking','createdAt','updatedAt','endedAt','revision','status','content','reasoning','finishReason','stopRequested','error'];
 const agentFields=[...fields,'kind','receipts','plan','sources','pendingStep','budgetReached','nativeResult'];
 const pending=new Set(['intent','running']);
@@ -210,9 +214,9 @@ export class ChatRuns{
    const response=await this.#fetch(this.#url,{method:'POST',signal,redirect:'error',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
    if(signal.aborted){await response.body?.cancel();signal.throwIfAborted();}
    if(response.redirected||response.status>=300&&response.status<400||!response.ok){await response.body?.cancel();throw Error('Local model request failed or redirected (HTTP '+response.status+').');}
-   const append=(key,chunk)=>{if(compact&&bytes(entry.row.content)+bytes(entry.row.reasoning)+bytes(chunk)>32000)throw Error('Context summary exceeded its saved bound. The original history is unchanged.');entry.row[key]+=chunk;changed();};
+   const append=(key,chunk)=>{if(compact&&(bytes(entry.row.content)+bytes(entry.row.reasoning)+bytes(chunk)>COMPACTION_SUMMARY_BYTES||bytes(JSON.stringify(entry.row.content+(key==='content'?chunk:'')))>COMPACTION_CARRY_JSON_BYTES))throw Error('Context summary exceeded its UTF-8 carry budget (12,000 raw bytes or 16,000 JSON-encoded bytes). Partial output is retained; original history and compaction progress are unchanged.');entry.row[key]+=chunk;changed();};
    const result=await readCompletion(response,{signal,onContent:chunk=>append('content',chunk),onReasoning:chunk=>append('reasoning',chunk)});signal.throwIfAborted();
-   const choice=result.choices?.[0];if(!['stop','length'].includes(choice?.finish_reason)||choice.message?.tool_calls?.length||choice.message?.function_call||!choice.message?.content?.trim()&&!(choice.finish_reason==='length'&&input.thinking==='deep'&&choice.message?.reasoning_content?.trim()))throw Error('The text answer did not finish without tools. Partial text is retained.');
+   const choice=result.choices?.[0];if(compact&&(bytes(choice?.message?.content??'')+bytes(choice?.message?.reasoning_content??'')>COMPACTION_SUMMARY_BYTES||bytes(JSON.stringify(choice?.message?.content??''))>COMPACTION_CARRY_JSON_BYTES))throw Error('Context summary exceeded its UTF-8 carry budget. Original history and compaction progress are unchanged.');if(!['stop','length'].includes(choice?.finish_reason)||choice.message?.tool_calls?.length||choice.message?.function_call||!choice.message?.content?.trim()&&!(choice.finish_reason==='length'&&input.thinking==='deep'&&choice.message?.reasoning_content?.trim()))throw Error('The text answer did not finish without tools. Partial text is retained.');
    final={...entry.row,content:choice.message.content??'',reasoning:choice.message.reasoning_content||'',status:choice.finish_reason==='length'?'length':'complete',finishReason:choice.finish_reason,error:null};
   }catch(error){const stop=signal.aborted&&signal.reason?.name==='AbortError';final={...entry.row,status:stop?'stopped':'error',stopRequested:stop,error:errorText(stop?'Stopped. Any saved partial text is retained.':error.message||error)};}
   finally{

@@ -76,6 +76,28 @@ await test('oversized provider summary fails without poisoning ordinary receipts
  const f=await fixture({response:'x'.repeat(32001)});try{const input=f.input();await f.start(input);const failed=await f.settled(input.runId);assert.equal(failed.run.status,'error');assert.equal(failed.persistence,'saved');const next=f.input();delete next.purpose;delete next.sourceDigest;await f.start(next);assert.equal((await f.settled(next.runId)).run.status,'complete');}finally{await f.close();}
 });
 
+await test('compaction output bound counts UTF-8 bytes and leaves ordinary output uncapped',async()=>{
+ for(const [response,expected] of [['é'.repeat(6000),'complete'],['é'.repeat(6001),'error']]){
+  const f=await fixture({response});try{const input=f.input();await f.start(input);const value=await f.settled(input.runId);assert.equal(value.run.status,expected);assert.equal(value.persistence,'saved');if(expected==='error')assert.match(value.run.error,/carry budget/);
+   const ordinary=f.input();delete ordinary.purpose;delete ordinary.sourceDigest;await f.start(ordinary);assert.equal((await f.settled(ordinary.runId)).run.status,'complete');assert.equal(f.requests.at(-1).max_tokens,-1);
+  }finally{await f.close();}
+ }
+});
+await test('cold reading retains historical32k v5 summaries without applying the new carry limit retroactively',async()=>{
+ const f=await fixture();try{const input=f.input();await f.start(input);const value=await f.settled(input.runId),root=await fsp.mkdtemp(join(generatedDataRoot,'legacy-summary-')),directory=root+'/runs';fixtureRoots.push(root);await fsp.mkdir(directory,{mode:0o700});
+  const row={...value.run,content:'é'.repeat(16000)};await fsp.writeFile(directory+'/'+input.runId+'.json',JSON.stringify(row),{mode:0o600});let calls=0;
+  const cold=new ChatRuns({...f.options,directory,fetchImpl:async()=>{calls++;throw Error('No replay');}}),saved=await cold.inspect(input.runId);assert.equal(saved.run.status,'complete');assert.equal(saved.run.content,row.content);assert.equal(Buffer.byteLength(saved.run.content),32000);assert.equal(calls,0);
+ }finally{await f.close();}
+});
+
+await test('compaction enforces encoded carry room while ordinary escaped output remains uncapped',async()=>{
+ for(const [response,expected] of [['\\'.repeat(7999),'complete'],['\\'.repeat(8000),'error'],['\u0000'.repeat(2667),'error']]){
+  const f=await fixture({response});try{const input=f.input();await f.start(input);const value=await f.settled(input.runId);assert.equal(value.run.status,expected);assert.equal(value.persistence,'saved');if(expected==='error')assert.match(value.run.error,/carry budget/);
+   const ordinary=f.input();delete ordinary.purpose;delete ordinary.sourceDigest;await f.start(ordinary);assert.equal((await f.settled(ordinary.runId)).run.status,'complete');assert.equal(f.requests.at(-1).max_tokens,-1);
+  }finally{await f.close();}
+ }
+});
+
 await import(SOURCE+'/context-compaction.js');
 const compact=globalThis.SalehContextCompaction;
 const fixtureChat=()=>({id:'chat-fixture',model:'owner-selected-Q8-fixture',mode:'agent',thinking:'standard',title:'Keep title',draft:'  أحدث مسودة😀\n\t ',draftAttachments:[{kind:'text',name:'keep.txt',text:'  keep\n'}],unknown:{kept:true},messages:Array.from({length:8},(_,n)=>({id:'message-'+n,role:n%2?'assistant':'user',content:'Original '+n+'\nالرياض😀',state:'complete',extra:{kept:n}}))});

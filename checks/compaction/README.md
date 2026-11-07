@@ -1,25 +1,29 @@
-# Build172 compaction and recovery checks
+# Build174 compaction and recovery checks
 
 Run from any working directory:
 
     python3 checks/compaction/run-suite.py
 
-The runner resolves source relative to its tracked location. It executes 115 checks, writes a source-pinned receipt under .artifacts/compaction/runs, and checks that all source files stayed unchanged. Node defaults to /opt/homebrew/bin/node; pass --node PATH to qualify another explicit executable. --preserve-symlinks lets nested packages resolve through the owned node_modules link. No dependency is installed or modified.
+The runner resolves source relative to its tracked location. It executes 151 checks, writes a source-pinned receipt under .artifacts/compaction/runs, and checks that all source files stayed unchanged. Node defaults to /opt/homebrew/bin/node; pass --node PATH to qualify another explicit executable. --preserve-symlinks lets nested packages resolve through the owned node_modules link. No dependency is installed or modified.
 
 ## Product behavior
 
-- Summary display has asynchronous, source-bound Active, Stale, Available and failed/pending states. An old result cannot repaint another chat or changed settings. Validation uses an immutable snapshot.
+- Summary display has asynchronous, source-bound Active, partial progress, Stale, Available and failed/pending states. An old result cannot repaint another chat or changed settings. Validation uses an immutable snapshot.
 - Request projection remains bound to original messages, context settings and selected summary through prepare/start. Draft edits and reasoning disclosure do not invalidate it.
 - Use full history performs the existing structural snapshot CAS and changes only the active summary selection. Previous records, messages, draft, attachments and unknown metadata remain.
 - Rebuild summary reserves the existing admission before asynchronous work, durably clears the selected summary, then explicitly summarizes from original history. It keeps prior records; Stop or a failed rebuild leaves originals in use. No old request is replayed.
-- Summaries cover whole complete earlier exchanges only. The 24,000 UTF-8 byte input limit, unfinished boundaries and 64-record limit are stated honestly. An oversized exchange is never partially covered or silently omitted. Message positions and exchange counts replace opaque range IDs.
+- A v2 source records exact UTF-8 fragments of canonical exchange JSON, with source hashes, a contiguous byte cursor and the previous summary hash. Each explicit operation fits its entire escaped input envelope into 24,000 bytes. A partly processed exchange remains fully present in request projection; only completely processed earlier exchanges become summary-covered. The newest exchange and unsettled evidence stay in full.
+- New compaction output uses a 12,000-byte raw UTF-8 bound and a 16,000-byte JSON-encoded carry bound. This leaves room for a following fragment even when summaries contain quotes, backslashes or control characters. Ordinary response generation remains uncapped. Historical records keep their original 32,000-byte validation bound; an oversized or escaping-heavy active legacy summary is retained and explicitly rebuilt from originals.
+- v1 metadata migrates only on an explicit append. v2 retains up to 64 current and 2,048 archived attempts, with a 32 MiB compaction-metadata bound and encoded output space reserved before dispatch. Every archived record is preserved in storage/export/import; the active record stays current. Reaching a count or byte bound stops new admission without deleting anything. The existing 256 MiB chat snapshot and 128 MiB backend receipt-store bounds also remain.
+- The Chat caller must use append(chat, job) inside its existing structural CAS, operationMessage(chat, job) for the post-activation notice, and stepHint for the Compact control titles. Other compaction APIs remain compatible. Cold inspection never starts a request; the next explicit Compact continues the saved cursor.
 - Failed-startup inspection no longer depends on model readiness. Native list/review still checks signed transport, owner admission, result shape and authorization. Showing an existing saved continuation remains history-only. Preparing a new continuation requires the UI's actual Coding readiness and the backend's current profile checks, with separate native confirmations.
 
 ## Fixture coverage
 
 | Fixture | Checks | Scope |
 |---|---:|---|
-| manual-check.mjs | 19 | Actual ChatRuns owner, finite tool-free summary dispatch, persistence/Stop, source and result binding |
+| manual-check.mjs | 22 | Actual ChatRuns owner, tool-free dispatch, persistence/Stop, UTF-8/encoded carry limits, ordinary uncapped output and historical v5 compatibility |
+| chunked-check.mjs | 33 | Exact fragment reconstruction, partial projection, cold cursor resume, legacy/escaped summary restart, archive count/byte bounds, import/export and source races |
 | ui-handler-check.mjs | 6 | Actual slash-command interception and draft/attachment preservation |
 | review-r2-check.mjs | 23 | Real outbound handler, admission gaps, Stop, source edits during SHA/prepare, unsettled evidence preservation |
 | state-races-check.mjs | 29 | Actual helper/render/CAS/rebuild code in a capability-free VM |
@@ -31,7 +35,7 @@ The browser fixture opens no listening socket. Browser requests are intercepted 
 
 ## Qualification limits and fixture corrections
 
-These checks do not measure summary quality, model performance, installed application behavior or an integrated native build. They do not implement automatic compaction, a tokenizer-based context meter, partial-exchange compaction or Coding history compaction.
+These checks do not measure summary quality, model performance, installed application behavior or an integrated native build. They do not implement automatic compaction, a tokenizer-based context meter or Coding history compaction. The model summary itself remains derived and potentially lossy: these checks prove supplied-fragment coverage and retained provenance, not semantic completeness. Partial exchanges can be processed over several rounds, but remain fully projected until their final fragment is summarized.
 
 Initial browser adaptation attempts failed before qualification: mapping the dependency resolver back to the same source recursed; normal realpath resolution could not find a nested SDK dependency. The final runner uses Node's --preserve-symlinks with the owned dependency tree.
 
@@ -57,3 +61,12 @@ The outside-tab CAS case previously treated observing fake-provider dispatch as 
 - Candidate verification: `/Users/saleh/Documents/Noiee/worktrees/compaction/.artifacts/compaction/browser-cas-ready-20261107T014046Z-4e439729/RESULT.json`, SHA256 `67148b2de29da5c1077854b4798dbb5fa4fe35ba7d7c8fb5fd4b7289f7d2fdac`. All13 browser cases passed with current production source unchanged. One actual durable running/revision2 observation was delivered during the first save; confirmations were `[false,true]`. All original outside-tab conflict, retained metadata/draft, explicit Apply and inference-count assertions passed.
 
 The committed fixture waits for the exact newly admitted run's persisted running revision and exact draft, then requires a positively confirmed stable save before injecting the external CAS change. It keeps a bounded timeout and the exact CAS assertions. No production guard is changed, no false acknowledgement counts as success, and the diagnostic observer/interleaving hooks are not shipped.
+
+
+### Build174 result and fixture correction
+
+The initial new chunk fixture run retained six failed comparisons caused by cross-realm object prototypes in the capability-free VM. The comparison operands now use host structuredClone normalization; no product guard or behavioral assertion was relaxed. The retained trial is .artifacts/compaction174-trial-77414d3406/RESULT.json.
+
+Independent review found that raw UTF-8 limits alone did not account for JSON escaping. Both carry admission and the metadata reservation now budget encoded bytes. Regression cases cover 12,000 backslashes/quotes, control-character expansion, a carry exactly at the encoded ceiling and activation near the actual 32 MiB metadata bound.
+
+The final local runner passed all 151 checks with all source files unchanged. Its source-pinned receipt is .artifacts/compaction/runs/20261107T045128Z-2493f4ef/RESULT.json, SHA256 c1302d7e898fd1007b01b4b4c606d72cfea2b87a46a0dfccc79cdcadcd74660a. Chat caller integration and fresh native oversized-exchange/cold-resume acceptance remain separate gates owned by the integrating release.
