@@ -388,6 +388,30 @@ class WorkflowResults(unittest.TestCase):
             with self.subTest(changes=changes), self.assertRaises(RuntimeError):
                 qualify.named_check_result(self.named(**changes), "coding-goals")
 
+    def engine(self, **changes):
+        checks = ["generated guarded dispatch", "coding-engine checks passed",
+                  "coding-engine error scope checks passed"]
+        value = {"name": "coding-engine", "fullSuite": True,
+                 "passed": len(checks), "checks": checks}
+        value.update(changes)
+        return self.named(**value)
+
+    def test_engine_result_retains_fresh_completed_group_count(self):
+        count, extra = qualify.engine_check_result(self.engine())
+        self.assertEqual(count, 3)
+        self.assertEqual(len(extra["assertions"]), 3)
+        self.assertIs(extra["fullSuite"], True)
+
+    def test_engine_result_refuses_partial_or_untyped_completion(self):
+        for full in (False, None, 1, "true"):
+            with self.subTest(full=full), self.assertRaisesRegex(RuntimeError, "complete shared-engine"):
+                qualify.engine_check_result(self.engine(fullSuite=full))
+
+    def test_engine_result_refuses_truncated_harness_or_cleanup(self):
+        for marker in ("coding-engine checks passed", "coding-engine error scope checks passed"):
+            with self.subTest(marker=marker), self.assertRaisesRegex(RuntimeError, "complete shared-engine"):
+                qualify.engine_check_result(self.engine(passed=1, checks=[marker]))
+
     def submission(self, browser=False, **changes):
         value = {"passed": True, "installedAppTouched": False}
         if browser:

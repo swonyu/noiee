@@ -16,6 +16,11 @@ let module;
 try { module = await import('./coding-engine.mjs'); } catch {}
 assert.equal(typeof module?.CodingEngine, 'function', 'CodingEngine must exist');
 const { CodingEngine:NativeCodingEngine } = module;
+const completedGroups=[];
+function reportGroup(name){
+  assert.equal(typeof name,'string');assert(name.trim());assert(!completedGroups.includes(name),'Completed regression groups must be unique');
+  completedGroups.push(name);console.log(name);
+}
 // Filesystem work below simulates the native helper contract; Swift owns race-safe syscalls.
 async function fakeTemporaryOperation(action,input) {
   if(action==='create'){
@@ -28,15 +33,15 @@ async function fakeTemporaryOperation(action,input) {
   if(action==='verify')return {verified:true};
   assert.equal(action,'remove');await rm(input.path,{recursive:true});return {removed:true};
 }
-const localModels={async resolve(id,{effort}){return {id,generation:{max_tokens:effort==='high'?32768:2048,reasoning_effort:effort}};}};
+const localModels={async resolve(id,{effort}){return {id,contextLength:65536,generation:{max_tokens:effort==='high'?32768:2048,reasoning_effort:effort}};}};
 class CodingEngine extends NativeCodingEngine {constructor(options){super({temporaryOperation:fakeTemporaryOperation,localModels,...options});}}
 const root = await realpath(await mkdtemp(join(tmpdir(), 'coding-check-')));
 const children = [], calls = [];
 const projectLayers = new Map();
 const tick = () => new Promise(resolve => setImmediate(resolve));
 const waitFor=async(predicate)=>{for(let i=0;i<100&&!predicate();i++)await new Promise(r=>setTimeout(r,5));};
-const localConfig = {model:'qwen3.8-27b-uncensored-hauhaucs-aggressive-mtp',model_provider:'saleh_local',approval_policy:'on-request',approvals_reviewer:'user',sandbox_mode:'workspace-write',web_search:'disabled',features:{hooks:false,apps:false,remote_plugin:false,shell_snapshot:false,memories:false,default_mode_request_user_input:true,multi_agent:true,multi_agent_v2:{enabled:true,max_concurrent_threads_per_session:3,expose_spawn_agent_model_overrides:false}},sandbox_workspace_write:{network_access:false},shell_environment_policy:{exclude:['SALEH_CODING_CLOUD_KEY']}};
-const handoffInstructions='You are a coding assistant in Saleh Uncensored. Work in the selected project. Read applicable project instructions. Preserve user work. Use the available tools to inspect, edit, and verify requested changes. Request approval when required. Report actual results and unresolved failures accurately. Never claim tests or actions ran without tool evidence. The current TMPDIR environment variable identifies app-owned scratch space; use it for temporary files and do not commit that directory.';
+const localConfig = {model:'qwen3.8-27b-uncensored-hauhaucs-aggressive-mtp',model_provider:'saleh_local',approval_policy:'on-request',approvals_reviewer:'user',sandbox_mode:'workspace-write',web_search:'disabled',features:{goals:false,hooks:false,apps:false,remote_plugin:false,shell_snapshot:false,memories:false,default_mode_request_user_input:true,multi_agent:true,multi_agent_v2:{enabled:true,max_concurrent_threads_per_session:3,expose_spawn_agent_model_overrides:false}},sandbox_workspace_write:{network_access:false},shell_environment_policy:{exclude:['SALEH_CODING_CLOUD_KEY']}};
+const handoffInstructions='You are a coding assistant in Noiee. Work in the selected project. Read applicable project instructions. Preserve user work. Use the available tools to inspect, edit, and verify requested changes. Request approval when required. Report actual results and unresolved failures accurately. Never claim tests or actions ran without tool evidence. The current TMPDIR environment variable identifies app-owned scratch space; use it for temporary files and do not commit that directory.';
 function spawnFake(binary, args, options) {
   const child = new EventEmitter();
   Object.assign(child, { stdout:new PassThrough(), stderr:new PassThrough(), killed:false, calls:[], options, args });
@@ -64,7 +69,7 @@ function spawnFake(binary, args, options) {
       if(q.method==='environment/status')result={status:child.environmentStatuses?.[q.params.environmentId]??(q.params.environmentId==='remote'?'ready':'unknown')};
       if(q.method==='environment/info')result={shell:{name:'zsh',path:child.executorShell??'/bin/zsh'},cwd:'file:///private/var/empty'};
       if(q.method==='config/read') result={config:args.includes('sandbox_mode="read-only"')?{...localConfig,approval_policy:'never',sandbox_mode:'read-only',features:{...localConfig.features,default_mode_request_user_input:false,multi_agent:false,multi_agent_v2:{...localConfig.features.multi_agent_v2,enabled:false}}}:localConfig, layers:projectLayers.get(q.params.cwd)==='missing'?undefined:projectLayers.get(q.params.cwd)??[]};
-      if(q.method==='config/read')result.config={...result.config,features:{...result.config.features,plugins:child.pluginConfigFault==='missing'?undefined:child.pluginConfigFault==='enabled'||!args.includes('features.plugins=false')}};
+      if(q.method==='config/read')result.config={...result.config,features:{...result.config.features,goals:!args.includes('features.goals=false'),plugins:child.pluginConfigFault==='missing'?undefined:child.pluginConfigFault==='enabled'||!args.includes('features.plugins=false')}};
       if(q.method==='config/read'&&options.env.SALEH_CODING_LOCAL_KEY)result.config={...result.config,model_providers:{saleh_local:{env_key:child.relayConfigFault==='provider'?'WRONG_KEY':'SALEH_CODING_LOCAL_KEY'}},shell_environment_policy:{exclude:child.relayConfigFault==='exclusion'?['SALEH_CODING_CLOUD_KEY']:['SALEH_CODING_LOCAL_KEY','SALEH_CODING_CLOUD_KEY']}};
       if(q.method==='configRequirements/read') result={requirements:null};
       if(q.method==='account/read') result={account:null};
@@ -162,7 +167,7 @@ for(const mode of ['valid','provider','exclusion']){
     else await assert.rejects(e.ensure(),/Local relay credential isolation/);
   }finally{await e.close();}
 }
-console.log('PASS relay auth uses an environment key, excludes command access, and rejects unverifiable provider/exclusion config');
+reportGroup('PASS relay auth uses an environment key, excludes command access, and rejects unverifiable provider/exclusion config');
 checks: {
 try {
   // Stop must revoke a submission already past model lookup, even after the
@@ -215,7 +220,7 @@ try {
       assert.equal(e.admissions.size,0);assert.equal(child.killed,false);
     }finally{release?.();await e.close();}
   }
-  console.log('PASS admission Stop: 16 held send/review/fork cases plus 4 terminal dispatch fences; selected/global cancellation; fresh requests and peers');
+  reportGroup('PASS admission Stop: 16 held send/review/fork cases plus 4 terminal dispatch fences; selected/global cancellation; fresh requests and peers');
   if(process.argv.includes('--admission-stop-only'))break checks;
   // Follow-up readiness must agree with send admission, even when saved history
   // becomes terminal before its live completion event. Native frequency is unproven.
@@ -272,7 +277,7 @@ try {
       assert.equal(e.runs.size,0);assert.equal(e.startedTurns.size,0);
     }finally{await e.close();await pending;}
   }
-  console.log('PASS follow-up readiness: terminal history, exact completion, trusted dispatch, unrelated root, reservation, and proof invalidation');
+  reportGroup('PASS follow-up readiness: terminal history, exact completion, trusted dispatch, unrelated root, reservation, and proof invalidation');
   // Synthetic child history can lead its live completion event. Every recorded
   // descendant, including an unacknowledged reservation, must still block a follow-up.
   for(const scenario of ['idle','run','reservation','started','grandchild','unrelated','completed','wrong-completion','proof-invalidated']){
@@ -308,7 +313,7 @@ try {
       assert.equal(result.turn.id,'followup-family-control');
     }finally{await e.close();}
   }
-  console.log('PASS follow-up descendant readiness: live run, null reservation, started-only, grandchild, exact and wrong completion, unrelated root, and final proof invalidation');
+  reportGroup('PASS follow-up descendant readiness: live run, null reservation, started-only, grandchild, exact and wrong completion, unrelated root, and final proof invalidation');
   // Trusted fork input is private, complete and pinned; public requests still expose only an ID.
   {
     assert.equal(typeof engine.forkFromSnapshot,'function','Trusted fork-from-snapshot operation must exist');
@@ -323,7 +328,7 @@ try {
       await e.ensure();const child=e.child;child.nextThreadId='independent-fork';
       const result=await e.forkFromSnapshot({...input,onCreated:async t=>{committed=t.id;assert(e.admissions.size);}});
       assert.equal(committed,'independent-fork');assert.equal(result.thread.forkedFromId,source.id);assert(e.verifiedThreads.has(committed));assert.equal(e.admissions.size,0);
-      const call=child.calls.find(q=>q.method==='thread/fork');assert(call);assert.equal(call.params.path,path);assert.equal(call.params.deferGoalContinuation,true);assert.equal(call.params.ephemeral,false);assert.equal(call.params.excludeTurns,true);assert.equal(call.params.baseInstructions,handoffInstructions);assert.deepEqual(call.params.runtimeWorkspaceRoots,[root]);assert.equal(call.params.config['web_search'],'disabled');assert.equal(call.params.config['features.hooks'],false);assert.equal(call.params.config['features.plugins'],false);assert.equal(child.calls.filter(q=>['turn/start','review/start','command/exec'].includes(q.method)).length,0);
+      const call=child.calls.find(q=>q.method==='thread/fork');assert(call);assert.equal(call.params.path,path);assert.equal(call.params.deferGoalContinuation,true);assert.equal(call.params.ephemeral,false);assert.equal(call.params.excludeTurns,true);assert.equal(call.params.baseInstructions,handoffInstructions);assert.deepEqual(call.params.runtimeWorkspaceRoots,[root]);assert.equal(call.params.config['web_search'],'disabled');assert.equal(call.params.config['features.hooks'],false);assert.equal(call.params.config['features.plugins'],false);assert.equal(call.params.config['features.goals'],false);assert.equal(child.calls.filter(q=>['turn/start','review/start','command/exec'].includes(q.method)).length,0);
       const before=child.calls.filter(q=>q.method==='thread/fork').length;
       for(const bad of [{source:{...source,id:'wrong-source'}},{sha256:'0'.repeat(64)},{identity:{dev:input.identity.dev,ino:'0'}},{path:join(home,'sessions','fork.jsonl')},{source:{...source,model:null}},{source:{...source,model:'invalid\nmodel'}},{onCreated:null}])await assert.rejects(e.forkFromSnapshot({...input,onCreated:async()=>{},...bad}),/fork|snapshot|profile|callback|model|session header/i);
       assert.equal(child.calls.filter(q=>q.method==='thread/fork').length,before);
@@ -356,7 +361,7 @@ try {
 
     }finally{await e.close();}
     const reader=new CodingEngine({dataDir:home,historyOnly:true});try{await assert.rejects(reader.forkFromSnapshot({...input,onCreated:async()=>{}}),/History-only/);}finally{await reader.close();}
-    console.log('coding-engine snapshot fork checks passed');
+    reportGroup('coding-engine snapshot fork checks passed');
   }
   if(process.argv.includes('--fork-only'))break checks;
   function commandPeer(callbacks,{waitReady=false}={}) {
@@ -476,8 +481,8 @@ try {
     }finally{await e.close();}
   }
   assert.throws(()=>new CodingEngine({executor:{...executorBinding(),url:'ws://example.com'}}),/secure|loopback/i);
-  console.log('executor owner atomic startup checks passed');
-  console.log('executor command engine checks passed');
+  reportGroup('executor owner atomic startup checks passed');
+  reportGroup('executor command engine checks passed');
   if(process.argv.includes('--commands-only'))break checks;
 
   assert.equal(typeof module.CodingEvents,'function','Shared event journal must exist');
@@ -563,7 +568,7 @@ try {
       for(const invalid of [-1,1.5,journal.sequence+1,'0'])assert.throws(()=>journal.read(invalid),/cursor/);
     } finally {for(const owner of owners)await owner.close();}
   }
-  console.log('shared coding event and history cursor checks passed');
+  reportGroup('shared coding event and history cursor checks passed');
   if(process.argv.includes('--events-only'))break checks;
 
   {
@@ -584,6 +589,7 @@ try {
       await reader.ensure();const c=reader.child;assert(c);assert.equal(credentials,0);assert.equal(reader.relay,null);assert(!reader.processLife.commands);
       for(const key of ['HOME','CODEX_HOME','ZDOTDIR'])assert.equal(c.options.env[key],home);assert(!c.options.env.CODEX_EXEC_SERVER_URL);assert(!c.options.env.SALEH_CODING_CLOUD_KEY);
       assert(c.args.includes('features.plugins=false'),'History reader must disable plugin startup before launch');
+      assert(c.args.includes('features.goals=false'),'History reader must disable native Goal continuation before launch');
       assert(c.args.includes('sandbox_mode="read-only"'));assert(c.args.includes('approval_policy="never"'));assert(c.args.includes('model_providers.saleh_local.base_url="http://127.0.0.1:9/v1"'));
       c.threads=new Map([['saved-root',{id:'saved-root',cwd:root,model:'fixture-cloud-model',modelProvider:'saleh_cloud',historyMode:'legacy',status:{type:'active'},turns:[]}],['saved-child',{id:'saved-child',parentThreadId:'saved-root',cwd:root,model:'fixture-cloud-model',modelProvider:'saleh_cloud',historyMode:'legacy',turns:[]}]]);
       const saved=await reader.handle({action:'read',threadId:'saved-root'});assert(JSON.stringify(saved.thread).includes('saved partial reply'));
@@ -618,7 +624,7 @@ try {
     const script=`import {CodingEngine} from ${JSON.stringify(new URL('./coding-engine.mjs',import.meta.url).href)};const e=new CodingEngine({dataDir:${JSON.stringify(fifoHome)},historyOnly:true});await e.loadPartialHistory();if(!e.historyBlocked)process.exitCode=2;await e.close();`;
     const fifoResult=await promisify(execFile)(process.execPath,['--input-type=module','-e',script],{timeout:1500,killSignal:'SIGKILL'}).then(()=>({passed:true}),error=>({passed:false,killed:error.killed,error:error.message}));assert.equal(fifoResult.passed,true,JSON.stringify(fifoResult));assert((await lstat(fifoPath)).isFIFO());
   }
-  console.log('native history-only reader checks passed');
+  reportGroup('native history-only reader checks passed');
   if(process.argv.includes('--history-only'))break checks;
   assert.equal(typeof module.CodingProjects,'function','Coding owners require one shared project admission authority');
   {
@@ -672,7 +678,7 @@ try {
       let claimed=false;await a.runScheduled({cwd:other,prompt:'checked retirement before schedule',onClaim:async()=>{claimed=true;throw new Error('Bounded fixture stops at claim');}});assert(claimed,'A closed, settled peer must retire after its final admission unwinds, without needing an unrelated Git reservation');
     }finally{lease?.release();await a.close();await b.close();}
   }
-  console.log('shared coding project admission checks passed');
+  reportGroup('shared coding project admission checks passed');
   if(process.argv.includes('--projects-only'))break checks;
   for(const beforeReply of [true,false]){
     const e=new CodingEngine({dataDir:join(root,'review-'+beforeReply),binary:'/fake/codex',spawnProcess:spawnFake,localBaseURL:'http://127.0.0.1:1234/v1'});
@@ -739,7 +745,7 @@ try {
       c.emitMessage({method:'turn/completed',params:{threadId:'thread-1',turn:{id:next.turn.id,status:'completed',items:[]}}});
     }finally{await e.close();}
   }
-  console.log('coding-engine review identity checks passed (9 ordering, Stop, timeout and terminal-reply cases, exact approval decline, late-event protection)');
+  reportGroup('coding-engine review identity checks passed (9 ordering, Stop, timeout and terminal-reply cases, exact approval decline, late-event protection)');
   if(process.argv.includes('--review-only'))break checks;
   {
     const cwd=join(root,'retained-scratch-project');await mkdir(cwd);
@@ -752,7 +758,7 @@ try {
     assert(e.events.some(event=>event.method==='coding/error'&&event.params.message.includes(entry.path)&&/descendant.*unconfirmed/i.test(event.params.message)));
     assert.match(e.message,/Fixture idle engine failure\./,'Scratch retention must not replace the original engine failure');
     assert.match(e.events.at(-1).params.message,/Fixture idle engine failure\./,'The latest UI error must retain the original cause');await e.close();
-    console.log('coding-engine scratch retention after engine exit passed');
+    reportGroup('coding-engine scratch retention after engine exit passed');
     if(process.argv.includes('--temporary-retention-only'))break checks;
   }
   {
@@ -816,7 +822,7 @@ try {
           else{const result=await after;assert.deepEqual(result.members,snapshot.members.map(t=>({...t,cwd:mode==='finish'?destination:source})));assert.equal(e.handoffFor('move-root'),undefined);assert(!child.calls.slice(before).some(q=>q.method==='turn/start'));}
         }finally{lease?.release();await e.close();}
       }
-      console.log('PASS: native filesystem proof admits only the exact retained header across mount epochs; original family fingerprints, final Restore/Finish, and no-turn behavior stay exact');break checks;
+      reportGroup('PASS: native filesystem proof admits only the exact retained header across mount epochs; original family fingerprints, final Restore/Finish, and no-turn behavior stay exact');break checks;
     }
     // Let the real RPC timer expire while the subprocess can still change metadata.
     const timeoutCases=[...['relocate','recover'].flatMap(route=>[
@@ -866,7 +872,7 @@ try {
           child.emitMessage({method:'thread/started',params:{thread:{...child.threads.get(threadId),cwd:destination}}});
           await tick();assert.equal(e.sequence,before);assert.equal(e.handoffFor(threadId),fence);assert.equal(fence.exitUnconfirmed,true);assert.equal(e.loaded.size,0);assert.equal(e.threadInfo.size,0);
           await assert.rejects(e.stopHandoff(fence,{snapshot,lease}),/Stop|process|lifecycle|cancel/i);
-          console.log(`handoff-timeout ${route} ${method} ${threadId} ${unknownExit?'unconfirmed exit retained':'confirmed exit'} passed`);
+          reportGroup(`handoff-timeout ${route} ${method} ${threadId} ${unknownExit?'unconfirmed exit retained':'confirmed exit'} passed`);
         }finally{releaseStop?.();clearTimeout(child.handoffDelay?.timer);if(!child.exited)child.emit('exit',0,null);lease?.release();await e.close();}
       }
       {
@@ -879,11 +885,11 @@ try {
           for(const id of child.deferredReads.keys())await assert.rejects(e.rpc('thread/read',{threadId:id,includeTurns:false},20),/timed out/);
           assert.equal(child.killed,false);assert.equal(e.epoch,epoch);assert.equal(e.processLife,life);assert.notEqual(fence.exitUnconfirmed,true);assert.equal(e.runs.get('move-peer'),'peer-running');
           child.deferredReads=null;release();await work;assert.equal(e.handoffFor('move-root'),undefined);assert.equal(child.killed,false);
-          console.log('handoff-timeout read-only selected and unrelated timeouts preserve execution passed');
+          reportGroup('handoff-timeout read-only selected and unrelated timeouts preserve execution passed');
         }finally{release?.();lease?.release();await e.close();}
       }
     }finally{clearInterval(timerKeepAlive);}
-    if(process.argv.includes('--handoff-timeout-only')){console.log('coding-engine handoff timeout checks passed');break checks;}
+    if(process.argv.includes('--handoff-timeout-only')){reportGroup('coding-engine handoff timeout checks passed');break checks;}
     // The manager's terminal callback must commit while the selected family is still fenced.
     for(const route of ['relocate','recover'])for(const mode of ['success','callback-failure','stop','committed-stop','lease-released','checkpoint-stop','invalid-null','invalid-object']){
       const {e,child}=await make();let lease,release;
@@ -936,7 +942,7 @@ try {
         assert.equal(child.killed,false,'Completion preserves the shared peer process');
       }finally{release?.();lease?.release();await e.close();}
     }
-    console.log('family completion callback checks passed (16 cases)');
+    reportGroup('family completion callback checks passed (16 cases)');
     for(const state of ['all-archived','partial-archive','mixed'])for(const target of [source,destination]){
       const {e,child}=await make();let lease;try{
         const snapshot=await e.prepareHandoff('move-root'),intents=[];lease=await e.reserveProjectMutation(async()=>[source,destination]);
@@ -1089,7 +1095,7 @@ try {
       const after=await moved;
       assert.equal(after.cwd,destination);assert.deepEqual(after.members.map(t=>[t.id,t.archived,t.lastTurnId]),snapshot.members.map(t=>[t.id,t.archived,t.lastTurnId]));
       assert.equal(phases.at(-1),'family-verified');assert(phases.indexOf('family-unloaded')<phases.indexOf('family-transfer-intent'));assert(phases.indexOf('family-transferred')<phases.indexOf('family-resume-intent'));
-      for(const q of child.calls.filter(q=>q.method==='thread/resume')){assert(q.params.baseInstructions.includes('current TMPDIR environment variable'));assert(!q.params.baseInstructions.includes('/.saleh-coding-tmp-'));assert.deepEqual(q.params.runtimeWorkspaceRoots,[destination]);assert.equal(q.params.model,handoffModel);}
+      for(const q of child.calls.filter(q=>q.method==='thread/resume')){assert(q.params.baseInstructions.includes('current TMPDIR environment variable'));assert(!q.params.baseInstructions.includes('/.saleh-coding-tmp-'));assert.deepEqual(q.params.runtimeWorkspaceRoots,[destination]);assert.equal(q.params.model,handoffModel);assert.equal(q.params.config['features.goals'],false,'Handoff resumes must retain disabled native Goals');}
       assert.equal((await e.resolveFamily('move-archived')).root.id,'move-root');assert.equal((await e.thread('move-root')).cwd,destination);assert.equal(child.threads.get('move-peer').cwd,peer);
       assert.deepEqual(await e.prepareHandoff('move-root'),after,'A second handoff can be prepared immediately despite stale catalog cwd and no intervening turn');
       assert.throws(()=>e.checkHandoffAuthority(destination,bound,{snapshot,lease}),/handoff/i,'Completed authority cannot be reused');
@@ -2004,6 +2010,7 @@ EOF`});
   assert.equal(started.thread.id,'thread-1');
   const child=children.at(-1);
   assert(child.args.includes('features.plugins=false'),'Execution engine must disable plugin startup before launch');
+  assert(child.args.includes('features.goals=false'),'Execution engine must disable native Goal continuation before launch');
   assert.equal(child.options.cwd,'/private/var/empty','the app-server must not inherit an ambient writable data directory');
   assert.equal(child.options.env.CODEX_HOME,join(root,'state'));
   assert.equal(child.options.env.CODEX_SQLITE_HOME,undefined);
@@ -2019,6 +2026,7 @@ EOF`});
   assert(calls.some(q=>q.method==='skills/config/write'&&q.params.enabled===false));
   const start=calls.find(q=>q.method==='thread/start').params;
   assert.equal(start.config['features.plugins'],false,'Thread starts must retain disabled plugin startup');
+  assert.equal(start.config['features.goals'],false,'Thread starts must retain disabled native Goals');
   assert.equal(start.model,localConfig.model);assert.equal(start.modelProvider,'saleh_local');
   assert.equal(start.approvalPolicy,'on-request');assert.equal(start.sandbox,'workspace-write');
   assert.equal(start.approvalsReviewer,'user');
@@ -2431,8 +2439,11 @@ EOF`});
   const escaped=join(root,'outside-receipt.jsonl');await writeFile(escaped,JSON.stringify(receiptRecords[0])+'\n');
   const link=join(receiptHome,'sessions','escape.jsonl');await symlink(escaped,link);children.at(-1).thread.path=link;
   await assert.rejects(receiptEngine.handle({action:'read',threadId:'thread-1'}),/outside|rollout/i);await receiptEngine.close();
-  console.log('coding-engine checks passed');
+  reportGroup('coding-engine checks passed');
 } finally {await engine.close();await rm(root,{recursive:true,force:true,maxRetries:3,retryDelay:20});}
 }
 
 const errorScopeEngine=new CodingEngine({dataDir:'/tmp/saleh-error-scope-check'});errorScopeEngine.runs.set('only-thread','only-turn');errorScopeEngine.fail(new Error('Fixture scope'));assert.deepEqual(errorScopeEngine.events.at(-1).params.turns,[{threadId:'only-thread',turnId:'only-turn'}]);await errorScopeEngine.close();
+
+reportGroup('coding-engine error scope checks passed');
+console.log(JSON.stringify({schemaVersion:1,name:'coding-engine',fullSuite:process.argv.slice(2).length===0,passed:completedGroups.length,failed:0,checks:completedGroups}));

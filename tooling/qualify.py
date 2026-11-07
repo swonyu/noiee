@@ -33,7 +33,7 @@ SCOPES = {
     "model-stabilization": "Generated inventories, in-memory model/engine routing and real headless browser pages with every request and native call faked. No live model.",
     "startup-diagnostics": "Compiled current startup diagnostics with generated processes, configuration and sockets; generated build and backup-inventory fixtures.",
     "presentation": "Current Chat/Tasks rendering, shared command palette, tool-authority labels and delegated-result views in fresh headless browsers, plus generated receipt/state cases. Requests and native calls are faked; no inference or original browser profile.",
-    "goals": "Generated durable Goal state and guarded dispatch cases, plus fresh headless Tasks UI fixtures. Fake engine callbacks and requests; no live Codex, model or original stores.",
+    "goals": "Generated durable Goal state, full shared-engine regression and guarded dispatch cases, plus fresh headless Tasks UI fixtures. Fake engine callbacks and requests; no live Codex, model or original stores.",
     "submission-origin": "Generated Chat receipt checks and headless browser input-origin, composition and duplicate-submit cases with fake streaming upstream. Temporary receipts and IndexedDB only; no installed app, native accessibility or live model.",
     "mcp-skills": "Fresh generated MCP lifecycle/recovery and project-skills native, Agent and UI checks. Fake transports; no original stores.",
     "fetch": "Dependent installer, native, guard, durable, UI, admission and recovery fixtures. Only generated bundled payload copies; no external install.",
@@ -170,6 +170,15 @@ def named_check_result(text, name):
             and type(row.get("failed")) is int and row["failed"] == 0,
             name + " assertions did not all complete")
     return len(checks), {"assertions": checks}
+
+def engine_check_result(text):
+    count, extra = named_check_result(text, "coding-engine")
+    row = next(row for row in parse_json_lines(text) if row.get("name") == "coding-engine")
+    require(row.get("fullSuite") is True
+            and all(name in extra["assertions"] for name in (
+                "coding-engine checks passed", "coding-engine error scope checks passed")),
+            "The complete shared-engine regression fixture must finish and clean up")
+    return count, {**extra, "fullSuite": True}
 
 def submission_result(text, browser=False):
     rows = [row for row in parse_json_lines(text)
@@ -469,6 +478,8 @@ class Suite:
             self.case("coding-parity", node("source/coding-ui-check.mjs") + ["--coding-parity-only"],
                       coding_parity)
         elif name == "goals":
+            self.case("coding-engine-regressions", node("source/coding-engine-check.mjs"),
+                      engine_check_result)
             self.case("goals-state-and-guards", node("source/coding-goals-check.mjs"),
                       lambda text: named_check_result(text, "coding-goals"))
             self.case("goals-ui", node("source/coding-goals-ui-check.mjs"),
