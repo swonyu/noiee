@@ -418,7 +418,7 @@ struct NoieeStartupLifecycle {
         switch phase {
         case .idle, .paused: return .restart
         case .ready, .failed: return .present
-        default: return .none
+        default: return ResumeAction.none
         }
     }
     mutating func completeQuit(_ ticket: UUID) -> Bool {

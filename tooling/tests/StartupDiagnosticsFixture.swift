@@ -246,6 +246,26 @@ struct StartupFixture {
             check(state.cancelQuit(again) == nil && state.beginNavigation(generation: 0) == nil, "successful closure rejects cancellation and presentation")
         }
 
+        do {
+            var state = NoieeStartupLifecycle()
+            let start = state.beginStartup()!
+            let earlyQuit = state.beginQuit()!
+            let preflightResume = state.cancelQuit(earlyQuit)
+            check(preflightResume == .some(NoieeStartupLifecycle.ResumeAction.none) &&
+                  !state.quitting && state.phase == .preflight,
+                  "cancelling an active preflight returns a non-nil no-restart response")
+            check(state.continuePreflight(start) && state.authorizeBackendLaunch(start) &&
+                  state.beginStartup() == nil,
+                  "preflight cancellation retains the same launch authority without duplication")
+            let warmQuit = state.beginQuit()!
+            let backendResume = state.cancelQuit(warmQuit)
+            check(backendResume == .some(NoieeStartupLifecycle.ResumeAction.none) &&
+                  !state.quitting && state.phase == .backend && state.beginStartup() == nil,
+                  "cancelling backend readiness returns a non-nil no-restart response")
+            check(state.markReady(start),
+                  "backend cancellation preserves the existing process readiness generation")
+        }
+
         print("{\"passed\":\(checks),\"failed\":0,\"appLaunches\":0,\"modelRequests\":0,\"originalStoreActions\":0,\"scope\":\"generated process, socket, config, lifecycle-race and support-report fixtures\"}")
     }
 }
