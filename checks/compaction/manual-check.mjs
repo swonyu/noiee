@@ -9,6 +9,8 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {randomUUID,createHash,webcrypto} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
+import {homedir} from 'node:os';
+import {join} from 'node:path';
 import {syncBuiltinESMExports} from 'node:module';
 const HERE=fileURLToPath(new URL('.',import.meta.url)).replace(/\/$/,''),SOURCE=fileURLToPath(new URL('../../source/',import.meta.url)).replace(/\/$/,'');
 const effects={network:0,childProcess:0,originalStore:0};
@@ -18,12 +20,19 @@ net.Socket.prototype.connect=deny('network');globalThis.fetch=deny('network');gl
 const originalPrefixes=['/Users/saleh/Applications/','/Users/saleh/Library/Application Support/Qwen Local','/Users/saleh/Library/Application Support/Saleh Uncensored','/Users/saleh/Library/Application Support/Noiee','/Users/saleh/Library/WebKit/','/Users/saleh/Library/HTTPStorages/','/Users/saleh/Library/Preferences/'];
 for(const [target,names]of [[fs,['readFileSync','openSync']],[fsp,['readFile','open','mkdir','rename','writeFile']]])for(const name of names){const old=target[name].bind(target);target[name]=(path,...args)=>{if(originalPrefixes.some(p=>String(path).startsWith(p)))return deny('originalStore')();return old(path,...args);};}
 syncBuiltinESMExports();
+// Documents receives asynchronous macOS provenance xattrs that change ctime.
+// Generated receipt stores belong in private Caches; logs stay in .artifacts.
+const cacheParent=await fsp.realpath(join(homedir(),'Library','Caches'));
+const generatedDataRoot=await fsp.mkdtemp(join(cacheParent,'NoieeCompaction172-manual-'));
+assert.equal(await fsp.realpath(generatedDataRoot),generatedDataRoot);
+assert.equal((await fsp.lstat(generatedDataRoot)).mode&0o077,0);
+console.log(JSON.stringify({fixtureDataRoot:generatedDataRoot,source:SOURCE}));
 const {ChatRuns,chatRunDigest}=await import(SOURCE+'/chat-runs.mjs');
 const passed=[],fixtureRoots=[];async function test(name,fn){await fn();passed.push(name);console.log('PASS '+name);}
 const sha=value=>createHash('sha256').update(value).digest('hex');
 const until=async fn=>{for(let n=0;n<400;n++){const value=await fn();if(value)return value;await new Promise(r=>setTimeout(r,5));}throw Error('Fixture did not settle');};
 async function fixture({failFinal=false,hold=false,wrongModel=false,response='summary',finish='stop'}={}){
- const root=await fsp.mkdtemp(fileURLToPath(new URL('../../.artifacts/compaction/owner-',import.meta.url))),directory=root+'/runs',generation=randomUUID(),requests=[],inference=new Set(),started=new Set();fixtureRoots.push(root);
+ const root=await fsp.mkdtemp(join(generatedDataRoot,'owner-')),directory=root+'/runs',generation=randomUUID(),requests=[],inference=new Set(),started=new Set();fixtureRoots.push(root);
  const begin=()=>{const controller=new AbortController(),entry={controller};inference.add(entry);return {controller,accept(){controller.signal.throwIfAborted();},finish(){inference.delete(entry);}};};
  const options={directory,beginInference:begin,admissionGeneration:()=>generation,prepare:async input=>({model:wrongModel?'wrong-model':input.model,messages:input.messages,max_tokens:-1,stream:false,tools:[{type:'function',function:{name:'never_execute'}}],tool_choice:'auto'}),upstream:'http://127.0.0.1:9',fetchImpl:async(url,options)=>{
    assert.equal(url,'http://127.0.0.1:9/v1/chat/completions');requests.push(JSON.parse(options.body));
@@ -58,7 +67,7 @@ await test('a truncated summary stays length and cannot claim completion',async(
  const f=await fixture({finish:'length'});try{const input=f.input();await f.start(input);const value=await f.settled(input.runId);assert.equal(value.run.status,'length');assert.equal(value.persistence,'saved');}finally{await f.close();}
 });
 await test('cold observation of pending compaction never dispatches',async()=>{
- const f=await fixture();try{const input=f.input();await f.start(input);const value=await f.settled(input.runId),root=await fsp.mkdtemp(fileURLToPath(new URL('../../.artifacts/compaction/cold-',import.meta.url))),directory=root+'/runs';fixtureRoots.push(root);await fsp.mkdir(directory,{mode:0o700});const row={...value.run,status:'running',endedAt:null,finishReason:null,error:null};await fsp.writeFile(directory+'/'+input.runId+'.json',JSON.stringify(row),{mode:0o600});let calls=0;const cold=new ChatRuns({...f.options,directory,fetchImpl:async()=>{calls++;throw Error('No replay');}});assert.equal((await cold.inspect(input.runId)).run.status,'unconfirmed');assert.equal(calls,0);}finally{await f.close();}
+ const f=await fixture();try{const input=f.input();await f.start(input);const value=await f.settled(input.runId),root=await fsp.mkdtemp(join(generatedDataRoot,'cold-')),directory=root+'/runs';fixtureRoots.push(root);await fsp.mkdir(directory,{mode:0o700});const row={...value.run,status:'running',endedAt:null,finishReason:null,error:null};await fsp.writeFile(directory+'/'+input.runId+'.json',JSON.stringify(row),{mode:0o600});let calls=0;const cold=new ChatRuns({...f.options,directory,fetchImpl:async()=>{calls++;throw Error('No replay');}});assert.equal((await cold.inspect(input.runId)).run.status,'unconfirmed');assert.equal(calls,0);}finally{await f.close();}
 });
 await test('invalid compaction modes and provenance fail before inference',async()=>{
  const f=await fixture();try{for(const change of [{thinking:'deep'},{kind:'agent',sources:[]},{longOutput:true},{sourceDigest:'bad'},{purpose:'other'},{messages:[{role:'user',content:'one'},{role:'user',content:'two'}]}])await assert.rejects(f.start({...f.input(),...change}),/Invalid|requires/);assert.equal(f.requests.length,0);}finally{await f.close();}
@@ -114,4 +123,4 @@ await test('ordinary import retains foreign compaction metadata without binding 
  const c=vm.createContext({added:[imported],contextCompaction:compact});vm.runInContext(text.slice(a,b),c,{timeout:1000});assert.equal(imported.contextCompactions.activeId,null);assert.equal(imported.contextCompactions.records.length,0);assert.deepEqual(imported.contextCompactions.imports[0],metadata);assert.deepEqual(imported.messages,original.messages);
 });
 assert.deepEqual(effects,{network:0,childProcess:0,originalStore:0});
-console.log(JSON.stringify({passed:passed.length,failed:0,...effects,source:SOURCE,generatedDataRoots:fixtureRoots,claim:'Manual compaction offline fixtures only; no tokenization/model/installed acceptance'}));
+console.log(JSON.stringify({passed:passed.length,failed:0,...effects,source:SOURCE,generatedDataRoot,generatedDataRoots:fixtureRoots,claim:'Manual compaction offline fixtures only; no tokenization/model/installed acceptance'}));
