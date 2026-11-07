@@ -388,7 +388,7 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
   let imagePreviewEpoch=0,attachmentRevision=0,storageBlocked=false,lastSavedSnapshot=null,storageHydrating=false;
   let preferences = {selectedId: '', drafts: {}, attachmentDrafts: {}, efforts: {}, taskModes: {}, pendingThreads: {}, terminalDrafts: {}, unread: {}, watchedTurns, scheduleDrafts: {}, scheduleSelectedId: '', gitDrafts: {}, worktreeGitDrafts: {}, handoffChats: {}}, selectedId = '', archived = false, panel = '', sessionView = false;
   let listed = [], approvals = [], cursor = 0, requestQueue = Promise.resolve(), acting = false, listRequest = 0, listHistoryWarning = '', eventNotice = '', stopNotice = '', stopResultEligible = false;
-  let listState = 'loading', listLoaded = false;
+  let listState = 'loading', listLoaded = false, listProgress = null, listStartedAt = 0;
   let approvalWarning = '', codingRequest = null, requestFeedbackTimer;
   let selectionEpoch = 0, setupPanelEpoch = 0, setupInventoryReading = false, setupInventoryReady = false;
   let setupProject = '', setupChoice = null;
@@ -957,6 +957,26 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
         !familyStopping(workspaceStopTarget(selectedId)) && taskMode !== null && model.ready,
       busy:acting,blockedReason,mode:taskMode || 'build',effort:$('effort').value === 'high' ? 'high' : 'none'};
   }
+  async function viewGoalTurn(target) {
+    const validId = value => typeof value === 'string' && /^[A-Za-z0-9_.-]{1,160}$/.test(value);
+    const threadId = target?.threadId, turnId = target?.turnId, epoch = selectionEpoch;
+    const fresh = () => !disposed && selectedId === threadId && selectionEpoch === epoch && goalContext().canInspect;
+    if (!target || !['threadId','goalId','attemptId','turnId'].every(key => validId(target[key])) ||
+        target.binding?.rootThreadId !== threadId || !Number.isSafeInteger(target.goalRevision) || target.goalRevision < 1 || !fresh()) {
+      return {shown:false,reason:'This goal result no longer matches the selected chat. Refresh the goal before opening it.'};
+    }
+    try {
+      let turns = (current()?.turns || []).filter(turn => turn.id === turnId);
+      if (!turns.length) {await readThread(threadId);if (!fresh()) return {shown:false,reason:'The selected chat changed while reading the result.'};turns = (current()?.turns || []).filter(turn => turn.id === turnId);}
+      if (turns.length !== 1 || turns[0].status === 'inheritedStopped') return {shown:false,reason:'This exact turn is not in the available chat history. Browse saved history to inspect older results.'};
+      renderMessages();
+      const matches = [...$('messages').querySelectorAll('.turn[data-turn-id]')].filter(node => node.dataset.turnId === turnId);
+      if (!fresh() || matches.length !== 1) return {shown:false,reason:'The exact result could not be displayed. Refresh history and try again.'};
+      const result = matches[0];result.tabIndex = -1;result.setAttribute('aria-label','Goal continuation result');
+      result.focus({preventScroll:true});result.scrollIntoView({block:'start'});
+      return {shown:true};
+    } catch (error) {return {shown:false,reason:'The saved result could not be read. ' + message(error)};}
+  }
   function saveGoalDraft(id,value) {
     if (!/^[A-Za-z0-9_.-]{1,160}$/.test(id) || value !== null && !globalThis.NoieeCodingGoals.validDraft(value)) return false;
     const prior = preferences.goalDrafts || {};
@@ -968,7 +988,7 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
     if (!persistPreferences(next)) return false;
     preferences = next; return true;
   }
-  goals = globalThis.NoieeCodingGoals.create({getContext:goalContext,call,
+  goals = globalThis.NoieeCodingGoals.create({getContext:goalContext,call,onViewTurn:viewGoalTurn,onOpen:() => {if (panel) closeProjectPanel();},
     getDraft:id => preferences.goalDrafts?.[id],saveDraft:saveGoalDraft,run:fn => act(fn),
     onTurn:async (id,result) => {
       if (result.turn?.id) acceptTurn(id,result.turn,true);
@@ -1353,7 +1373,10 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
       if (!collapsed) for (const thread of chats) appendChat(group, thread);
       list.append(group);
     }
-    if (!groups.size && !pinned.length) list.append(element('p', 'empty-list', listState === 'loading' ? 'Loading saved chats…' : listState === 'failed' ? 'Saved chats could not be loaded. Refresh to try again.' : query ? 'No matching chats' : sessionView ? 'No active or unread chats' : archived ? 'No archived chats' : 'No coding chats yet'));
+    if (listState === 'loading' || listState === 'failed') {
+      const status = element('p', 'empty-list', listState === 'loading' ? catalogLoadingText() : 'Saved chats could not be fully loaded. Refresh to try again.');
+      status.id = 'catalog-loading-status'; status.setAttribute('role', 'status'); list.append(status);
+    } else if (!groups.size && !pinned.length) list.append(element('p', 'empty-list', query ? 'No matching chats' : sessionView ? 'No active or unread chats' : archived ? 'No archived chats' : 'No coding chats yet'));
     syncNode($('thread-list'), list); if (!query) workspace?.revealCurrent($('thread-list'), selectedId); controls();
   }
   function verifiedParent(thread) {
@@ -1804,26 +1827,65 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
     closeSavedHistory();clearImagePreviews();selectionEpoch++; selectedId = id; syncCodingSkillsScope(); save(); if (matchMedia('(max-width:850px)').matches) sidebar(false); renderSelection();
     if (!historyRead) await readThread(id); await readFamily(id);void refreshFollowups(id); if (selectedId === id) {void refreshTerminalResults();if (preferences.unread[id]) {delete preferences.unread[id]; save(); renderSidebar(); renderFamily();} $('thread-title').textContent = title(current()); $('project-path').textContent = current()?.cwd || ''; $('thread').scrollTop = $('thread').scrollHeight;}
   }
+  // Catalog progress is display-only. It cannot add rows or change execution authority.
+  function catalogProgressSnapshot(value, mode) {
+    const phases = ['legacy-history','owner-history','reader-close','finalizing'];
+    if (!value || value.schemaVersion !== 1 || typeof value.id !== 'string' ||
+        !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(value.id) ||
+        value.archived !== mode || value.searching !== false || value.state !== 'loading' ||
+        !phases.includes(value.phase) || !['ownersTotal','ownersCompleted','threadsVerified','elapsedMs','phaseElapsedMs'].every(key => Number.isSafeInteger(value[key]) && value[key] >= 0) ||
+        value.ownersCompleted > value.ownersTotal) return null;
+    return {id:value.id,phase:value.phase,threadsVerified:value.threadsVerified,elapsedMs:value.elapsedMs};
+  }
+  function catalogLoadingText() {
+    const labels = {'legacy-history':'Checking older history','owner-history':'Checking saved chats','reader-close':'Finishing history checks',finalizing:'Preparing the chat list'};
+    const seconds = Math.max(0, Math.floor((performance.now() - listStartedAt) / 1000));
+    const detail = listProgress ? labels[listProgress.phase] + '…' + (listProgress.threadsVerified ? ' ' + listProgress.threadsVerified.toLocaleString() + ' checked' : '') : 'Loading saved chats…';
+    return detail + (seconds ? ' · ' + seconds + 's' : '');
+  }
   async function loadList() {
-    const mode = archived, request = ++listRequest, ids = [], seen = new Set(); let next, warning = '';
-    listState = 'loading'; renderSidebar();
+    const mode = archived, request = ++listRequest, ids = [], seen = new Set(); let next, warning = '', progressTimer, pending = true;
+    const fresh = () => !disposed && archived === mode && request === listRequest;
+    const publish = () => {
+      const visible = [...ids];
+      if (!mode) for (const id of new Set([...Object.keys(preferences.pendingThreads), ...setupCreatedRoots])) if (threads.has(id) && !threads.get(id).archived && !visible.includes(id)) visible.unshift(id);
+      listed = visible; renderSidebar();
+    };
+    const sample = async () => {
+      if (!pending || !fresh()) return;
+      try {
+        // Do not consume the event cursor, approvals or questions here. Normal polling
+        // replays that snapshot after bootstrap; this lane reads progress only.
+        const result = await call('events', {after:cursor});
+        if (!pending || !fresh()) return;
+        const progress = catalogProgressSnapshot(result.catalogProgress, mode);
+        if (progress && (!listProgress || progress.id === listProgress.id && progress.elapsedMs >= listProgress.elapsedMs)) listProgress = progress;
+      } catch { /* A progress read cannot fail or authorize the underlying list. */ }
+      finally {
+        if (pending && fresh()) {renderSidebar();progressTimer = setTimeout(sample, 1000);}
+      }
+    };
+    listState = 'loading'; listProgress = null; listStartedAt = performance.now(); renderSidebar();
+    progressTimer = setTimeout(sample, 400);
     try {
       do {
         const result = await call('list', {archived: mode, ...(next ? {cursor: next} : {})});
-        if (archived !== mode || request !== listRequest) return;
+        if (!fresh()) return;
         if (result.historyIncomplete === true) warning = typeof result.historyWarning === 'string' && result.historyWarning ? result.historyWarning.slice(0, 2000) : 'Some saved history is unavailable; this chat list is incomplete.';
         for (const thread of result.threads || []) {if (!thread.id) continue; const prior = threads.get(thread.id); threads.set(thread.id, {...prior, ...thread, turns: prior?.turns || thread.turns || [], metadataPending: false, archived: mode}); if (!childChat(thread) && !ids.includes(thread.id)) ids.push(thread.id);}
         next = result.nextCursor; if (next && seen.has(next)) throw new Error('Chat pagination stopped repeating. Refresh to retry.'); seen.add(next);
+        // A list page is published only after the backend's complete ownership scan.
+        // Later page retrieval need not hide rows that are already verified.
+        publish();
       } while (next);
-      if (!mode) for (const id of Object.keys(preferences.pendingThreads)) if (threads.has(id) && !threads.get(id).archived && !ids.includes(id)) ids.unshift(id);
-      if (!mode) for (const id of setupCreatedRoots) if (threads.has(id) && !threads.get(id).archived && !ids.includes(id)) ids.unshift(id);
-      if (archived !== mode || request !== listRequest) return;
-      listed = ids; listHistoryWarning = warning; listLoaded = true; listState = 'loaded'; syncMCPOutcomes();
+      if (!fresh()) return;
+      listHistoryWarning = warning; listLoaded = true; listState = 'loaded'; syncMCPOutcomes();
     } catch (error) {
-      if (archived === mode && request === listRequest) listState = 'failed';
+      if (fresh()) {listState = 'failed';listHistoryWarning = warning || 'Some saved chats may be missing. Refresh to finish loading.';}
       throw error;
     } finally {
-      if (request === listRequest) {
+      pending = false; clearTimeout(progressTimer);
+      if (!disposed && request === listRequest) {
         if (archived !== mode) listState = 'failed';
         banner('event-notice', eventNotice); renderSidebar();
       }
@@ -2140,6 +2202,7 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
     controls();
   }
   function renderPanel() {
+    if (panel) goals?.close({restoreFocus:false});
     $('workspace-panel').hidden = !panel; $('changes-panel').hidden = panel !== 'changes'; $('terminal-panel').hidden = panel !== 'terminal'; $('worktrees-panel').hidden = panel !== 'worktrees'; $('schedules-panel').hidden = panel !== 'schedules';
     $('panel-title').textContent = panel === 'schedules' ? 'Scheduled' : panel === 'worktrees' ? 'Worktrees' : panel === 'terminal' ? 'Terminal' : 'Changes'; $('panel-path').textContent = current()?.cwd || 'Choose a project'; $('panel-path').hidden = ['worktrees', 'schedules'].includes(panel);
     $('changes-toggle').setAttribute('aria-expanded', String(panel === 'changes')); $('terminal-toggle').setAttribute('aria-expanded', String(panel === 'terminal'));
