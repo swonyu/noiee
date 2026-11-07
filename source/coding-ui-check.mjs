@@ -23,7 +23,7 @@ const server = createServer(async (req, res) => {
   if(req.url==='/api/models'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify({online:true,models:[{id:fixtureModel,label:'Fixture model',available:true,loaded:true,capabilities:{coding:true,standard:true,deep:true}},...(process.argv.some(arg=>['--polish-layout-only','--schedule-mode-only'].includes(arg))?[{id:'local/saleh-qwen38-uncensored-8bit',label:'Saleh Qwen38 Uncensored 8bit',available:true,loaded:true,contextLength:131072,capabilities:{coding:true,standard:true,deep:true}}]:[])]}));return;}
   const name = req.url === '/coding' ? 'coding.html' : req.url.slice(1);
   const assets = {'xterm.js':'node_modules/@xterm/xterm/lib/xterm.js','xterm-fit.js':'node_modules/@xterm/addon-fit/lib/addon-fit.js','xterm.css':'node_modules/@xterm/xterm/css/xterm.css'};
-  if (!['coding.html', 'coding.js', 'chat-runs.js', 'work.js', 'coding.css', 'coding-terminal.js', 'coding-submission.js', 'attachments.js', 'attachment-storage.js', 'coding-metrics.js', 'coding-skills.js', 'coding-mcp-setup.js', 'workspace.css', 'workspace-extensions.js', 'workspace.js', ...Object.keys(assets)].includes(name)) {res.writeHead(404).end(); return;}
+  if (!['coding.html', 'coding.js', 'model-policy.js', 'model-picker.js', 'chat-runs.js', 'work.js', 'coding.css', 'coding-terminal.js', 'coding-submission.js', 'attachments.js', 'attachment-storage.js', 'coding-metrics.js', 'coding-skills.js', 'coding-mcp-setup.js', 'workspace.css', 'workspace-extensions.js', 'workspace.js', ...Object.keys(assets)].includes(name)) {res.writeHead(404).end(); return;}
   res.setHeader('Content-Type', name.endsWith('.js') ? 'text/javascript' : name.endsWith('.css') ? 'text/css' : 'text/html');
   res.end(await readFile(new URL(assets[name] || name, root)));
 });
@@ -75,7 +75,7 @@ const copy = value => structuredClone(value);
 const rootId = id => {const seen=new Set(); while(threads.get(id)?.parentThreadId&&!seen.has(id)){seen.add(id);id=threads.get(id).parentThreadId;}return id;};
 const subtree = id => [...threads.values()].filter(thread=>{const seen=new Set();let next=thread.id;while(next&&!seen.has(next)){if(next===id)return true;seen.add(next);next=threads.get(next)?.parentThreadId;}return false;});
 const metadata = thread => ({model:fixtureModel,...copy(thread), turns: [], status:{type:thread.turns.some(turn=>turn.status==='inProgress')?'active':'idle'}});
-let startupOutcome='cancelled',startupRelease=null;
+let startupOutcome='cancelled',startupRelease=null,fixtureOwners=[],fixtureListWarning='';
 await page.exposeBinding('codingNative', async (_, body) => {
   nativeActive++; maxNative = Math.max(maxNative, nativeActive); calls.push(copy(body));
   const outcomeRead = body.op === 'coding' && Object.keys(body).length === 2 && body.input?.action === 'mcpOutcomes' && Object.keys(body.input).length === 2 && typeof body.input.threadId === 'string' && /^[\w.-]{1,160}$/.test(body.input.threadId);
@@ -88,6 +88,7 @@ await page.exposeBinding('codingNative', async (_, body) => {
     if(body.op==='codingRecovery'){
       assert.deepEqual(body.input,{model:fixtureModel});
       if(startupOutcome==='hold'){await new Promise(resolve=>{startupRelease=resolve;});}
+      if(startupOutcome==='error')throw Error('Current recovery inspection failed; retained startup unchanged.');
       if(startupOutcome==='existing')return {existingThreadId:'startup-continuation',message:'Saved continuation opened.'};
       if(startupOutcome==='cancelled')return {cancelled:true,message:'Continuation review cancelled; originals retained.'};
       if(startupOutcome==='corrupt')return {thread:{id:'unverified-copy',cwd:'/fixture/new',model:'wrong-model',modelProvider:'saleh_local'},executionMode:'native',copyId:'33333333-3333-4333-8333-333333333333'};
@@ -222,8 +223,8 @@ await page.exposeBinding('codingNative', async (_, body) => {
         if(p.recordId&&holdSavedCommand===p.threadId){holdSavedCommand='';await new Promise(resolve=>{releaseSavedCommand=resolve;});}
         return result;
       }
-      case 'status': {const wasActive=terminalActive;if(finishTerminalAtStatus){finishTerminalAtStatus=false;terminalActive=false;emit('coding/terminal/completed',{threadId:terminalThreadId,processId:terminalProcessId,exitCode:0});} const result = {available: true, running: true, workspaceSync: copy([...workspaceSync.values()]), workspaceSyncCursor: sequence, activeTurns: [...threads.values()].flatMap(t => t.turns.filter(turn => turn.status === 'inProgress').map(turn => ({threadId:t.id,turnId:turn.id,rootThreadId:rootId(t.id),parentThreadId:t.parentThreadId}))), stoppingFamilies:[...familyStopping], model: 'Local Qwen', provider: 'local', terminals: [...(wasActive ? [{threadId: terminalThreadId, processId: terminalProcessId}] : []), ...(interactive ? [{...interactive,screen:undefined}] : [])], providers: [{id: 'local', name: 'Local Qwen', available: true}, ...(allowCloud ? [{id:'cloud',name:'Fixture cloud',available:true}] : [])], message: 'Local engine available'};if(holdStatus){holdStatus=false;await new Promise(resolve=>{releaseStatus=resolve;});}return result;}
-      case 'list': return {threads: [...threads.values()].filter(t => !hideAllThreads && !t.parentThreadId && t.archived === !!p.archived && (!omitEmpty || t.id === 'saved' || t.turns.length) && !(handoffReadBlocked && handoffs.some(h=>h.rootThreadId===t.id))).map(metadata), nextCursor: null, ...(handoffReadBlocked ? {historyIncomplete:true,historyWarning:'Some worktree handoffs remain incomplete. Their history is unavailable; verified saved chats are listed.'} : {})};
+      case 'status': {const wasActive=terminalActive;if(finishTerminalAtStatus){finishTerminalAtStatus=false;terminalActive=false;emit('coding/terminal/completed',{threadId:terminalThreadId,processId:terminalProcessId,exitCode:0});} const result = {available: true, running: true, owners:copy(fixtureOwners), workspaceSync: copy([...workspaceSync.values()]), workspaceSyncCursor: sequence, activeTurns: [...threads.values()].flatMap(t => t.turns.filter(turn => turn.status === 'inProgress').map(turn => ({threadId:t.id,turnId:turn.id,rootThreadId:rootId(t.id),parentThreadId:t.parentThreadId}))), stoppingFamilies:[...familyStopping], model: 'Local Qwen', provider: 'local', terminals: [...(wasActive ? [{threadId: terminalThreadId, processId: terminalProcessId}] : []), ...(interactive ? [{...interactive,screen:undefined}] : [])], providers: [{id: 'local', name: 'Local Qwen', available: true}, ...(allowCloud ? [{id:'cloud',name:'Fixture cloud',available:true}] : [])], message: 'Local engine available'};if(holdStatus){holdStatus=false;await new Promise(resolve=>{releaseStatus=resolve;});}return result;}
+      case 'list': return {threads: [...threads.values()].filter(t => !hideAllThreads && !t.parentThreadId && t.archived === !!p.archived && (!omitEmpty || t.id === 'saved' || t.turns.length) && !(handoffReadBlocked && handoffs.some(h=>h.rootThreadId===t.id))).map(metadata), nextCursor: null, ...(fixtureListWarning ? {historyIncomplete:true,historyWarning:fixtureListWarning} : {}), ...(handoffReadBlocked ? {historyIncomplete:true,historyWarning:'Some worktree handoffs remain incomplete. Their history is unavailable; verified saved chats are listed.'} : {})};
       case 'historyPage': {assert(process.argv.includes('--delegated-receipts-only'));assert(thread);return {threadId:thread.id,pageCursor:p.cursor??null,nextCursor:null,truncated:false,turn:copy(thread.turns.at(-1)??null)};}
       case 'family': {if(!thread)throw new Error('Thread not found');const root=rootId(thread.id), all=subtree(root).filter(t=>t.id!==root), offset=Number(p.cursor||0);const result={rootThreadId:root,root:metadata(threads.get(root)),threads:all.slice(offset,offset+1).map(metadata),nextCursor:repeatFamilyCursor?'1':offset+1<all.length?String(offset+1):null,stopping:[...familyStopping].some(id=>rootId(id)===root),stoppingTargets:[...familyStopping].filter(id=>rootId(id)===root)};if(p.threadId===heldFamily){heldFamily='';await new Promise(resolve=>{releaseFamily=resolve;});}return result;}
       case 'interruptFamily': {
@@ -295,6 +296,143 @@ async function checkDeepResponsePresentation() {
   assert.deepEqual(turn,original);assert.deepEqual(await maps(),retained);assert.equal(await page.locator('#prompt').inputValue(),draft);
   await page.reload();await text('[data-turn-id="'+id+'"]','DEEP_INDENT');await text('[data-turn-id="'+solo.id+'"]','The model returned only whitespace.');assert.equal(await section.locator('article.assistant').count(),1);assert.deepEqual(await maps(),retained);assert.equal(await page.locator('#prompt').inputValue(),draft);
   const readsOnly=new Set(['coding/status','coding/events','coding/list','coding/read','coding/family','coding/mcpOutcomes','coding/terminalResults','codingWorktrees/list','codingSchedules/list','codingFilePreview/clear','codingSkills/clear']);assert(calls.slice(before).every(c=>readsOnly.has(c.op+'/'+c.input?.action)),'Presentation must never dispatch a model turn, tool or mutation');assert.deepEqual(errors,[]);
+}
+
+async function checkCodingParity() {
+  const checks=[],check=async(name,run)=>{await run();checks.push(name);};
+  const selected=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('qwen-coding-ui-v1')).selectedId);
+  const maps=()=>page.evaluate(()=>{const p=JSON.parse(localStorage.getItem('qwen-coding-ui-v1'));return Object.fromEntries(['drafts','attachmentDrafts','terminalDrafts','gitDrafts','worktreeGitDrafts','scheduleDrafts','efforts','taskModes','followupEdits'].map(key=>[key,p[key]]));});
+  readHistoryWarning='';
+  const inherited={id:'parity-inherited',status:'inheritedStopped',items:[{id:'inherited-user',type:'userMessage',content:[{type:'text',text:'PARENT_CONTEXT_UNCHANGED'},{type:'localImage',image:{sha256:'a'.repeat(64),width:1,height:1,bytes:100}}]},{id:'inherited-answer',type:'agentMessage',text:'PARENT_REPORT_NOT_CHILD_OUTCOME'},{id:'inherited-command',type:'commandExecution',cwd:'/fixture/older',command:'false',status:'failed',exitCode:1,aggregatedOutput:'PARENT_FAILURE'}]};
+  const child={id:'parity-child',parentThreadId:'saved',rootThreadId:'saved',canAcceptDirectInput:false,name:'Parity reader <img src=x>',cwd:'/fixture/older',model:fixtureModel,archived:false,turns:[inherited]};
+  const parentTurn={id:'parity-parent',status:'completed',items:[{id:'parent-report',type:'agentMessage',text:'The model claims all tests passed.'}]};
+  threads.get('saved').turns=[parentTurn];threads.set(child.id,child);
+  threads.set('parity-grandchild',{...copy(child),id:'parity-grandchild',parentThreadId:child.id,name:'Nested parity reader',turns:[]});
+  await page.reload();await text('#thread-title','Saved chat');await page.waitForFunction(()=>!document.querySelector('#prompt').disabled);
+  await page.locator('#prompt').fill('KEEP_PARITY_PARENT_DRAFT مرحبا');
+  await page.locator('#message-files').setInputFiles({name:'parity-keep.txt',mimeType:'text/plain',buffer:Buffer.from('KEEP_PARITY_ATTACHMENT')});
+  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('qwen-coding-ui-v1')).attachmentDrafts?.saved?.length===1);
+  const kept=await maps(),before=calls.length,originalInherited=copy(inherited);
+  const openChild=async()=>{await page.locator('#family-list [data-thread-id="parity-child"]').click();await text('#thread-title',child.name);await page.waitForFunction(()=>!document.querySelector('#return-to-parent').disabled);};
+  await openChild();
+  await check('Child replaces disabled composer with read-only result and verified parent action',async()=>{
+    assert(await page.locator('#child-result').isVisible());assert(await page.locator('#composer').isHidden());assert(await page.locator('#task-mode-hint').isHidden());assert(await page.locator('#model-status').isHidden());
+    assert(await page.locator('#prompt').isDisabled());assert(await page.locator('#send').isDisabled());assert(await page.locator('#return-to-parent').isVisible());
+  });
+  await check('Inherited-only history is not the agent outcome',async()=>{
+    await text('#child-result-status','No agent result recorded');assert(!(await page.locator('#child-result').innerText()).includes('PARENT_REPORT'));assert(await page.locator('#child-result-report').isHidden());
+    assert.match(await page.locator('#family-list [data-thread-id="parity-child"]').getAttribute('aria-description'),/No agent result yet/);
+  });
+  await check('Inherited context starts collapsed and explicitly labels its provenance',async()=>{
+    assert.equal(await page.locator('.inherited-context').count(),1);assert.equal(await page.locator('.inherited-context').evaluate(node=>node.open),false);
+    await text('.inherited-context>summary','Inherited parent context · 1 turn');assert(await page.getByText('PARENT_CONTEXT_UNCHANGED',{exact:true}).isHidden());
+    assert.equal(await page.locator('.inherited-context .verification-summary').count(),0);
+  });
+  await page.locator('.inherited-context>summary').click();
+  await check('Opening inherited context preserves raw content without recasting the stop marker',async()=>{
+    assert(await page.getByText('PARENT_CONTEXT_UNCHANGED',{exact:true}).isVisible());await text('.inherited-outcome','Inherited parent context');
+    await text('.inherited-context .message-label','inherited parent context');assert.deepEqual(inherited,originalInherited);
+  });
+  await check('Inherited attachments retain their normal guarded image view without a fake history cursor',async()=>{
+    assert(await page.locator('.inherited-context').getByRole('button',{name:'View image 1',exact:true}).isEnabled());
+    assert(!calls.slice(before).some(row=>row.input?.action==='readImage'));assert.deepEqual(errors,[]);
+  });
+  const active={id:'parity-own',status:'inProgress',items:[]};child.turns.push(active);emit('turn/started',{threadId:child.id,turn:copy(active)});await text('#child-result-status','Working…');
+  await check('Active child retains the original Stop control outside the hidden composer',async()=>{
+    assert(await page.locator('#stop').isVisible());assert.equal(await page.locator('#stop').evaluate(node=>node.parentElement.id),'child-actions');assert.equal(await page.locator('[id="stop"]').count(),1);assert(await page.locator('#child-result-report').isHidden());
+  });
+  await check('Direct child execution remains refused even with forged DOM submission',async()=>{
+    const at=calls.length;await page.evaluate(()=>{document.querySelector('#prompt').value='MUST_NOT_SEND';document.querySelector('#composer').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));});await page.waitForTimeout(80);
+    assert(!calls.slice(at).some(row=>['send','steer','review','fork'].includes(row.input?.action)));
+  });
+  const report={id:'parity-report',type:'agentMessage',text:'All checks passed, says the model. <script>NEVER_RUN</script>'},command={id:'parity-command',type:'commandExecution',cwd:'/fixture/older',command:'node fixture-check.mjs',status:'completed',exitCode:1,aggregatedOutput:'ONE CHECK FAILED'};
+  active.items=[command,report];active.status='completed';emit('turn/completed',{threadId:child.id,turn:copy(active)});await text('#child-result-status','Turn finished');
+  await check('Execution completion and command failure remain distinct from verification',async()=>{
+    await text('#child-result-evidence','1 failed');await text('#child-result-evidence','Verification: not established');
+    const row=page.locator('[data-turn-id="parity-own"]');await text('[data-turn-id="parity-own"] .execution-summary','Execution');assert.equal(await row.locator('.verification-summary').getAttribute('data-state'),'failed');
+    assert.equal(await row.locator('.verification-summary strong').innerText(),'Verification: not established');assert(!(await page.locator('#child-result-evidence').innerText()).includes('exited 0'));
+  });
+  await check('The latest report is labeled model output and rendered as inert text',async()=>{
+    await page.locator('#child-result-report>summary').click();assert.equal(await page.locator('#child-result-report-text').innerText(),report.text);
+    assert.equal(await page.locator('#messages script,#messages img,#child-result script,#child-result img').count(),0);await text('[data-item-id="parity-report"] .message-label','model output');
+  });
+  await check('Live completion preserves expanded inherited evidence and original history',async()=>{
+    assert.equal(await page.locator('.inherited-context').evaluate(node=>node.open),true);assert.deepEqual(inherited,originalInherited);
+  });
+  await page.locator('#return-to-parent').click();await text('#thread-title','Saved chat');
+  await check('Return to parent restores its exact draft and all nine draft maps',async()=>{
+    assert.equal(await page.locator('#prompt').inputValue(),'KEEP_PARITY_PARENT_DRAFT مرحبا');assert.deepEqual(await maps(),kept);assert(await page.locator('#composer').isVisible());await page.waitForFunction(()=>document.activeElement===document.querySelector('#prompt'));
+    assert.equal(await page.locator('#stop').evaluate(node=>node.nextElementSibling.id),'send');
+  });
+  await check('Model prose alone never becomes parent verification',async()=>{
+    assert.equal(await page.locator('#messages .verification-summary strong').innerText(),'Verification: not established');await text('#messages .command-counts','No command receipts');
+  });
+  await openChild();await page.locator('#family-list [data-thread-id="parity-grandchild"]').click();await text('#thread-title','Nested parity reader');await page.waitForFunction(()=>!document.querySelector('#return-to-parent').disabled);
+  await page.locator('#return-to-parent').click();await text('#thread-title',child.name);
+  await check('Nested child returns to its immediate verified parent',async()=>assert.equal(await selected(),child.id));
+  await page.evaluate(()=>{window.oldParityReturn=document.querySelector('#return-to-parent').onclick;});
+  heldFamily='saved';releaseFamily=null;emit('coding/family/updated',{threadId:'saved',rootThreadId:'saved'});await until(()=>releaseFamily);
+  await check('Pending family refresh rejects a stale retained parent handler',async()=>{
+    await page.evaluate(()=>window.oldParityReturn());await text('#notice','Refresh the agent family');assert.equal(await selected(),child.id);
+  });
+  releaseFamily();await page.waitForFunction(()=>!document.querySelector('#return-to-parent').disabled);
+  repeatFamilyCursor=true;await page.locator('#refresh').click();await text('#family-notice','pagination');
+  await check('Incomplete family metadata keeps parent navigation unavailable',async()=>{
+    assert(await page.locator('#return-to-parent').isDisabled());await page.evaluate(()=>window.oldParityReturn());assert.equal(await selected(),child.id);await text('#child-parent-label','unavailable');
+  });
+  repeatFamilyCursor=false;await page.locator('#refresh').click();await page.waitForFunction(()=>!document.querySelector('#return-to-parent').disabled);
+  await page.reload();await text('#thread-title',child.name);await page.waitForFunction(()=>!document.querySelector('#return-to-parent').disabled);
+  await check('Cold child selection retains its result, read-only layout and collapsed context',async()=>{
+    assert(await page.locator('#composer').isHidden());assert.equal(await page.locator('.inherited-context').evaluate(node=>node.open),false);await text('#child-result-status','Turn finished');assert.deepEqual(await maps(),kept);
+  });
+  const stopped={id:'parity-stop',status:'inProgress',items:[]};child.turns.push(stopped);emit('turn/started',{threadId:child.id,turn:copy(stopped)});await text('#child-result-status','Working…');
+  await check('Child Stop dispatches only the selected subtree through the original handler',async()=>{
+    const at=calls.filter(row=>row.input?.action==='interruptFamily').length;await page.locator('#stop').click();await until(()=>calls.filter(row=>row.input?.action==='interruptFamily').length===at+1);
+    assert.equal(calls.filter(row=>row.input?.action==='interruptFamily').length,at+1);assert.equal(calls.filter(row=>row.input?.action==='interruptFamily').at(-1).input.threadId,child.id);
+    await text('#child-result-status','Stopping');assert(await page.locator('#stop').isDisabled());assert.deepEqual(threads.get('saved').turns,[parentTurn]);
+  });
+  stopped.status='interrupted';emit('turn/completed',{threadId:child.id,turn:copy(stopped)});familyStopping.delete(child.id);emit('coding/family/updated',{threadId:'saved',rootThreadId:'saved'});await text('#child-result-status','Stopped');
+  await check('Confirmed child interruption has its own outcome and never reopens direct input',async()=>{
+    assert(await page.locator('#stop').isHidden());assert(await page.locator('#composer').isHidden());assert(await page.locator('#prompt').isDisabled());assert(await page.locator('#child-result-report').isHidden());
+  });
+  await check('Parent navigation and child result fit narrow and medium windows',async()=>{
+    for(const width of [390,650,1360]){await page.setViewportSize({width,height:900});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+      const rect=await page.locator('#return-to-parent').evaluate(node=>node.getBoundingClientRect().toJSON());assert(rect.width>0&&rect.left>=0&&rect.right<=width&&rect.bottom<=900);}
+  });
+  await page.locator('#return-to-parent').click();await text('#thread-title','Saved chat');
+  fixtureOwners=[{id:'retained-1',state:'creating',rootThreadId:null},{id:'retained-2',state:'creating',rootThreadId:null}];
+  fixtureListWarning='Some task startups remain incomplete. Their history is unavailable; verified saved chats are listed.';
+  await page.locator('#refresh').click();await text('#startup-recovery-summary','2 incomplete task startups');
+  await check('Retained startup warning is bounded, counted and initially collapsed',async()=>{
+    assert(await page.locator('#startup-recovery').isVisible());assert.equal(await page.locator('#startup-recovery-details').evaluate(node=>node.open),false);assert(!(await page.locator('#event-notice').textContent()).includes('Some task startups remain incomplete'));
+  });
+  await check('Recovery summary uses the existing review action without altering a draft',async()=>{
+    const at=calls.filter(row=>row.op==='codingRecovery').length;await page.locator('#review-startup-recovery').click();await text('#notice','Continuation review cancelled');
+    assert.equal(calls.filter(row=>row.op==='codingRecovery').length,at+1);assert.equal(await selected(),'saved');assert.deepEqual(await maps(),kept);
+  });
+  fixtureOwners[0].rootThreadId='saved';fixtureListWarning='Current saved history inspection failed. This is not only an old startup warning.';
+  await page.locator('#refresh').click();await text('#startup-recovery-current','selected task');await text('#event-notice',fixtureListWarning);
+  await check('Selected-task recovery and arbitrary current history failures stay prominent',async()=>{
+    assert(await page.locator('#startup-recovery-current').isVisible());assert(await page.locator('#event-notice').isVisible());
+  });
+  startupOutcome='error';await page.locator('#review-startup-recovery').click();await text('#notice','Current recovery inspection failed');
+  await check('Current recovery failure is not collapsed into the retained summary',async()=>{
+    assert(await page.locator('#notice').isVisible());assert(await page.locator('#startup-recovery').isVisible());assert.deepEqual(await maps(),kept);
+  });
+  fixtureOwners=[];fixtureListWarning='';emit('coding/family/updated',{threadId:'saved',rootThreadId:'saved'});await page.waitForFunction(()=>document.querySelector('#startup-recovery').hidden);
+  await check('Clearing retained count does not erase a current operation failure',async()=>{
+    await text('#notice','Current recovery inspection failed');assert(await page.locator('#notice').isVisible());
+  });
+  fixtureListWarning='Some task startups remain incomplete. Their history is unavailable; verified saved chats are listed.';
+  await page.locator('#refresh').click();await text('#startup-recovery-summary','count unavailable');
+  await check('Missing startup inventory reports an unknown count rather than zero',async()=>{
+    assert(await page.locator('#startup-recovery').isVisible());await page.waitForFunction(()=>!document.querySelector('#review-startup-recovery').disabled);
+  });
+  await check('Parity navigation never dispatches a model or mutates saved thread history',async()=>{
+    assert(!calls.slice(before).some(row=>row.op==='coding'&&['start','send','steer','review','fork','rename','archive','terminalStart'].includes(row.input?.action)));
+    assert.deepEqual(threads.get('saved').turns,[parentTurn]);assert.deepEqual(inherited,originalInherited);assert.deepEqual(await maps(),kept);assert.deepEqual(errors,[]);
+  });
+  return checks;
 }
 
 async function checkDelegatedReceipts() {
@@ -1057,7 +1195,9 @@ try {
   await text('#thread-title', 'Saved chat');
   assert.equal(await page.locator('#worktrees-toggle').count(),1,'Managed worktrees are accessible without replacing the selected chat');
   assert.equal(await page.locator('#schedules-toggle').count(),1,'Scheduled work is accessible without replacing the selected chat');
-  if (process.argv.includes('--recovery-startup-only')) {
+  if (process.argv.includes('--coding-parity-only')) {
+    const checks=await checkCodingParity();console.log(JSON.stringify({schemaVersion:1,name:'coding-ui-parity',passed:checks.length,failed:0,checks}));
+  } else if (process.argv.includes('--recovery-startup-only')) {
     await text('#workspace-access-chip','Full access · Recovery');
     assert.match(await page.locator('#tool-access-status').textContent(),/Unrestricted tools are held/);
     const rootId='recovery-ui-root',id='99999999-9999-4999-8999-999999999999';

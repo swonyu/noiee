@@ -57,7 +57,7 @@ function harness(extra = {}) {
     gitResults: new Map([[thread.id, git]]), gitOperation: null, gitEpoch: 0, gitFormRepository: '', gitCall: async (...args) => {calls.push(['git', ...args]); return {cancelled: true};},
     worktreeMutating: false, worktreesBusy: false, worktreesReadOnly:false,worktreeCreateAvailable:true,worktreeOpenAvailable:true,worktreeRecoveryCopyAvailable:true,worktreeStopRequested: false, worktreeReconnectAvailable: false, worktreeSource: '', worktreesLoaded: false, worktrees: new Map(), handoffs: new Map(), worktreeMutation: null,
     renderModelControls: noOp, scheduleControlState: noOp,publishingControls:noOp,renderFollowups:noOp, renderGit: noOp, renderTerminal: noOp, renderSidebar: noOp, renderFamily: noOp, controls: noOp,
-    renderCodingRequestFeedback: noOp, renderQuestions: noOp, renderSubmission: noOp, renderMetrics: noOp, renderMCPSetup: noOp,
+    renderCodingRequestFeedback: noOp, renderQuestions: noOp, renderSubmission: noOp, renderMetrics: noOp, renderMCPSetup: noOp, renderChildResult: noOp, renderStartupRecovery: noOp,
     clearCodingFilePreview: noOp, refreshTerminalResults: noOp, terminalResultEvent: () => false,
     save: noOp, pty: {availability: noOp, revoke: noOp}, crypto: {randomUUID: () => 'fixture'},
     banner: (id, text) => {$(id).textContent = text;}, message: error => error?.message || String(error), outcome: () => '', renderMessages: noOp,

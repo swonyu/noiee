@@ -61,6 +61,61 @@ function codingVerificationSummary(turn, context = {}) {
   return {state, counts, detail: detail.join(' ')};
 }
 
+// CODING RESULT PRESENTATION BEGIN
+// Presentation reads only explicit saved markers. It never changes turn state,
+// establishes verification, or guesses inheritance from matching message text.
+function codingOwnResultTurns(thread) {
+  return (Array.isArray(thread?.turns) ? thread.turns : []).filter(turn => turn?.status !== 'inheritedStopped');
+}
+function codingExecutionLabel(turn) {
+  return ({inProgress:'Working…', completed:turn?.id ? 'Turn finished' : 'Activity finished',
+    interrupted:'Stopped', failed:'Error', inheritedStopped:'Inherited parent context'}[turn?.status] || 'Status unavailable') +
+    (turn?.status !== 'inheritedStopped' && turn?.error?.message ? ` · ${turn.error.message}` : '');
+}
+function codingCommandCounts(counts) {
+  const parts = [];
+  if (counts.zero) parts.push(`${counts.zero} exited 0`);
+  if (counts.failed) parts.push(`${counts.failed} failed`);
+  if (counts.pending) parts.push(`${counts.pending} awaiting a final result`);
+  if (counts.unknown) parts.push(`${counts.unknown} unknown or conflicting`);
+  return parts.length ? `Command receipts: ${parts.join(' · ')}.` : 'No command receipts in this turn.';
+}
+function codingChildResult(thread, context = {}) {
+  const own = codingOwnResultTurns(thread), last = own.at(-1);
+  const incomplete = !!(thread?.historyTruncated || thread?.historyWarning || thread?.verificationGap || context.updatesInterrupted);
+  const pending = !!(thread?.metadataPending || context.historyPending);
+  const status = thread?.draftReadError ? 'History unavailable · refresh to check' : pending ? 'Loading agent history…' :
+    context.stopping ? 'Stopping…' : thread?.localStopped ? 'Stop requested · checking state' :
+    context.waiting ? 'Waiting for review' : context.working ? 'Working…' :
+    last ? codingExecutionLabel(last) : 'No agent result recorded';
+  const evidence = last ? codingVerificationSummary(last, {historyIncomplete:incomplete,updatesInterrupted:context.updatesInterrupted}) : null;
+  const report = !pending && !thread?.draftReadError && Array.isArray(last?.items) ?
+    last.items.findLast(item => item?.type === 'agentMessage' && typeof item.text === 'string' && item.text.trim())?.text || '' : '';
+  let preview = report.slice(0,400);
+  const lastUnit = preview.charCodeAt(preview.length - 1);
+  if (lastUnit >= 0xD800 && lastUnit <= 0xDBFF) preview = preview.slice(0,-1);
+  return {status, turnId:last?.id || null, inheritedCount:(thread?.turns?.length || 0) - own.length,
+    receiptSummary:evidence ? codingCommandCounts(evidence.counts) : 'Inherited context is separate from this agent’s result.',
+    report:report.length > 400 ? preview + '…' : report,
+    reportTruncated:report.length > 400, incomplete,
+    verification:'Verification: not established'};
+}
+const CODING_RETAINED_STARTUP_WARNING = 'Some task startups remain incomplete. Their history is unavailable; verified saved chats are listed.';
+function codingStartupRecovery(owners, warning = '', selectedId = '', rootId = '') {
+  const retained = new Map();
+  for (const row of Array.isArray(owners) ? owners : []) {
+    if (row?.state === 'creating' && typeof row.id === 'string' && row.id) retained.set(row.id, row);
+  }
+  const count = retained.size, retainedWarning = warning === CODING_RETAINED_STARTUP_WARNING;
+  const relevant = [...retained.values()].some(row => typeof row.rootThreadId === 'string' &&
+    !!row.rootThreadId && [selectedId,rootId].includes(row.rootThreadId));
+  return {visible:count > 0 || retainedWarning,count:count || null,relevant,
+    summary:count ? `${count} incomplete task startup${count === 1 ? '' : 's'}` : 'Incomplete task startups · count unavailable',
+    // Unknown history warnings remain in the live banner verbatim.
+    historyWarning:retainedWarning ? '' : warning};
+}
+// CODING RESULT PRESENTATION END
+
 // REPEATED COMMAND NOTICE BEGIN
 // Equality/threshold principle adapted from OpenCode 014614d35b397775e5d397a490fc72368c894ec2,
 // packages/opencode/src/session/processor.ts:331-380 (MIT; see THIRD-PARTY-NOTICES.txt).
@@ -394,11 +449,17 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
   const mcpSetup = setupAPI?.create({request:(body, cancellation) => native(body, cancellation),getContext:setupContext,changed:() => {renderMCPSetup();controls();},recordRoot:recordMCPSetupRoot});
   const setupBlocking = () => !!mcpSetup?.view().blocking;
   function historyNotice() {
-    if (!listLoaded) return '';
-    const warning=listHistoryWarning || (engine.owners?.some(row => row.state === 'creating') ? 'Some task startups remain incomplete. Their history is unavailable; verified saved chats are listed.' : '');
-    return warning ? warning+' Use Failed task startups in Project utilities to review an independent continuation.' : '';
+    return listLoaded ? codingStartupRecovery(engine.owners, listHistoryWarning).historyWarning : '';
   }
-  const banner = (id, value) => {if (id === 'notice') value = [stopNotice, value].filter(Boolean).join(' ');if (id === 'event-notice') {eventNotice = value || ''; value = [historyNotice(), completionNotice, eventNotice].filter(Boolean).join(' ');} const node = $(id); node.textContent = value || ''; node.hidden = !value; if (id === 'notice') delete node.dataset.stopFamily;};
+  function renderStartupRecovery() {
+    const state = codingStartupRecovery(engine.owners, listLoaded ? listHistoryWarning : '', selectedId, familyFor(selectedId)?.rootThreadId);
+    $('startup-recovery').hidden = !state.visible;
+    $('startup-recovery-summary').textContent = state.summary;
+    $('startup-recovery-current').hidden = !state.relevant;
+    $('startup-recovery-current').textContent = state.relevant ? 'The selected task has an incomplete startup. Review its retained record before continuing.' : '';
+    $('review-startup-recovery').disabled = $('failed-startups').disabled;
+  }
+  const banner = (id, value) => {if (id === 'notice') value = [stopNotice, value].filter(Boolean).join(' ');if (id === 'event-notice') {eventNotice = value || ''; value = [historyNotice(), completionNotice, eventNotice].filter(Boolean).join(' ');} const node = $(id); node.textContent = value || ''; node.hidden = !value; if (id === 'notice') delete node.dataset.stopFamily; if (id === 'event-notice') renderStartupRecovery();};
   const agentWorking = thread => !thread?.localStopped && (!!activeTurn(thread) || thread?.status?.type === 'active');
   const working = thread => agentWorking(thread) || !!terminals.get(thread?.id)?.running;
   const waiting = id => approvals.some(approval => approval.params?.threadId === id);
@@ -827,7 +888,7 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
     if (thread?.executionMode === 'native') $('reclaim-guest-disk').disabled = true;
     $('reclaim-guest-disk').title = thread?.executionMode === 'native' ? 'Native macOS chats do not allocate a guest disk.' : '';
     $('thread-provider').textContent = localThread(thread) ? 'Local model' : 'Cloud model';$('thread-provider').classList.toggle('sr-only',localThread(thread));
-    const last = thread?.turns?.at(-1);
+    const last = childChat(thread) ? codingOwnResultTurns(thread).at(-1) : thread?.turns?.at(-1);
     $('run-status').textContent = !bridge ? 'Native app required' : !thread ? 'Choose a project' : thread.archived ? 'Archived' : thread.draftReadError ? 'Draft · refresh to check chat' : historyPending(thread) ? 'Loading saved history…' : thread.historySource === 'creation-receipt' ? 'Saved empty chat' : thread.historyOnly ? 'Saved history' : thread.pendingMaterialization ? 'Unsent draft' : thread.localStopped ? 'Stopped · checking engine state' : waitingAnswer(selectedId) ? 'Waiting for your answer' : working(thread) ? (waiting(selectedId) ? 'Waiting for approval' : 'Working…') : familyBusy(selectedId) ? 'Agents working…' : last ? outcome(last) : 'Ready';
     $('composer-hint').textContent = thread?.draftReadError ? 'Refresh history to check this chat' : historyPending(thread) ? 'Checking saved chat…' : thread?.historyOnly || childChat(thread) ? 'Read-only history · messages cannot be sent' : 'Enter to send · Shift Enter for a new line';
     if (thread && submission) $('run-status').textContent = submission.phase === 'preparing' ? 'Preparing message' : submission.phase === 'waiting' ? 'Waiting for submission acknowledgement' : 'Submission outcome unconfirmed';
@@ -872,7 +933,7 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
     renderFollowups();renderSubmission();
     renderMetrics();
     codingSkillsControlState();
-    renderMCPSetup();
+    renderMCPSetup(); renderChildResult(); renderStartupRecovery();
   }
   // Setup authority stays in memory and never enters saved draft/submission state.
   function selectedSetupChoice() {
@@ -1143,7 +1204,7 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
       } finally {submissionStore.finishCheck(token, checked); controls();}
     });
   }
-  const outcome = turn => ({inProgress: 'Working…', completed: turn.id ? 'Turn finished' : 'Activity finished', interrupted: 'Stopped', failed: 'Error'}[turn.status] || turn.status || 'Status unavailable') + (turn.error?.message ? ` · ${turn.error.message}` : '');
+  const outcome = codingExecutionLabel;
   let historySearchEpoch = 0, historySearchCancellation = null;
   function cancelHistorySearch(notice = '', discardResults = true) {
     if (discardResults) historySearchEpoch++; if (historySearchCancellation) historySearchCancellation.cancelled = true;
@@ -1254,6 +1315,48 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
     if (!groups.size && !pinned.length) list.append(element('p', 'empty-list', listState === 'loading' ? 'Loading saved chats…' : listState === 'failed' ? 'Saved chats could not be loaded. Refresh to try again.' : query ? 'No matching chats' : sessionView ? 'No active or unread chats' : archived ? 'No archived chats' : 'No coding chats yet'));
     syncNode($('thread-list'), list); if (!query) workspace?.revealCurrent($('thread-list'), selectedId); controls();
   }
+  function verifiedParent(thread) {
+    const family = familyFor(thread?.id), parent = threads.get(thread?.parentThreadId);
+    if (!thread || !childChat(thread) || thread.metadataPending || !parent || parent.id === thread.id || parent.metadataPending ||
+        !family || familyReads.has(family.rootThreadId) || familyWarnings.has(family.rootThreadId) || invalidFamilies.has(family.rootThreadId) ||
+        !family.ids.includes(thread.id) || !family.ids.includes(parent.id)) return null;
+    return parent;
+  }
+  function renderChildResult() {
+    const thread = current(), child = childChat(thread), stop = $('stop');
+    $('child-result').hidden = !child;
+    $('compose-area').hidden = child;
+    // Keep one Stop control and its original guarded handler in both layouts.
+    if (child && stop.parentElement !== $('child-actions')) $('child-actions').append(stop);
+    else if (!child && stop.parentElement !== $('send').parentElement) $('send').before(stop);
+    if (!child) return;
+    const parent = verifiedParent(thread), id = selectedId, epoch = selectionEpoch, parentId = parent?.id;
+    const result = codingChildResult(thread, {working:working(thread),stopping:familyStopping(workspaceStopTarget(id)),
+      waiting:waiting(id) || waitingAnswer(id),historyPending:historyPending(thread),updatesInterrupted:pollFailed});
+    $('child-result-status').textContent = `Execution · ${result.status}`;
+    $('child-result-evidence').textContent = result.receiptSummary + ' ' + result.verification + '.';
+    $('child-result-warning').hidden = !result.incomplete;
+    $('child-result-warning').textContent = result.incomplete ? 'This view has incomplete history or live updates. Refresh Tasks before relying on its outcome.' : '';
+    $('child-result-report').hidden = !result.report;
+    $('child-result-report-text').textContent = result.report;
+    $('child-result-report-note').hidden = !result.reportTruncated;
+    $('child-parent-label').textContent = parent ? `Further work belongs in ${title(parent)}.` : 'Parent chat is unavailable. Refresh Tasks to check the agent family.';
+    const button = $('return-to-parent'); button.disabled = !parent || setupBlocking();
+    button.onclick = () => {
+      if (disposed || selectedId !== id || selectionEpoch !== epoch || !parentId ||
+          verifiedParent(current())?.id !== parentId || setupBlocking()) {
+        banner('notice', 'Refresh the agent family before returning to its parent.'); return;
+      }
+      if (!window.salehSaveBeforeLeave()) return;
+      clearStopNotice();
+      const navigation = select(parentId), targetEpoch = selectionEpoch;
+      navigation.then(() => {
+        if (disposed || selectedId !== parentId || selectionEpoch !== targetEpoch) return;
+        const target = childChat(current()) ? $('return-to-parent') : !$('prompt').disabled ? $('prompt') : $('thread');
+        target.focus();
+      }).catch(error => banner('notice', message(error)));
+    };
+  }
   function renderFamily() {
     const thread = current(), family = familyFor(selectedId), rootId = family?.rootThreadId || thread?.rootThreadId, ids = rootId ? subtreeIds(rootId) : [selectedId];
     const warning = familyWarnings.get(family?.rootThreadId || selectedId) || '';
@@ -1267,7 +1370,7 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
       const row = element('li', 'family-row'), button = element('button', '', title(member)); row.dataset.key = id; row.style.setProperty('--depth', Math.min(depth, 3));
       button.dataset.threadId = id; button.title = `${title(member)} · ${id}`; if (id === selectedId) button.setAttribute('aria-current', 'page');
       button.onclick = () => {clearStopNotice();select(id).catch(error => banner('notice', message(error)));};
-      const unread = preferences.unread[id], status = familyStopping(id) ? 'Stopping…' : waiting(id) ? 'Needs review' : questionLabel(id) || (working(member) ? 'Working' : unread ? `${outcome({status: unread.status})} · unread` : member.turns?.length ? outcome(member.turns.at(-1)) : 'Idle');
+      const unread = preferences.unread[id], status = familyStopping(id) ? 'Stopping…' : waiting(id) ? 'Needs review' : questionLabel(id) || (working(member) ? 'Working' : unread ? `${outcome({status: unread.status})} · unread` : codingOwnResultTurns(member).length ? outcome(codingOwnResultTurns(member).at(-1)) : childChat(member) ? 'No agent result yet' : 'Idle');
       const label = `${childChat(member) ? member.agentRole || 'Agent' : 'Parent chat'} · ${status}`;
       button.setAttribute('aria-description', label); row.append(button, element('span', 'family-status', label)); list.append(row);
     }
@@ -1301,7 +1404,7 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
       engine.stoppingFamilies = [...(engine.stoppingFamilies || []).filter(target => ![rootId, ...members.keys()].includes(target)), ...stoppingTargets];
       familyWarnings.delete(key); familyWarnings.delete(rootId); settleFamilyStops(); renderFamily(); renderSidebar(); renderApprovals(); controls();
       for (const member of members.values()) {const known = threads.get(member.id); if (working(known) && !known.turns?.length) readThread(member.id).catch(error => {known.historyWarning = message(error);});}
-    })().catch(error => {familyWarnings.set(key, `Agent family: ${message(error)}`); renderFamily();}).finally(() => {familyReads.delete(key); if (familyFor(selectedId)?.rootThreadId === key || selectedId === key) renderMessages();});
+    })().catch(error => {familyWarnings.set(key, `Agent family: ${message(error)}`); renderFamily();}).finally(() => {familyReads.delete(key); if (familyFor(selectedId)?.rootThreadId === key || selectedId === key) {renderMessages(); renderChildResult();}});
     read.promise = read.promise.then(() => read.again ? readFamily(key) : undefined);
     return read.promise;
   }
@@ -1414,14 +1517,14 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
   function savedMessageText(item) {
     return item.type==='userMessage'?(Array.isArray(item.content)?item.content:[]).map(part=>typeof part?.text==='string'?part.text:'').filter(Boolean).join('\n'):['agentMessage','plan'].includes(item.type)&&typeof item.text==='string'?item.text:'';
   }
-  function codingAgentReceipt(key, item, thread, openKeys, view) {
+  function codingAgentReceipt(key, item, thread, openKeys, view, allowNavigation = true) {
     const labels = {started:'Agent started', interacted:'Agent updated', completed:'Agent finished'};
     const details = receipt(key, labels[item.kind] || 'Agent activity', JSON.stringify(item, null, 2), openKeys);
     const verified = () => {
       const family = familyFor(thread.id), child = threads.get(item.agentThreadId);
       return family && !familyReads.has(family.rootThreadId) && !familyWarnings.has(family.rootThreadId) && !invalidFamilies.has(family.rootThreadId) && family.ids.includes(thread.id) && family.ids.includes(child?.id) && child?.parentThreadId === thread.id && !child.metadataPending && childChat(child);
     };
-    if (!view && verified()) {
+    if (!view && allowNavigation && verified()) {
       const open = element('button', 'copy-code', 'Open agent'); open.type = 'button';
       open.onclick = () => {
         if (disposed || selectedId !== thread.id || !verified()) {banner('notice', 'Refresh the agent family before opening this result.'); return;}
@@ -1432,8 +1535,22 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
     }
     return details;
   }
-  function renderTurns(messages,thread,openKeys,view=null) {
+  function renderTurns(messages,thread,openKeys,view=null,inheritedContext=false) {
+    let inherited = null;
     for (const turn of thread.turns || []) {
+      if (turn.status === 'inheritedStopped' && !inheritedContext) {
+        if (!inherited) {
+          const details = element('details', 'inherited-context'), label = element('summary');
+          details.dataset.key = `inherited:${thread.id}:${turn.id}`; details.open = openKeys.has(details.dataset.key);
+          details.append(label, element('p', 'muted', 'Copied parent context. Its saved stopped marker does not describe this agent’s outcome.'));
+          inherited = {details,label,count:0}; messages.append(details);
+        }
+        inherited.label.textContent = `Inherited parent context · ${++inherited.count} turn${inherited.count === 1 ? '' : 's'}`;
+        if (view?.matchItem && turn.items?.includes(view.matchItem)) inherited.details.open = true;
+        renderTurns(inherited.details,{...thread,turns:[turn]},openKeys,view,true);
+        continue;
+      }
+      inherited = null;
       const section = element('section', 'turn'); section.dataset.turnId = turn.id;
       for (const item of turn.items || []) {
         const key = `${turn.id}:${item.id}`;
@@ -1445,8 +1562,8 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
           if (!whitespace || turn.status !== 'inProgress' && item === turn.items.findLast(other => other.type === 'agentMessage')) {
             const article = element('article', `message ${user ? 'user' : 'assistant'}`), content = element('div', 'content'); content.dir = 'auto'; article.dataset.itemId = item.id;
             if(item===view?.matchItem){article.classList.add('history-match');article.tabIndex=-1;article.setAttribute('aria-label','Matching message');}
-            article.append(element('div', 'message-label', user ? 'You' : item.type === 'plan' ? 'Proposed plan' : 'Assistant'));
-            if (whitespace) content.append(element('p', 'muted', 'The model returned only whitespace.')); else formatContent(content, text, !view); article.append(content);
+            article.append(element('div', 'message-label', inheritedContext ? user ? 'You · inherited parent context' : 'Parent · inherited model output' : user ? 'You' : item.type === 'plan' ? 'Proposed plan · model output' : 'Assistant · model output'));
+            if (whitespace) content.append(element('p', 'muted', 'The model returned only whitespace.')); else formatContent(content, text, !view && !inheritedContext); article.append(content);
             if(user)for(const [index,part] of (Array.isArray(item.content)?item.content:[]).filter(part=>['image','localImage'].includes(part.type)).entries())article.append(savedImageCard(thread.id,turn.id,item.savedImageItemId??item.id,index,part.image,view));
             if (!user && text) {const copy = element('button', 'message-copy', item.type === 'plan' ? 'Copy plan' : 'Copy message'); copy.onclick = event => copyText(event.currentTarget, text); article.append(copy);} section.append(article);
           }
@@ -1456,8 +1573,8 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
         } else if (item.type === 'commandExecution') {
           const text = `${item.cwd ? `Folder: ${item.cwd}\n` : ''}$ ${item.command || ''}\n\n${item.aggregatedOutput || ''}${item.exitCode != null ? `\nExit code: ${item.exitCode}` : ''}`;
           section.append(receipt(key, `Command · ${codingCommandOutcome(item, turn)}${item.command ? ` · ${item.command.slice(0, 100)}` : ''}`, text, openKeys));
-        } else if (item.type === 'fileChange') section.append(codingFileChangeReceipt(key,item,openKeys,!view));
-        else if (item.type === 'subAgentActivity') section.append(codingAgentReceipt(key,item,thread,openKeys,view));
+        } else if (item.type === 'fileChange') section.append(codingFileChangeReceipt(key,item,openKeys,!view && !inheritedContext));
+        else if (item.type === 'subAgentActivity') section.append(codingAgentReceipt(key,item,thread,openKeys,view,!inheritedContext));
         else section.append(receipt(key, `${item.type || 'Tool'}${item.status ? ` · ${item.status}` : ''}`, JSON.stringify(item, null, 2), openKeys));
         if (item.truncated) section.append(element('p', 'muted', view?'Saved output is truncated. Original history is preserved.':'Live output truncated. Saved history is refreshed when the turn ends.'));
       }
@@ -1465,10 +1582,17 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
       if (turn.diff) section.append(receipt(`${turn.id}:diff`, 'Turn diff', turn.diff, openKeys));
       const repeat = !view && codingRepeatedCommandNotice(thread, turn, {selectedThreadId: selectedId, historyPending: historyPending(thread), updatesInterrupted: !view && pollFailed});
       if (repeat) section.append(element('p', 'muted repeated-command-notice', `The same command has completed ${repeat.count} times in a row in this turn. Review the command receipts above to check its progress.`));
-      section.append(element('p', `turn-outcome${turn.status === 'failed' ? ' error' : ''}`, outcome(turn)));
-      const evidence = codingVerificationSummary(turn, {historyIncomplete: !!(thread.historyTruncated || thread.historyWarning || thread.verificationGap), updatesInterrupted: !view && pollFailed});
-      const verification = element('aside', 'verification-summary'); verification.dataset.state = evidence.state; verification.setAttribute('aria-label', 'Verification evidence');
-      verification.append(element('strong', '', 'No verification recorded'), element('p', '', evidence.detail)); section.append(verification); messages.append(section);
+      if (inheritedContext) {
+        section.append(element('p', 'turn-outcome inherited-outcome', 'Inherited parent context · original stopped marker retained'));
+      } else {
+        const evidence = codingVerificationSummary(turn, {historyIncomplete: !!(thread.historyTruncated || thread.historyWarning || thread.verificationGap), updatesInterrupted: !view && pollFailed});
+        const execution = element('div', 'execution-summary'); execution.setAttribute('aria-label', 'Execution result');
+        execution.append(element('strong', '', 'Execution'), element('p', `turn-outcome${turn.status === 'failed' ? ' error' : ''}`, outcome(turn)), element('p', 'command-counts', codingCommandCounts(evidence.counts)));
+        const verification = element('aside', 'verification-summary'); verification.dataset.state = evidence.state; verification.setAttribute('aria-label', 'Verification evidence');
+        verification.append(element('strong', '', 'Verification: not established'), element('p', '', evidence.detail));
+        section.append(execution, verification);
+      }
+      messages.append(section);
     }
   }
   function renderMessages() {
@@ -2934,6 +3058,9 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
       catch(error){if(!disposed&&selectedId===id&&selectionEpoch===scope)banner('notice',message(error));}});
   };
   $('failed-guest-storage').onclick = () => {act(async()=>{const result=await native({op:'codingStorage',input:{failed:true}});banner('notice',result.message || 'Failed guest disk review finished.');});};
+  $('review-startup-recovery').onclick = () => {
+    if (!$('review-startup-recovery').disabled && !$('failed-startups').disabled) $('failed-startups').click();
+  };
   $('failed-startups').onclick = () => {
     if(setupBlocking()||!window.salehSaveBeforeLeave())return;const origin=selectedId,scope=selectionEpoch,model=newModel;
     return act(async()=>{
