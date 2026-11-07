@@ -398,7 +398,8 @@ class Suite:
                         "Startup compilation/fixture did not pass")
                 return count["passed"], {"rawResult": kept}
             self.case("startup", py("tooling/check_startup.py"), startup)
-            self.case("build-tools", py("tooling/tests/test_build_tools.py") + ["-v"],
+            self.case("build-tools", [self.python, "-B", "-m", "unittest", "discover", "-s",
+                      "tooling/tests", "-p", "test_build_tools.py", "-v"],
                       lambda text: (unittest_counts(text), {}))
         elif name == "presentation":
             def presentation(text):
