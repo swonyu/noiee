@@ -1,6 +1,6 @@
 # Noiee
 
-Noiee is the native macOS local AI workspace formerly named Saleh Uncensored. This checkout is the versioned development source for Build 172. Its baseline is tagged `noiee-build171-source`; the original Build 171 source and release evidence remain separate and unchanged.
+Noiee is the native macOS local AI workspace formerly named Saleh Uncensored. This checkout is the versioned development source for Build 173. The installed Build 172 source is retained at tag `noiee-build172`; the original Build 171 source and its `noiee-build171-source` baseline remain separate and unchanged.
 
 ## Layout
 
@@ -25,12 +25,12 @@ Tasks derives its execution context and automatic-compaction threshold from the 
 Use a clean committed checkout for a release build:
 
 ```sh
-python3 -B tooling/build_native.py --build 172
+python3 -B tooling/build_native.py --build 173
 ```
 
 This compiles all native sources and runs the built-in native checks without opening the installed app. Each run creates an exclusive receipt containing source, compiler, SDK, command, binary and log hashes. A `--development` build is explicitly ineligible for release.
 
-See [tooling/README.md](tooling/README.md) for startup checks and backup coverage inspection. See [tooling/RELEASE.md](tooling/RELEASE.md) for the complete Build 171 to Build 172 qualification, capture, signing and guarded installation process. Do not run a historic release recipe or rewrite a prior receipt.
+See [tooling/README.md](tooling/README.md) for startup checks and backup coverage inspection. See [tooling/RELEASE.md](tooling/RELEASE.md) for the complete Build 172 to Build 173 qualification, capture, signing and guarded installation process. Do not run a historic release recipe or rewrite a prior receipt.
 
 `tooling/check_live_profile.mjs` is an explicitly invoked real-model qualification harness. It uses a generated project and isolated native engine home; its result is separate from installed native UI acceptance. Live tests must run serially under the release owner. Never label generated fixtures or a compiler check as a completed user task.
 

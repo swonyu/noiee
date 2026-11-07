@@ -5,7 +5,7 @@
 Run from a committed checkout:
 
 ~~~sh
-python3 -B tooling/build_native.py --build 172
+python3 -B tooling/build_native.py --build 173
 ~~~
 
 The builder compiles the actual Swift inventory into a new private directory under .artifacts/native/, then runs the existing --check-computer validation entry point. It never starts the app UI or a model, signs a bundle, installs an update, opens original stores, or replaces an earlier receipt.
@@ -49,7 +49,7 @@ Chat JSON exports contain Chat histories and associated exported chat data. They
 
 ## Packaging and installation boundary
 
-For the 171→172 update, preserve the existing bundle identifier, designated signing requirement, physical application path, original data directory and authentic successor-admission lineage. Historical Build 171 source, receipts, backups, and its release adapter remain immutable.
+For the 172→173 update, preserve the existing bundle identifier, designated signing requirement, physical application path, original data directory and authentic successor-admission lineage. Historical Build 171 and Build 172 source, receipts, backups, and release adapters remain immutable.
 
 A host release adapter must bind the committed source freeze, immutable native receipt, actual source-bound check reports, fresh closed-store capture, and exact signed predecessor package. It assembles and verifies a signed candidate and archive, makes a complete four-store backup, and uses the existing guarded replacement/rollback transaction. Native startup support and both runtime contracts must be included in the resource manifest.
 
@@ -57,4 +57,4 @@ Portable source compilation and host-specific installation are separate. Do not 
 
 ## Reviewed host update tooling
 
-[RELEASE.md](RELEASE.md) documents the isolated Build171-to-Build172 host adapter, current closed-boundary capture, vendored guard provenance, exact qualification schema, and rollback/acceptance boundaries. The source compiler remains separate from installation.
+[RELEASE.md](RELEASE.md) documents the isolated Build172-to-Build173 host adapter, current closed-boundary capture, vendored guard provenance, exact qualification schema, and rollback/acceptance boundaries. The source compiler remains separate from installation.
