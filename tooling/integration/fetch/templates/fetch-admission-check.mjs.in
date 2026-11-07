@@ -1,0 +1,42 @@
+import assert from 'node:assert/strict';
+import {Readable} from 'node:stream';
+import {mkdtemp,writeFile,mkdir} from 'node:fs/promises';
+import {randomUUID} from 'node:crypto';
+import {dirname,join} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {toolRoutes,nativeSignature,AGENT_TOOLS} from "/Users/saleh/Documents/Noiee/source/agent.mjs";
+const root="/Users/saleh/Library/Caches/NoieeFetchQualification-current-ds23jv0w",CHECKS="/Users/saleh/Documents/Noiee/checks/fetch/current-runtime",fixture=await mkdtemp(join(root,'admission-fixture-'));
+assert(AGENT_TOOLS.some(t=>t.function.name==='fetch_plugin'),'RED: Agent has no fixed Fetch native action');
+const token='private-generated-fixture-token',checks=[];let workCalls=0,codingCalls=0,failWork=false,failCoding=false,hold=false,disconnected=[],gate=null;
+const resolver=Object.assign(async()=>null,{holdDisabled:()=>{hold=true;},admitEnable:()=>{hold=false;},isHeldDisabled:()=>hold});
+const stopped=async()=>({stopped:true});
+const hub={disconnect:async id=>{disconnected.push(id);return {server:id,connected:false};},stop:stopped,close:stopped};
+const worktrees={assertUnconfinedAccess:async()=>{workCalls++;if(gate)await gate;if(failWork)throw Error('Fixture worktree identity changed');},stop:stopped,close:stopped};
+const coding={dataDir:join(fixture,'Coding'),assertUnconfinedAccess:async()=>{codingCalls++;if(failCoding)throw Error('Fixture owner writer is active');},stop:stopped,close:stopped};
+const route=toolRoutes({instanceToken:token,upstream:'http://127.0.0.1:9',hub,coding,worktrees,gitWorkflow:{stop:stopped,close:stopped},managedFetch:resolver,fullAccess:true,unconfinedBoot:true,fetchImpl:async()=>{throw Error('No provider call is permitted');}});
+async function send(input,name='fetchPlugin',modify=()=>{}){
+ const url='/api/tools/'+name,body=Buffer.from(JSON.stringify(input)),nonce=randomUUID(),time=String(Date.now());
+ const req=Readable.from([body]);req.method='POST';req.headers={'content-type':'application/json','x-qwen-nonce':nonce,'x-qwen-time':time,'x-qwen-permit':nativeSignature(token,url,nonce,time,body)};
+ const res={destroyed:false,writableEnded:false,headersSent:false,once(){},off(){}};modify(req,res);let result;
+ await route(req,res,url,(status,value)=>{result={status,value};});return result;
+}
+async function check(name,fn){await fn();checks.push(name);console.log('PASS '+name);}
+await check('shared fixed native admission admits catalog and install after both FullAccess guards',async()=>{
+ for(const action of ['catalog','install']){const before=[workCalls,codingCalls];const r=await send({action});assert.equal(r.status,200);assert.equal(r.value.admitted,true);assert.deepEqual([workCalls,codingCalls],before.map(n=>n+1));}
+});
+await check('disable holds then drains only the managed Fetch ID',async()=>{const r=await send({action:'set_enabled',enabled:false});assert.equal(r.value.admitted,true);assert(hold);assert.deepEqual(disconnected,['managed-fetch']);});
+await check('enable only releases the hold and never auto-connects',async()=>{const r=await send({action:'set_enabled',enabled:true});assert.equal(r.value.admitted,true);assert(!hold);assert.deepEqual(disconnected,['managed-fetch']);});
+await check('worktree or Coding owner refusal dispatches no plugin effect',async()=>{
+ for(const which of ['work','coding']){failWork=which==='work';failCoding=which==='coding';const count=disconnected.length;const r=await send({action:'set_enabled',enabled:false});assert.equal(r.value.isError,true);assert.match(r.value.message,/No new tool/);assert.equal(disconnected.length,count);assert(!hold);}
+ failWork=false;failCoding=false;
+});
+await check('invalid fixed request and unbound Agent claim cannot disable',async()=>{
+ for(const input of [{action:'set_enabled',enabled:1},{action:'install',path:'/tmp'},{action:'install',agentClaim:{runId:randomUUID(),stepId:randomUUID(),claimId:randomUUID()}}]){const r=await send(input);assert.equal(r.status,400);assert(!hold);}
+});
+await check('disconnected native request dispatches no effect',async()=>{const r=await send({action:'set_enabled',enabled:false},'fetchPlugin',(_req,res)=>{res.destroyed=true;});assert.equal(r,undefined);assert(!hold);});
+await check('Stop generation change during FullAccess check prevents admission',async()=>{
+ let release;gate=new Promise(resolve=>release=resolve);const before=workCalls,pending=send({action:'set_enabled',enabled:false});while(workCalls===before)await new Promise(resolve=>setImmediate(resolve));
+ const s=await send({},'stop');assert(s.value.stopped);gate=null;release();const r=await pending;assert(r.value.isError);assert(!hold);
+});
+await writeFile(join(CHECKS,'admission-result.json'),JSON.stringify({passed:checks.length,failed:0,checks,modelCalls:0,serverStarts:0,networkCalls:0},null,2)+'\n');
+console.log(JSON.stringify({passed:checks.length,failed:0}));

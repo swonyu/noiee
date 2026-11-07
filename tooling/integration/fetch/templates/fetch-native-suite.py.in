@@ -1,0 +1,126 @@
+"""One sequential final-q job. Importing defines functions; it runs no fixture."""
+import sys
+sys.dont_write_bytecode=True
+from pathlib import Path
+import datetime,hashlib,json,os,re,signal,stat,subprocess,time
+
+ROOT=Path('/Users/saleh/Library/Caches/NoieeFetchQualification-current-ds23jv0w')
+CHECKS=Path('/Users/saleh/Documents/Noiee/checks/fetch/current-runtime')
+SOURCE=Path('/Users/saleh/Documents/Noiee/source')
+CACHES=Path('/Users/saleh/Library/Caches')
+PYTHON='/opt/homebrew/Cellar/python@3.14/3.14.8_2/Frameworks/Python.framework/Versions/3.14/bin/python3.14'
+NODE='/opt/homebrew/Cellar/node/26.13.0/bin/node'
+REV='f14622be6addadd62adade8fe848ad68bc8c8db8a62f74ef29ca74948036ea8f'
+ENV_KEYS={'HOME','USER','LOGNAME','PATH','LANG','TMPDIR','PYTHONDONTWRITEBYTECODE','NODE_OPTIONS','MODEL_PICKER_BROWSER','ADMISSION_FILES_HELPER','HANDOFF_FILES_HELPER','RECONNECT_SOURCE'}
+ADMISSION='/Users/saleh/Library/Application Support/Saleh Uncensored Release Staging/Build132-zyv3vi8a/archive-review/Saleh Uncensored.app/Contents/Resources/legacy-boot-helper'
+HANDOFF='/Users/saleh/Library/Caches/SalehRecovery152/candidate-9xl_pejs/checks/native-runtime152-v2'
+PINS={
+ 'test-fetch-plugin.py':('f2cc29fb477b6159aec135828bac99c91e423f0cb5c9c789a303f1917f17f865',11004),
+ 'fetch-native-check':('5d936aea8eb783bf43bee500eec0783b305d9d38664c78b919fe6294d1b051ec',142640),
+ 'fetch-native-client':('92d00d7d227f122fa6b9f9ecc9e58a6f8ef377f250a314aa6a39c83d4995cc26',117072),
+ 'fetch-guards-check.mjs':('21d49d070378e5892f929a3d69cb6cf503a15ae9e1b70379f39f507bed8d0209',5662),
+ 'fetch-durable-check.mjs':('86a8ee94ca837142b3f506daae33f82659b9fe835da47569ec007e64f117b20e',6403),
+ 'model-http171-stdio-guard.mjs':('174edf52ca9fe071eebcc1df38a9ace7a68f5fda8d4ddbdad154217a5a7a2f08',2199),
+}
+RUNTIMES={PYTHON:('1b5cb11d163e5ba34e2a05fc533c0ed89574d4425f9749a9d89405f651980e0d',34640),PYTHON.rsplit('/bin/',1)[0]+'/Python':('ea96cfe3ee0190f17c4f907a321f8aadbca35eee47285e329ad243347be6a8b9',5467456),NODE:('7296c3dda88793e08d1089d839a782178c4bba6bb22f5c40ab2a75263fb071bd',132848)}
+FIXED_OUTPUTS=['installer-result.json','guard-result.json','durable-result.json','fetch-native-suite-result.json']+[f'fetch-native-suite-{name}.log' for name in ['installer','native','guards','durable']]
+def require(value,message):
+    if not value:raise RuntimeError(message)
+def derive_root(script):
+    p=Path(script);require(p==CHECKS/'fetch-native-suite.py','Wrapper must be at the exact Noiee checks location')
+    root=ROOT;require(root.is_relative_to(CACHES) and root!=CACHES,'Exact generated Caches namespace required');return root
+def validate_environment(env,root):
+    require(type(env) is dict and set(env)==ENV_KEYS and all(type(v) is str and '\0' not in v for v in env.values()),'Exact twelve-key qenv required; ambient/credential fields refused')
+    require(root==ROOT and env['HOME']=='/Users/saleh' and env['USER']==env['LOGNAME']=='saleh','Root identity/environment changed')
+    require(env['PATH']=='/opt/homebrew/bin:/usr/bin:/bin' and env['LANG']=='C' and env['PYTHONDONTWRITEBYTECODE']==env['MODEL_PICKER_BROWSER']=='1','Reviewed fixed qenv values required')
+    require(env['RECONNECT_SOURCE']==str(SOURCE),'RECONNECT_SOURCE must name the exact combined source')
+    require(env['NODE_OPTIONS']=='--preserve-symlinks --import='+str(CHECKS/'model-http171-stdio-guard.mjs'),'Exact reviewed preimport guard required')
+    require(env['ADMISSION_FILES_HELPER']==ADMISSION and env['HANDOFF_FILES_HELPER']==HANDOFF,'Reviewed helper paths required')
+    tmp=Path(env['TMPDIR'].rstrip('/'));require(tmp.is_absolute() and str(tmp)==os.path.normpath(str(tmp)) and tmp.is_relative_to(CACHES) and tmp!=CACHES and not tmp.is_relative_to(SOURCE),'Exact private Caches temporary namespace required')
+    return dict(env)
+def runtime_environment(raw,root):
+    require(type(raw) is dict,'Runtime environment must be a plain map');env=dict(raw);removed={}
+    for key,value in [('LC_CTYPE','C.UTF-8'),('__CF_USER_TEXT_ENCODING','0x1F5:0x0:0x0')]:
+        if key in env:
+            require(env[key]==value,'Unreviewed interpreter-added metadata: '+key);removed[key]=env.pop(key)
+    return validate_environment(env,root),removed
+def private_dir(p,create=False):
+    if create:
+        try:p.mkdir(mode=0o700)
+        except FileExistsError:pass
+    s=p.lstat();require(stat.S_ISDIR(s.st_mode) and s.st_uid==os.getuid() and not s.st_mode&0o077 and p.resolve(strict=True)==p,'Private canonical directory required: '+str(p))
+def checked(p,limit=2*1024*1024):
+    before=p.lstat();require(stat.S_ISREG(before.st_mode) and before.st_uid==os.getuid() and before.st_nlink==1 and not before.st_mode&0o022 and before.st_size<=limit and p.resolve(strict=True)==p,'Unsafe fixed input/output: '+str(p))
+    fd=os.open(p,os.O_RDONLY|os.O_NONBLOCK|os.O_NOFOLLOW|os.O_CLOEXEC)
+    stamp=lambda s:(s.st_dev,s.st_ino,s.st_mode,s.st_uid,s.st_nlink,s.st_size,s.st_mtime_ns,s.st_ctime_ns)
+    try:
+        require(stamp(before)==stamp(os.fstat(fd)),'File changed before read');chunks=[];size=0
+        while True:
+            block=os.read(fd,65536)
+            if not block:break
+            size+=len(block);require(size<=limit,'File exceeds its bound');chunks.append(block)
+        require(size==before.st_size and stamp(before)==stamp(os.fstat(fd))==stamp(p.lstat()),'File changed during read');return b''.join(chunks)
+    finally:os.close(fd)
+def reference(p):
+    data=checked(p);return dict(path=str(p),sha256=hashlib.sha256(data).hexdigest(),bytes=len(data))
+def validate_bindings(root):
+    private_dir(root);private_dir(CHECKS);private_dir(SOURCE)
+    for name,(sha,size) in PINS.items():
+        data=checked(CHECKS/name);require(len(data)==size and hashlib.sha256(data).hexdigest()==sha,'Pinned fixture changed: '+name)
+    for name,(sha,size) in RUNTIMES.items():
+        data=checked(Path(name),size);require(len(data)==size and hashlib.sha256(data).hexdigest()==sha,'Pinned runtime changed')
+def native_environment(root):return {'HOME':str(CHECKS/'native-home'),'TMPDIR':str(CHECKS/'native-tmp'),'PATH':'/usr/bin:/bin','LANG':'en_US.UTF-8'}
+def command_plan(root,env,parent='@installer.parent'):
+    env=validate_environment(env,root);checks=CHECKS
+    if parent!='@installer.parent':
+        p=Path(parent);require(p.name=='app-parent' and p.parent.parent==root and re.fullmatch(r'fixture-[a-z0-9_]{8}',p.parent.name),'Installer parent must be the exact generated cache role')
+    definitions=[('installer',[PYTHON,'-I','-B',str(checks/'test-fetch-plugin.py')],90,env),('native',[str(checks/'fetch-native-check'),parent,str(SOURCE)],45,native_environment(root)),('guards',[NODE,'--preserve-symlinks',str(checks/'fetch-guards-check.mjs')],45,env),('durable',[NODE,'--preserve-symlinks',str(checks/'fetch-durable-check.mjs')],60,env)]
+    return [dict(name=name,command=cmd,cwd=str(root),environment=dict(child_env),timeoutSeconds=seconds,logPath=str(checks/('fetch-native-suite-'+name+'.log'))) for name,cmd,seconds,child_env in definitions]
+def receipt(path,count):
+    value=json.loads(checked(path,65536));require(type(value) is dict and type(value.get('passed')) is int and value['passed']==count and type(value.get('failed')) is int and value['failed']==0,'Exact fixture count/result required');return value
+def zeros(value,keys):require(all(type(value.get(key)) is int and value[key]==0 for key in keys),'Exact zero-effect/normal-exit fields required')
+def installer_parent(root,v,env):
+    zeros(v,['originalAppActions','modelCalls','networkCalls'])
+    parent=Path(v['parent']);command_plan(root,env,parent=str(parent));require(Path(v['fixture'])==parent.parent and Path(v['runtime'])==parent/'extensions/fetch'/REV/'runtime','Installer role bindings changed');return str(parent)
+def guard_exit(text):
+    matches=re.findall(r'^PRIVATE_NETWORK_EXIT_GUARD (\{[^\n]*\})$',text,re.M);require(len(matches)==1,'Exactly one Node exit guard receipt required')
+    value=json.loads(matches[0]);require(set(value)=={'allowed','denied','unexpected','livePorts'} and all(type(value[k]) is int and value[k]>=0 for k in ['allowed','denied','unexpected']) and value['unexpected']==0 and value['livePorts']==[],'Node guard unexpected sockets or live ports');return value
+def end_group(child):
+    for sig,seconds in [(signal.SIGTERM,2),(signal.SIGKILL,2)]:
+        try:os.killpg(child.pid,sig)
+        except ProcessLookupError:pass
+        try:child.wait(timeout=seconds);return
+        except subprocess.TimeoutExpired:pass
+    raise RuntimeError('Owned test stage exit is unconfirmed')
+def cancelled(_signal,_frame):raise InterruptedError('Final qualification cancelled')
+def run_stage(job,rows):
+    require('@installer.parent' not in job['command'],'Unresolved dependency cannot execute');start=time.monotonic();timeout=False
+    fd=os.open(job['logPath'],os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW|os.O_CLOEXEC,0o600)
+    with os.fdopen(fd,'wb') as output:
+        child=subprocess.Popen(job['command'],cwd=job['cwd'],env=job['environment'],stdin=subprocess.DEVNULL,stdout=output,stderr=subprocess.STDOUT,start_new_session=True)
+        try:
+            try:code=child.wait(timeout=job['timeoutSeconds'])
+            except subprocess.TimeoutExpired:timeout=True;end_group(child);code=child.returncode
+        except BaseException:end_group(child);raise
+        finally:output.flush();os.fsync(output.fileno())
+    row={**job,'pid':child.pid,'exitCode':code,'timeoutHit':timeout,'elapsedSeconds':round(time.monotonic()-start,6),'log':reference(Path(job['logPath']))}
+    rows.append(row);require(code==0 and not timeout,'Stage did not exit normally: '+job['name']);return row
+def write_new(path,value):
+    fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW|os.O_CLOEXEC,0o600)
+    with os.fdopen(fd,'w') as f:json.dump(value,f,indent=2);f.write('\n');f.flush();os.fsync(f.fileno())
+def main():
+    require(len(sys.argv)==1,'No path, environment or command overrides are accepted');root=derive_root(Path(__file__).absolute());env,removed=runtime_environment(dict(os.environ),root);validate_bindings(root);private_dir(Path(env['TMPDIR'].rstrip('/')))
+    checks=CHECKS;require(all(not os.path.lexists(checks/name) for name in FIXED_OUTPUTS),'Fresh fixed receipts/logs required; previous evidence is never overwritten')
+    for name in ['native-home','native-tmp']:private_dir(checks/name,True)
+    for sig in [signal.SIGTERM,signal.SIGINT]:signal.signal(sig,cancelled)
+    rows=[];result=dict(version=1,kind='sequential-fetch-native-final-q',passed=0,failed=1,rows=rows,validatedQenvKeys=sorted(env),runtimeAddedMetadataRemoved=removed,childEnvironmentsReconstructed=True)
+    try:
+        plan=command_plan(root,env);run_stage(plan[0],rows);installed=receipt(checks/'installer-result.json',17);parent=installer_parent(root,installed,env);private_dir(Path(parent).parent);private_dir(Path(parent))
+        plan=command_plan(root,env,parent);run_stage(plan[1],rows);native_text=checked(Path(plan[1]['logPath'])).decode();require(re.findall(r'^PASS 14 fixed native parser/catalog/drain checks; generated fixture only$',native_text,re.M)==['PASS 14 fixed native parser/catalog/drain checks; generated fixture only'],'Native14 success marker required')
+        run_stage(plan[2],rows);guards=receipt(checks/'guard-result.json',9);zeros(guards,['realServerStarts','networkCalls','modelCalls']);rows[-1]['nodeExitGuard']=guard_exit(checked(Path(plan[2]['logPath'])).decode())
+        run_stage(plan[3],rows);durable=receipt(checks/'durable-result.json',6);zeros(durable,['actualModelCalls','networkCalls','nativeFixtureExitCode']);rows[-1]['nodeExitGuard']=guard_exit(checked(Path(plan[3]['logPath'])).decode())
+        validate_bindings(root);result.update(passed=46,failed=0,installerParent=parent,installerReceipt=reference(checks/'installer-result.json'),guardReceipt=reference(checks/'guard-result.json'),durableReceipt=reference(checks/'durable-result.json'))
+    except BaseException as error:result['error']=str(error);raise
+    finally:write_new(checks/'fetch-native-suite-result.json',result)
+    print(json.dumps({'passed':46,'failed':0,'sequence':['installer17','native14','guards9','durable6']}))
+if __name__=='__main__':main()

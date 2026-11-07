@@ -1,0 +1,150 @@
+from pathlib import Path
+import hashlib,importlib.util,json,os,signal,stat,subprocess,tempfile,time,types
+
+ROOT=Path('/Users/saleh/Library/Caches/NoieeFetchQualification-current-ds23jv0w')
+CHECKS=Path('/Users/saleh/Documents/Noiee/checks/fetch/current-runtime')
+SOURCE=Path('/Users/saleh/Documents/Noiee/source')
+PYTHON='/opt/homebrew/Cellar/python@3.14/3.14.8_2/Frameworks/Python.framework/Versions/3.14/bin/python3.14'
+HELPER=SOURCE/'fetch-plugin-runtime.py'
+assert HELPER.is_file(),'RED: the fixed Fetch installer helper is missing'
+fixture=Path(tempfile.mkdtemp(prefix='fixture-',dir=ROOT));fixture.chmod(0o700)
+parent=fixture/'app-parent';parent.mkdir(mode=0o700)
+coding=parent/'Coding';coding.mkdir(mode=0o700);(coding/'preserve').write_text('immutable fixture Coding namespace')
+coding_before=hashlib.sha256((coding/'preserve').read_bytes()).hexdigest()
+checks=[]
+env={'HOME':str(fixture),'TMPDIR':str(fixture),'PATH':'/usr/bin:/bin','LANG':'en_US.UTF-8'}
+def call(action,enabled=None,expected=True):
+    args=[PYTHON,'-I','-B',str(HELPER),'--parent',str(parent),'--resources',str(SOURCE),'--action',action]
+    if enabled is not None:args+=['--enabled',enabled]
+    p=subprocess.run(args,env=env,cwd=fixture,capture_output=True,text=True,timeout=30)
+    value=json.loads(p.stdout)
+    assert (p.returncode==0)==expected,(args,p.returncode,value,p.stderr)
+    return value
+def check(name,fn):fn();checks.append(name);print('PASS',name,flush=True)
+def ownership_matrix():
+    spec=importlib.util.spec_from_file_location('fixed_fetch_fixture',HELPER);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    correct=dict(st_mode=stat.S_IFREG|0o600,st_uid=os.getuid(),st_nlink=1)
+    module.owned(types.SimpleNamespace(**correct),mode=0o600)
+    for changed in [dict(st_uid=0),dict(st_nlink=2),dict(st_mode=stat.S_IFREG|0o620),dict(st_mode=stat.S_IFLNK|0o600)]:
+        try:module.owned(types.SimpleNamespace(**(correct|changed)),mode=0o600)
+        except AssertionError:continue
+        raise AssertionError('Unsafe generated ownership metadata was admitted')
+check('generated wrong UID, mode, link count and leaf type refused',ownership_matrix)
+def initial():
+    v=call('catalog');assert not v['installed'] and not v['enabled'] and v['available'];assert not (parent/'extensions').exists()
+check('catalog is read only before installation',initial)
+def fixed_shape():
+    call('arbitrary',expected=False);call('set_enabled','1',expected=False)
+check('unknown action and non-Boolean literal rejected',fixed_shape)
+def install():
+    v=call('install');assert v['installed'] and not v['enabled'] and v['newInstall'];assert not (parent/'mcp.json').exists()
+check('exact fixed payload installs disabled outside Coding',install)
+runtime=parent/'extensions/fetch/f14622be6addadd62adade8fe848ad68bc8c8db8a62f74ef29ca74948036ea8f/runtime'
+state=parent/'fetch-plugin-v1.json'
+assert runtime.is_dir() and state.stat().st_mode&0o777==0o600
+def idempotent():assert not call('install')['newInstall']
+check('exact installation is idempotent',idempotent)
+def enable():assert call('set_enabled','true')['enabled'];assert call('catalog')['enabled']
+check('explicit enable retains exact complete payload',enable)
+original=state.read_bytes()
+def bad_state():
+    for mutate in [lambda v:v.update(version=True),lambda v:v.update(id='arbitrary'),lambda v:v.update(revision='0'*64),lambda v:v.update(enabled=1),lambda v:v.update(extra=True)]:
+        v=json.loads(original);mutate(v);state.write_text(json.dumps(v));state.chmod(0o600);call('catalog',expected=False)
+    state.write_bytes(original);state.chmod(0o600)
+check('state exact keys, numeric version, ID, revision and Boolean checked',bad_state)
+def state_permissions():
+    state.chmod(0o666);call('catalog',expected=False);state.chmod(0o600)
+    other=parent/'alias-state';os.link(state,other);call('catalog',expected=False);other.unlink()
+    saved=parent/'saved-state';state.rename(saved);state.symlink_to(saved);call('catalog',expected=False);state.unlink();saved.rename(state)
+    state.rename(saved);os.mkfifo(state,0o600)
+    try:call('catalog',expected=False)
+    finally:state.unlink();saved.rename(state)
+check('state wrong mode, hardlink, symlink and FIFO rejected',state_permissions)
+def tamper():
+    p=runtime/'lib/python3.14/site-packages/mcp_server_fetch/server.py';b=p.read_bytes();p.write_bytes(b+b'\n');call('catalog',expected=False);p.write_bytes(b)
+    (runtime/'extra').write_text('unreviewed');call('catalog',expected=False);(runtime/'extra').unlink()
+check('changed package content and extra namespace rejected',tamper)
+def disabled():assert not call('set_enabled','false')['enabled']
+check('explicit disable changes only fixed record',disabled)
+def stopped_install():
+    stopped=fixture/'stopped-parent';stopped.mkdir(mode=0o700)
+    args=[PYTHON,'-I','-B',str(HELPER),'--parent',str(stopped),'--resources',str(SOURCE),'--action','install']
+    p=subprocess.Popen(args,env=env,cwd=fixture,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+    deadline=time.monotonic()+10
+    while time.monotonic()<deadline and p.poll() is None:
+        stages=stopped/'extensions/fetch'
+        if stages.exists() and any(x.name.startswith('.install-') for x in stages.iterdir()):break
+        time.sleep(.001)
+    assert p.poll() is None,'Generated Stop must arrive during an owned install'
+    p.terminate();out,err=p.communicate(timeout=10)
+    assert p.returncode!=0 and not (stopped/'fetch-plugin-v1.json').exists(),(p.returncode,out,err)
+    assert not (stopped/'extensions/fetch/f14622be6addadd62adade8fe848ad68bc8c8db8a62f74ef29ca74948036ea8f').exists()
+    again=subprocess.run(args,env=env,cwd=fixture,capture_output=True,text=True,timeout=10)
+    assert again.returncode!=0 and 'interrupted' in json.loads(again.stdout)['message'],'An interrupted install must never retry silently'
+check('Stop drains installer child and fences publication',stopped_install)
+def unsafe_parent():
+    alias=fixture/'aliased-parent';alias.symlink_to(parent,target_is_directory=True)
+    args=[PYTHON,'-I','-B',str(HELPER),'--parent',str(alias),'--resources',str(SOURCE),'--action','catalog']
+    p=subprocess.run(args,env=env,cwd=fixture,capture_output=True,text=True,timeout=10);assert p.returncode!=0 and 'canonical' in json.loads(p.stdout)['message']
+    mode=parent.stat().st_mode&0o777;parent.chmod(0o777)
+    try:call('install',expected=False)
+    finally:parent.chmod(mode)
+check('canonical parent aliases and other-writer directory modes refused',unsafe_parent)
+def publication_uncertainty():
+    spec=importlib.util.spec_from_file_location('fixed_fetch_publication_fixture',HELPER);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    target=fixture/'publication-parent';target.mkdir(mode=0o700);chain=module.Chain(target);replace=module.os.replace
+    def stop_after_atomic_replace(*args,**kwargs):replace(*args,**kwargs);module.cancelled=True
+    try:
+        module.os.replace=stop_after_atomic_replace
+        try:module.publish_state(chain,True,(None,None))
+        except RuntimeError:pass
+        else:raise AssertionError('Stop after publication must not claim success')
+        assert module.published and json.loads((target/'fetch-plugin-v1.json').read_text())['enabled'] is True
+    finally:module.os.replace=replace;module.cancelled=False;chain.close()
+check('Stop after atomic publication retains state and reports uncertainty',publication_uncertainty)
+def fifo_race():
+    spec=importlib.util.spec_from_file_location('fixed_fetch_fifo_fixture',HELPER);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    assert module.FILE&os.O_NONBLOCK,'Read-only open must be nonblocking before a raced leaf type check'
+    target=fixture/'fifo-parent';target.mkdir(mode=0o700);leaf=target/'record';leaf.write_text('fixed fixture');leaf.chmod(0o600);fd=os.open(target,os.O_RDONLY|os.O_DIRECTORY);original_open=module.os.open;changed=False
+    def race(name,flags,*args,**kwargs):
+        nonlocal changed
+        if name=='record' and not changed:
+            changed=True;leaf.rename(target/'original');os.mkfifo(leaf,0o600)
+        return original_open(name,flags,*args,**kwargs)
+    try:
+        module.os.open=race
+        try:module.read_at(fd,'record',8192,0o600)
+        except AssertionError:pass
+        else:raise AssertionError('Raced FIFO was accepted')
+        assert changed
+    finally:module.os.open=original_open;os.close(fd)
+check('lstat-to-open FIFO replacement fails without blocking',fifo_race)
+def sync_manifest_directories():
+    spec=importlib.util.spec_from_file_location('fixed_fetch_sync_fixture',HELPER);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    entries=json.loads((SOURCE/'fetch-runtime-v20261024-manifest.json').read_text())['entries'];chain=module.Chain(runtime);fsync=module.os.fsync;synced=set()
+    def observe(fd):
+        s=os.fstat(fd);assert stat.S_ISDIR(s.st_mode);synced.add((s.st_dev,s.st_ino));fsync(fd)
+    try:module.os.fsync=observe;module.verify_tree(chain,entries,sync=True)
+    finally:module.os.fsync=fsync;chain.close()
+    assert len(synced)==sum(e['type']=='directory' for e in entries.values())
+check('prepared runtime directory entries are synced before publication',sync_manifest_directories)
+def runtime_only_publication_uncertainty():
+    spec=importlib.util.spec_from_file_location('fixed_fetch_runtime_publication_fixture',HELPER);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    target=fixture/'runtime-publication-parent';target.mkdir(mode=0o700);parent_chain=module.Chain(target);entries,resources=module.load_resources(str(SOURCE))
+    def fail_state(*args):raise RuntimeError('Generated stop after version directory publication')
+    module.publish_state=fail_state
+    try:
+        try:module.install(parent_chain,resources,entries)
+        except RuntimeError:pass
+        else:raise AssertionError('Late publication fault was not observed')
+        assert module.published and (target/'extensions/fetch'/module.REV/'runtime').is_dir() and not (target/'fetch-plugin-v1.json').exists()
+        try:module.require_no_unpublished(parent_chain)
+        except AssertionError:pass
+        else:raise AssertionError('A version published without its state must remain unavailable')
+    finally:resources.close();parent_chain.close()
+check('runtime-only publication is retained and stays unavailable after fault',runtime_only_publication_uncertainty)
+assert hashlib.sha256((coding/'preserve').read_bytes()).hexdigest()==coding_before and sorted(p.name for p in coding.iterdir())==['preserve']
+checks.append('protected Coding namespace remains exact')
+result={'passed':len(checks),'failed':0,'checks':checks,'fixture':str(fixture),'parent':str(parent),'runtime':str(runtime),'originalAppActions':0,'modelCalls':0,'networkCalls':0}
+(CHECKS/'installer-result.json').write_text(json.dumps(result,indent=2)+'\n')
+print(json.dumps(result))

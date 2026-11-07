@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "assertionsChanged": false,
+  "files": [
+    {
+      "template": "FetchPluginCheck.swift.in",
+      "sha256": "db47f97eb5611a1b40d352526ec75f85a58b59a1c5560fc06406b9d6a40717a4",
+      "origin": "/Users/saleh/Documents/Noiee/checks/fetch/current-runtime/FetchPluginCheck.swift",
+      "originSHA256": "db47f97eb5611a1b40d352526ec75f85a58b59a1c5560fc06406b9d6a40717a4"
+    },
+    {
+      "template": "FetchPluginClientFixture.swift.in",
+      "sha256": "3154c046e20c4478e9f01cd427e0876127030ff2f52412b15bb6c01075c07217",
+      "origin": "/Users/saleh/Documents/Noiee/checks/fetch/current-runtime/FetchPluginClientFixture.swift",
+      "originSHA256": "3154c046e20c4478e9f01cd427e0876127030ff2f52412b15bb6c01075c07217"
+    },
+    {
+      "template": "check-merged.mjs.in",
+      "sha256": "dc39220a9ddf971a4f947e0c5b9c176b82e634cdaffc7b86ae9eb02f5f1ce8b5",
+      "origin": "/Users/saleh/Documents/Noiee/checks/fetch/current-runtime/check-merged.mjs",
+      "originSHA256": "dc39220a9ddf971a4f947e0c5b9c176b82e634cdaffc7b86ae9eb02f5f1ce8b5"
+    },
+    {
+      "template": "fake-endpoints.mjs.in",
+      "sha256": "7caf47c771ecd5750bae55811662ddbdfa6a1023ee221cb46771bd0481c0fa07",
+      "origin": "/Users/saleh/Documents/Noiee/checks/fetch/current-runtime/fake-endpoints.mjs",
+      "originSHA256": "7caf47c771ecd5750bae55811662ddbdfa6a1023ee221cb46771bd0481c0fa07"
+    },
+    {
+      "template": "fetch-admission-check.mjs.in",
+      "sha256": "1eb64a83099e96d84f1a62c626466564193adbe169b7111b36fd25d9ea3ee8bd",
+      "origin": "/Users/saleh/Documents/Noiee/checks/fetch/current-runtime/fetch-admission-check.mjs",
+      "originSHA256": "1eb64a83099e96d84f1a62c626466564193adbe169b7111b36fd25d9ea3ee8bd"
+    },
+    {
+      "template": "fetch-durable-check.mjs.in",
+      "sha256": "86a8ee94ca837142b3f506daae33f82659b9fe835da47569ec007e64f117b20e",
+      "origin": "/Users/saleh/Documents/Noiee/checks/fetch/current-runtime/fetch-durable-check.mjs",
+      "originSHA256": "86a8ee94ca837142b3f506daae33f82659b9fe835da47569ec007e64f117b20e"
+    },
+    {
+      "template": "fetch-guards-check.mjs.in",
+      "sha256": "21d49d070378e5892f929a3d69cb6cf503a15ae9e1b70379f39f507bed8d0209",
+      "origin": "/Users/saleh/Documents/Noiee/checks/fetch/current-runtime/fetch-guards-check.mjs",
+      "originSHA256": "21d49d070378e5892f929a3d69cb6cf503a15ae9e1b70379f39f507bed8d0209"
+    },
+    {
+      "template": "fetch-native-suite.py.in",
+      "sha256": "c2fcea106334ca88891b45d83f51dc9c1b694f192774dccbfb80a98d88692842",
+      "origin": "/Users/saleh/Documents/Noiee/checks/fetch/current-runtime/fetch-native-suite.py",
+      "originSHA256": "c2fcea106334ca88891b45d83f51dc9c1b694f192774dccbfb80a98d88692842"
+    },
+    {
+      "template": "fetch-ui-check.mjs.in",
+      "sha256": "054f498bac6bc60b9ec5bd6b58d766e3e26813023ad8bb83c6eb0506cb176af9",
+      "origin": "/Users/saleh/Documents/Noiee/checks/fetch/current-runtime/fetch-ui-check.mjs",
+      "originSHA256": "054f498bac6bc60b9ec5bd6b58d766e3e26813023ad8bb83c6eb0506cb176af9"
+    },
+    {
+      "template": "model-http171-stdio-guard.mjs.in",
+      "sha256": "174edf52ca9fe071eebcc1df38a9ace7a68f5fda8d4ddbdad154217a5a7a2f08",
+      "origin": "/Users/saleh/Documents/Noiee/checks/fetch/current-runtime/model-http171-stdio-guard.mjs",
+      "originSHA256": "174edf52ca9fe071eebcc1df38a9ace7a68f5fda8d4ddbdad154217a5a7a2f08"
+    },
+    {
+      "template": "run-qualification.py.in",
+      "sha256": "1118f41441c824fe60bd53f48ae4114fe13653a0b8a626290c428e2b2c087fcc",
+      "origin": "/Users/saleh/Documents/Noiee/checks/fetch/current-runtime/run-qualification.py",
+      "originSHA256": "1118f41441c824fe60bd53f48ae4114fe13653a0b8a626290c428e2b2c087fcc"
+    },
+    {
+      "template": "test-fetch-plugin.py.in",
+      "sha256": "f2cc29fb477b6159aec135828bac99c91e423f0cb5c9c789a303f1917f17f865",
+      "origin": "/Users/saleh/Documents/Noiee/checks/fetch/current-runtime/test-fetch-plugin.py",
+      "originSHA256": "f2cc29fb477b6159aec135828bac99c91e423f0cb5c9c789a303f1917f17f865"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+from pathlib import Path
+import datetime,hashlib,json,os,signal,subprocess,sys,time
+checks=Path(__file__).resolve().parent
+plan=json.loads((checks/'ADAPTATION.json').read_text());root=Path(plan['root']);source=Path(plan['source']);cross=Path(plan['crossRoot'])
+python='/opt/homebrew/Cellar/python@3.14/3.14.8_2/Frameworks/Python.framework/Versions/3.14/bin/python3.14'
+node='/opt/homebrew/Cellar/node/26.13.0/bin/node'
+env={'HOME':'/Users/saleh','USER':'saleh','LOGNAME':'saleh','PATH':'/opt/homebrew/bin:/usr/bin:/bin','LANG':'C','TMPDIR':str(root/'tmp')+'/','PYTHONDONTWRITEBYTECODE':'1','NODE_OPTIONS':'--preserve-symlinks --import='+str(checks/'model-http171-stdio-guard.mjs'),'MODEL_PICKER_BROWSER':'1','ADMISSION_FILES_HELPER':'/Users/saleh/Library/Application Support/Saleh Uncensored Release Staging/Build132-zyv3vi8a/archive-review/Saleh Uncensored.app/Contents/Resources/legacy-boot-helper','HANDOFF_FILES_HELPER':'/Users/saleh/Library/Caches/SalehRecovery152/candidate-9xl_pejs/checks/native-runtime152-v2','RECONNECT_SOURCE':str(source)}
+rows=[]
+def ref(path):
+    data=path.read_bytes();return {'path':str(path),'sha256':hashlib.sha256(data).hexdigest(),'bytes':len(data)}
+def run(name,command,timeout):
+    log=checks/(name+'.log');start=time.monotonic()
+    with log.open('xb') as output:
+        child=subprocess.Popen(command,cwd=root,env=env,stdin=subprocess.DEVNULL,stdout=output,stderr=subprocess.STDOUT,start_new_session=True)
+        try:code=child.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            os.killpg(child.pid,signal.SIGTERM)
+            try:child.wait(timeout=5)
+            except subprocess.TimeoutExpired:os.killpg(child.pid,signal.SIGKILL);child.wait()
+            code=child.returncode
+        output.flush();os.fsync(output.fileno())
+    row={'name':name,'command':command,'exitCode':code,'seconds':round(time.monotonic()-start,3),'log':ref(log)};rows.append(row)
+    print(json.dumps(row),flush=True)
+    if code!=0:
+        print(log.read_text()[-16000:],flush=True)
+        raise RuntimeError(name+' failed')
+result={'status':'RUNNING','source':str(source),'generatedRoot':str(root),'rows':rows,'sourceBefore':plan['sourcePins']}
+try:
+    run('native-suite-wrapper',[python,'-I','-B',str(checks/'fetch-native-suite.py')],300)
+    suite=json.loads((checks/'fetch-native-suite-result.json').read_text());assert suite['passed']==46 and suite['failed']==0
+    print('DEPENDENT_SEQUENCE_PASS_46',flush=True)
+    run('fetch-ui-run',[node,'--preserve-symlinks',str(checks/'fetch-ui-check.mjs')],45)
+    run('fetch-admission-run',[node,'--preserve-symlinks',str(checks/'fetch-admission-check.mjs')],45)
+    run('fetch-recovery-cross-run',[node,'--preserve-symlinks',str(checks/'check-merged.mjs')],90)
+    crossvalue=json.loads((cross/'RESULT.json').read_text());assert crossvalue['passed']==15 and crossvalue['failed']==0
+    ui=json.loads((checks/'ui-result.json').read_text());assert ui['passed']==6 and ui['failed']==0
+    admission=json.loads((checks/'admission-result.json').read_text());assert admission['passed']==7 and admission['failed']==0
+    with (checks/'cross-result.json').open('x') as f:json.dump(crossvalue,f,indent=2)
+    after={name:{'absolutePath':str(source/name),'sha256':hashlib.sha256((source/name).read_bytes()).hexdigest(),'bytes':(source/name).stat().st_size} for name in plan['sourcePins']}
+    assert after==plan['sourcePins'],'Source changed during Fetch qualification'
+    result.update(status='PASS_ISOLATED_FETCH_QUALIFICATION',passed=74,failed=0,counts={'installer':17,'native':14,'guards':9,'durable':6,'UI':6,'admission':7,'recoveryCross':15},sourceAfter=after,sourceUnchanged=True,sourcePins=after,receipts={name:ref(checks/name) for name in ['fetch-native-suite-result.json','installer-result.json','guard-result.json','durable-result.json','ui-result.json','admission-result.json','cross-result.json']},effects={'realNetwork':0,'realModelCalls':0,'originalConfigOrDataActions':0,'externalRuntimeInstallations':0,'generatedBundledPayloadInstallations':True},nativeFixtureSourceMatchesShipping=True,completedUTC=datetime.datetime.now(datetime.timezone.utc).isoformat())
+except BaseException as error:
+    result.update(status='FAILED',error=str(error),failed=1)
+    raise
+finally:
+    with (checks/'RESULT.json').open('x') as f:json.dump(result,f,indent=2)
+print(json.dumps({'passed':result['passed'],'failed':0,'counts':result['counts'],'result':str(checks/'RESULT.json')}),flush=True)

@@ -1,0 +1,133 @@
+import fs from 'node:fs';
+import fsp from 'node:fs/promises';
+import net from 'node:net';
+import http from 'node:http';
+import https from 'node:https';
+import tls from 'node:tls';
+import dgram from 'node:dgram';
+import cp from 'node:child_process';
+import assert from 'node:assert/strict';
+import {createRequire,registerHooks,syncBuiltinESMExports,isBuiltin} from 'node:module';
+import {fileURLToPath,pathToFileURL} from 'node:url';
+import {createHash} from 'node:crypto';
+import path from 'node:path';
+
+const ROOT="/Users/saleh/Library/Caches/NoieeFetchQualification-current-ds23jv0w/cross-recovery";
+const SOURCE="/Users/saleh/Documents/Noiee/source";
+const SOURCE_URL=pathToFileURL(SOURCE+'/mcp.mjs').href;
+const before=JSON.parse(await fsp.readFile(ROOT+'/SOURCE-BEFORE.json','utf8'));
+const shared=pathToFileURL(before.dependencyRealpath+'/').href;
+const effects={network:0,childProcess:0,originalData:0,outsideFixtureWrite:0};
+const deny=key=>()=>{effects[key]++;throw Error('Merged fixture boundary refused '+key);};
+for(const [target,names,key]of [[net,['connect','createConnection','createServer'],'network'],[http,['request','get','createServer'],'network'],[https,['request','get','createServer'],'network'],[tls,['connect','createServer'],'network'],[dgram,['createSocket'],'network'],[cp,['spawn','spawnSync','exec','execSync','execFile','execFileSync','fork'],'childProcess']])for(const name of names)target[name]=deny(key);
+net.Socket.prototype.connect=deny('network');net.Server.prototype.listen=deny('network');globalThis.fetch=deny('network');globalThis.WebSocket=class{constructor(){deny('network')();}};
+const originalPrefixes=['/Users/saleh/Applications/','/Users/saleh/Library/Application Support/Qwen Local','/Users/saleh/Library/Application Support/Saleh Uncensored Backups','/Users/saleh/Library/Application Support/LM Studio','/Users/saleh/Library/WebKit/','/Users/saleh/Library/HTTPStorages/','/Users/saleh/Library/Preferences/','/Users/saleh/.lmstudio/','/Users/saleh/.codex/'];
+const location=p=>p instanceof URL?fileURLToPath(p):typeof p==='string'?path.resolve(p):null;
+function checkPath(p,write=false){const s=location(p);if(!s)return;if(originalPrefixes.some(prefix=>s===prefix||s.startsWith(prefix)))deny('originalData')();if(write&&s!==ROOT&&!s.startsWith(ROOT+'/'))deny('outsideFixtureWrite')();}
+for(const [target,names]of [[fs,['openSync','readFileSync','lstatSync','statSync','realpathSync','readdirSync','readlinkSync']],[fsp,['open','readFile','lstat','stat','realpath','readdir','readlink']]])for(const name of names){const original=target[name].bind(target);target[name]=(p,...args)=>{const flags=args[0],write=name==='open'||name==='openSync'?typeof flags==='string'?/[wa+]/.test(flags):!!(flags&(fs.constants.O_WRONLY|fs.constants.O_RDWR|fs.constants.O_CREAT|fs.constants.O_TRUNC|fs.constants.O_APPEND)):false;checkPath(p,write);return original(p,...args);};}
+for(const [target,names]of [[fs,['writeFileSync','appendFileSync','mkdirSync','unlinkSync','rmSync','chmodSync']],[fsp,['writeFile','appendFile','mkdir','mkdtemp','unlink','rm','chmod','truncate']]])for(const name of names){const original=target[name].bind(target);target[name]=(p,...args)=>{checkPath(p,true);return original(p,...args);};}
+for(const target of [fs,fsp])for(const name of target===fs?['renameSync','linkSync','symlinkSync','copyFileSync']:['rename','link','symlink','copyFile']){const original=target[name].bind(target);target[name]=(a,b,...args)=>{checkPath(a,true);checkPath(b,true);return original(a,b,...args);};}
+syncBuiltinESMExports();
+const require=createRequire(ROOT+'/package.json'),fake=pathToFileURL(ROOT+'/fake-endpoints.mjs').href;
+registerHooks({resolve(specifier,context,next){
+ if(context.parentURL===SOURCE_URL&&(specifier.startsWith('@modelcontextprotocol/')||specifier==='./mcp-transport.mjs'))return{url:fake,shortCircuit:true};
+ if((context.parentURL?.startsWith(pathToFileURL(SOURCE+'/').href)||context.parentURL?.startsWith(shared))&&!specifier.startsWith('.')&&!specifier.startsWith('/')&&!isBuiltin(specifier))return{url:pathToFileURL(require.resolve(specifier,{paths:[SOURCE]})).href,shortCircuit:true};
+ return next(specifier,context);
+}});
+const catalog=[{name:'fetch',description:'Generated public text catalog',inputSchema:{type:'object',properties:{url:{type:'string'}},required:['url'],additionalProperties:false},annotations:{readOnlyHint:true,destructiveHint:false}}];
+globalThis.mergedMCP={initializes:0,catalogs:0,toolCalls:0,trace:[],active:new Set(),connectGates:new Map(),closeGates:new Map(),catalogsByLabel:new Map(),catalog};
+const {MCPHub}=await import(SOURCE_URL);
+const fixture=globalThis.mergedMCP,passed=[],failed=[],roots=[];
+const defer=()=>{let resolve;const promise=new Promise(r=>resolve=r);return{promise,resolve};};
+async function until(fn){const end=Date.now()+5000;while(Date.now()<end){if(await fn())return;await new Promise(r=>setTimeout(r,2));}throw Error('Expected generated endpoint state was not reached');}
+async function test(name,fn){const start=Date.now();try{await fn();passed.push({name,elapsedMs:Date.now()-start});console.log('PASS '+name);}catch(error){failed.push({name,error:error.message,stack:error.stack});console.log('FAIL '+name+': '+error.message);}finally{fixture.connectGates.clear();fixture.closeGates.clear();fixture.catalogsByLabel.clear();}}
+const declaration={command:'/generated/fetch',args:['-I','-B','-m','generated_fetch_endpoint'],env:{PATH:'/usr/bin:/bin',MODE:'fixture',GENERATED_SECRET:'CANARY_FIXED_OFFLINE_ONLY'},cwd:ROOT,reviewedFixedRevision:'GENERATED_FIXED_REVISION'};
+function control(){
+ const c={installed:true,enabled:true,available:true,held:false,declaration:structuredClone(declaration),reads:0};
+ c.resolve=async()=>{c.reads++;if(!c.installed||!c.enabled||!c.available||c.held)return null;return structuredClone(c.declaration);};
+ c.disable=()=>{c.held=true;c.enabled=false;};c.enable=()=>{c.held=false;c.enabled=true;};return c;
+}
+async function make({servers={},fault,control:c=control()}={}){
+ const root=await fsp.mkdtemp(ROOT+'/fixtures/case-');await fsp.chmod(root,0o700);roots.push(root);const config=root+'/mcp.json',directory=root+'/remember';
+ await fsp.writeFile(config,JSON.stringify({mcpServers:servers}),{mode:0o600});
+ return{root,config,directory,control:c,hub:new MCPHub(config,{managedFetch:c.resolve,recoveryDirectory:directory,...(fault?{fault}:{})})};
+}
+const cold=f=>new MCPHub(f.config,{managedFetch:f.control.resolve,recoveryDirectory:f.directory});
+const state=async f=>JSON.parse(await fsp.readFile(f.directory+'/state.json','utf8'));
+const connect=async(hub,id='managed-fetch')=>{const row=(await hub.describe()).servers.find(row=>row.id===id&&!row.configRemoved);assert(row,'The requested configured fixture entry must exist');return hub.connect(id,row.configHash);};
+const hash=value=>createHash('sha256').update(value).digest('hex');
+const canonical=value=>JSON.stringify(value,(_k,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.keys(v).sort().map(k=>[k,v[k]])):v);
+const fingerprint=(salt,domain,value)=>hash('SalehAgentMCP:v1\0'+domain+'\0'+salt+'\0'+canonical(value));
+const params=value=>({command:value.command,args:value.args,env:value.env,cwd:value.cwd,stderr:'ignore'});
+const begin=()=>fixture.initializes;
+async function seed(options){const f=await make(options);await connect(f.hub);await f.hub.close();return f;}
+
+await test('fresh installer-state enable and startup recovery never connect a new ID',async()=>{
+ const c=control();c.installed=false;c.enabled=false;const f=await make({control:c}),n=begin();
+ assert.deepEqual((await f.hub.describe()).servers,[]);assert.equal(fs.existsSync(f.directory),false);
+ c.installed=true;assert.deepEqual((await f.hub.describe()).servers,[]);
+ c.enabled=true;const row=(await f.hub.describe()).servers[0];assert.equal(row.id,'managed-fetch');assert.equal(row.connected,false);assert.equal(fs.existsSync(f.directory),false);
+ await f.hub.recover(async()=>{});assert.equal(begin(),n);assert.deepEqual((await state(f)).servers,[]);await f.hub.close();
+});
+await test('explicit managed connection stores salted exact params and full configuration/catalog only',async()=>{
+ const f=await make(),n=begin(),before=(await f.hub.describe()).servers[0];await connect(f.hub);assert.equal(begin(),n+1);
+ const saved=await state(f),row=saved.servers[0];assert.equal(saved.clean,false);assert.deepEqual(Object.keys(row).sort(),['catalog','config','id','transport']);assert.equal(row.id,'managed-fetch');
+ assert.equal(row.config,fingerprint(saved.salt,'config',{id:row.id,transport:'stdio',params:params(f.control.declaration),configuration:f.control.declaration}));
+ assert.equal(row.catalog,fingerprint(saved.salt,'catalog',catalog));assert.notEqual(row.config,before.configHash);
+ const raw=JSON.stringify(saved);assert(!raw.includes('CANARY_FIXED_OFFLINE_ONLY'));assert(!raw.includes('/generated/fetch'));assert(!raw.includes('GENERATED_FIXED_REVISION'));assert(!raw.includes(before.configHash));
+ await f.hub.close();
+});
+await test('identical declarations in different private records have distinct salted bindings',async()=>{
+ const a=await seed(),b=await seed(),x=await state(a),y=await state(b);assert.notEqual(x.salt,y.salt);assert.notEqual(x.servers[0].config,y.servers[0].config);assert.notEqual(x.servers[0].catalog,y.servers[0].catalog);
+ assert.equal(x.servers[0].config,fingerprint(x.salt,'config',{id:'managed-fetch',transport:'stdio',params:params(declaration),configuration:declaration}));
+});
+await test('clean closure waits for owned drain then cold recovery validates and reconnects once',async()=>{
+ const f=await make();await connect(f.hub);const oldHash=(await f.hub.describe()).servers[0].configHash,gate=defer();fixture.closeGates.set('fetch',gate.promise);let done=false;const closing=f.hub.close().then(()=>{done=true;});
+ await until(()=>fixture.trace.some(x=>x.kind==='close-requested'&&x.label==='fetch'));await new Promise(r=>setTimeout(r,5));assert.equal(done,false);assert.equal((await state(f)).clean,false);gate.resolve();await closing;fixture.closeGates.delete('fetch');assert.equal((await state(f)).clean,true);
+ const hub=cold(f),n=begin();let checks=0;await hub.recover(async()=>{checks++;});await hub.recover(async()=>{throw Error('Repeated automatic work');});assert.equal(checks,1);assert.equal(begin(),n+1);const row=(await hub.describe()).servers[0];assert.equal(row.connected,true);assert.equal(row.recoveryState,'verified');assert.notEqual(row.configHash,oldHash);await hub.close();
+});
+await test('changed raw configuration with identical transport params blocks automatic handshake',async()=>{
+ const f=await seed();const previous=structuredClone(f.control.declaration);f.control.declaration.reviewedFixedRevision='CHANGED_GENERATED_REVISION';assert.deepEqual(params(previous),params(f.control.declaration));
+ const hub=cold(f),n=begin();await hub.recover(async()=>{});assert.equal(begin(),n);const row=(await hub.describe()).servers[0];assert.equal(row.connected,false);assert.match(row.recoveryState,/blocked/);await hub.close();
+});
+await test('changed effective environment blocks remembered transport before handshake',async()=>{
+ const f=await seed();f.control.declaration.env.GENERATED_SECRET='DIFFERENT_OFFLINE_CANARY';const hub=cold(f),n=begin();await hub.recover(async()=>{});assert.equal(begin(),n);await hub.close();
+});
+for(const disabled of ['enabled','available'])await test(disabled+' false excludes remembered Fetch and never auto-connects',async()=>{
+ const f=await seed();f.control[disabled]=false;const hub=cold(f),n=begin();await hub.recover(async()=>{});assert.equal(begin(),n);const rows=(await hub.describe()).servers;assert(rows.every(row=>!row.connected));await hub.close();
+});
+await test('changed full catalog refuses a recovered endpoint without any tool dispatch',async()=>{
+ const f=await seed(),hub=cold(f),n=begin();fixture.catalogsByLabel.set('fetch',[{...catalog[0],description:'Changed generated description'}]);await hub.recover(async()=>{});assert.equal(begin(),n+1);assert.equal((await hub.describe()).servers[0].connected,false);assert.equal(fixture.toolCalls,0);await hub.close();
+});
+await test('last managed revalidation prevents transport and remembered desire',async()=>{
+ const c=control();c.resolve=async()=>++c.reads<=2?structuredClone(c.declaration):null;const f=await make({control:c}),row=(await f.hub.describe()).servers[0],n=begin();await assert.rejects(f.hub.connect('managed-fetch',row.configHash),/changed|unavailable|disabled/i);assert.equal(begin(),n);assert.deepEqual((await state(f)).servers,[]);await f.hub.close();
+});
+const unrelated={browser:{command:'/generated/browser',args:[],env:{MODE:'fixture'},cwd:ROOT},files:{command:'/generated/files',args:[],env:{MODE:'fixture'},cwd:ROOT}};
+await test('disable/disconnect only Fetch preserves live Browser Files and their desired rows',async()=>{
+ const f=await make({servers:unrelated}),configBytes=await fsp.readFile(f.config);await connect(f.hub);await connect(f.hub,'browser');await connect(f.hub,'files');const old=(await state(f)).servers.filter(x=>x.id!=='managed-fetch');
+ f.control.disable();await f.hub.disconnect('managed-fetch');const rows=(await f.hub.describe()).servers;assert(rows.filter(x=>['browser','files'].includes(x.id)).every(x=>x.connected));assert.deepEqual((await state(f)).servers,old);assert.deepEqual(await fsp.readFile(f.config),configBytes);
+ await f.hub.close();const hub=cold(f),n=begin();f.control.enable();await hub.recover(async()=>{});assert.equal(begin(),n+2);const live=(await hub.describe()).servers;assert.equal(live.find(x=>x.id==='managed-fetch').connected,false);assert(live.filter(x=>x.id!=='managed-fetch').every(x=>x.connected));await hub.close();
+});
+await test('per-ID disconnect before cold recovery preserves other remembered startup connections',async()=>{
+ const f=await make({servers:unrelated});await connect(f.hub);await connect(f.hub,'browser');await connect(f.hub,'files');await f.hub.close();
+ const hub=cold(f),n=begin();f.control.disable();await hub.disconnect('managed-fetch');await hub.recover(async()=>{});const rows=(await hub.describe()).servers;
+ try{assert.equal(begin(),n+2);assert(rows.filter(x=>['browser','files'].includes(x.id)).every(x=>x.connected));assert.deepEqual((await state(f)).servers.map(x=>x.id),['browser','files']);}
+ finally{await hub.close();}
+});
+await test('disable during late handshake drains it and cannot remember or restore Fetch',async()=>{
+ const f=await make(),gate=defer(),n=begin();fixture.connectGates.set('fetch',gate.promise);const pending=connect(f.hub);const rejected=assert.rejects(pending,/cancelled|stopped|closing/i);await until(()=>begin()===n+1);f.control.disable();await f.hub.disconnect('managed-fetch');gate.resolve();await rejected;fixture.connectGates.delete('fetch');assert.deepEqual((await state(f)).servers,[]);await f.hub.close();f.control.enable();const hub=cold(f),now=begin();await hub.recover(async()=>{});assert.equal(begin(),now);await hub.close();
+});
+await test('disable during remembered-intent publication waits and late completion cannot restore it',async()=>{
+ const gate=defer(),entered=defer();let armed=true;
+ const f=await make({fault:async(stage,v)=>{if(armed&&stage==='before-publish'&&v.servers.some(x=>x.id==='managed-fetch')){armed=false;entered.resolve();await gate.promise;}}});
+ const pending=connect(f.hub),rejected=assert.rejects(pending,/stopped|changed/i);await entered.promise;f.control.disable();let done=false;const disconnecting=f.hub.disconnect('managed-fetch').then(()=>{done=true;});await new Promise(r=>setTimeout(r,5));assert.equal(done,false);gate.resolve();await Promise.all([disconnecting,rejected]);assert.deepEqual((await state(f)).servers,[]);await f.hub.close();f.control.enable();const hub=cold(f),n=begin();await hub.recover(async()=>{});assert.equal(begin(),n);await hub.close();
+});
+await test('owner Stop during late connection prevents later desire and cold reconnection',async()=>{
+ const f=await make(),gate=defer(),n=begin();fixture.connectGates.set('fetch',gate.promise);const pending=connect(f.hub),rejected=assert.rejects(pending,/cancelled|stopped|closing/i);await until(()=>begin()===n+1);await f.hub.stop();gate.resolve();await rejected;fixture.connectGates.delete('fetch');assert.deepEqual((await state(f)).servers,[]);await f.hub.close();const hub=cold(f),now=begin();await hub.recover(async()=>{});assert.equal(begin(),now);await hub.close();
+});
+
+assert.equal(fixture.toolCalls,0);assert.equal(fixture.active.size,0);assert.deepEqual(effects,{network:0,childProcess:0,originalData:0,outsideFixtureWrite:0});
+const after={};for(const [name,entry]of Object.entries(before.files)){const bytes=await fsp.readFile(entry.absolutePath),sha256=hash(bytes);after[name]={...entry,sha256,bytes:bytes.length};assert.equal(sha256,entry.sha256,'Combined MCP source changed during this bounded check');}
+const result={version:1,kind:'merged-managed-fetch-and-recovery-private-qualification',passed:passed.length,failed:failed.length,checks:passed,failures:failed,effects,toolCalls:fixture.toolCalls,realServerStarts:0,realModelCalls:0,fakeInitializes:fixture.initializes,fakeCatalogs:fixture.catalogs,activeEndpoints:fixture.active.size,source:SOURCE,sourceBefore:before.files,sourceAfter:after,generatedRoots:roots,simulatedInstallerState:true,actualInstallerRerun:false,completedUTC:new Date().toISOString()};
+await fsp.writeFile(ROOT+'/RESULT.json',JSON.stringify(result,null,2)+'\n',{mode:0o600});await fsp.writeFile(ROOT+'/TRACE.json',JSON.stringify(fixture.trace,null,2)+'\n',{mode:0o600});
+console.log(JSON.stringify({passed:passed.length,failed:failed.length,effects,realServerStarts:0,realModelCalls:0,toolCalls:0,result:ROOT+'/RESULT.json'}));if(failed.length)process.exitCode=1;

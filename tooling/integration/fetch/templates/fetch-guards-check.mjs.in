@@ -1,0 +1,48 @@
+import assert from 'node:assert/strict';
+import {existsSync} from 'node:fs';
+import {readFile,writeFile,mkdtemp,mkdir} from 'node:fs/promises';
+import {fileURLToPath} from 'node:url';
+import {dirname,join} from 'node:path';
+const root="/Users/saleh/Library/Caches/NoieeFetchQualification-current-ds23jv0w",source="/Users/saleh/Documents/Noiee/source",checksPath="/Users/saleh/Documents/Noiee/checks/fetch/current-runtime";
+assert(existsSync(join(source,'managed-fetch.mjs')),'RED: fixed managed Fetch reader is missing');
+const {createManagedFetch,fetchPluginRequest}=await import(join(source,'managed-fetch.mjs'));
+const {MCPHub}=await import(join(source,'mcp.mjs'));
+const checks=[];const check=async(name,fn)=>{await fn();checks.push(name);console.log('PASS '+name);};
+await check('fixed request parser admits only exact actions and Boolean',async()=>{
+ for(const value of [{action:'catalog'},{action:'install'},{action:'set_enabled',enabled:true},{action:'set_enabled',enabled:false}])assert.deepEqual(fetchPluginRequest(value),value);
+ for(const value of [{action:'install',url:'https://example.com/'},{action:'set_enabled',enabled:1},{action:'set_enabled'},[],{action:'remove'},{action:'catalog',command:'false'}])assert.throws(()=>fetchPluginRequest(value));
+});
+const fixture=await mkdtemp(join(root,'guard-fixture-')),config=join(fixture,'mcp.json');await writeFile(config,JSON.stringify({mcpServers:{}}),{mode:0o600});
+await check('disabled and unavailable managed entry never enters map',async()=>{
+ for(const value of [undefined,async()=>null]){const hub=new MCPHub(config,{managedFetch:value});assert.deepEqual((await hub.describe()).servers,[]);await assert.rejects(hub.connect('managed-fetch','0'.repeat(64)),/Unknown/);await hub.close();}
+});
+const declaration={command:'/usr/bin/false',args:[],cwd:fixture,env:{PATH:'/usr/bin:/bin'}};
+await check('one managed entry is visible with ordinary config hash',async()=>{const hub=new MCPHub(config,{managedFetch:async()=>declaration});const rows=(await hub.describe()).servers;assert.equal(rows.length,1);assert.equal(rows[0].id,'managed-fetch');assert.match(rows[0].configHash,/^[a-f0-9]{64}$/);await hub.close();});
+await check('reserved ID collision is rejected',async()=>{
+ await writeFile(config,JSON.stringify({mcpServers:{'managed-fetch':declaration}}));const hub=new MCPHub(config,{managedFetch:async()=>declaration});await assert.rejects(hub.describe(),/reserved|collision/i);await hub.close();await writeFile(config,JSON.stringify({mcpServers:{}}));
+});
+await check('disabled after review is refused before transport',async()=>{
+ let enabled=true;const hub=new MCPHub(config,{managedFetch:async()=>enabled?declaration:null});const row=(await hub.describe()).servers[0];enabled=false;await assert.rejects(hub.connect('managed-fetch',row.configHash),/Unknown|changed/);await hub.close();
+});
+await check('last managed pretransport revalidation rejects changed state',async()=>{
+ let calls=0;const hub=new MCPHub(config,{managedFetch:async()=>++calls<=2?declaration:null});const row=(await hub.describe()).servers[0];await assert.rejects(hub.connect('managed-fetch',row.configHash),/managed.*changed|unavailable|disabled/i);assert(calls>=3);await hub.close();
+});
+await check('managed enable and disable preserve Files Browser map and config bytes',async()=>{
+ const original=JSON.stringify({mcpServers:{files:declaration,browser:declaration}});await writeFile(config,original);let enabled=true;
+ const hub=new MCPHub(config,{managedFetch:async()=>enabled?declaration:null});const before=(await hub.describe()).servers;
+ enabled=false;const after=(await hub.describe()).servers;assert.deepEqual(after.map(x=>x.id).sort(),['browser','files']);
+ for(const row of after)assert.equal(row.configHash,before.find(x=>x.id===row.id).configHash);
+ assert.equal(await readFile(config,'utf8'),original);await hub.close();await writeFile(config,JSON.stringify({mcpServers:{}}));
+});
+await check('real fixed reader validates installed and enabled payload',async()=>{
+ const installed=JSON.parse(await readFile(join(checksPath,"installer-result.json"),'utf8'));
+ const resolver=createManagedFetch({parent:installed.parent,resources:source});assert.equal(await resolver(),null);
+ const state=join(installed.parent,'fetch-plugin-v1.json'),value=JSON.parse(await readFile(state,'utf8'));value.enabled=true;await writeFile(state,JSON.stringify(value),{mode:0o600});
+ const found=await resolver();assert(found);assert.equal(found.command,join(installed.runtime,'bin/python'));assert.deepEqual(found.args,['-I','-B','-m','mcp_server_fetch']);assert.equal(found.env.PATH,'/usr/bin:/bin');value.enabled=false;await writeFile(state,JSON.stringify(value),{mode:0o600});assert.equal(await resolver(),null);
+});
+await check('disable admission fences every shared resolver until explicit enable',async()=>{
+ const installed=JSON.parse(await readFile(join(checksPath,"installer-result.json"),'utf8')),state=join(installed.parent,'fetch-plugin-v1.json'),v=JSON.parse(await readFile(state,'utf8'));v.enabled=true;await writeFile(state,JSON.stringify(v),{mode:0o600});
+ const resolve=createManagedFetch({parent:installed.parent,resources:source});assert(await resolve());resolve.holdDisabled();assert.equal(await resolve(),null);assert.equal(resolve.isHeldDisabled(),true);resolve.admitEnable();assert(await resolve());v.enabled=false;await writeFile(state,JSON.stringify(v),{mode:0o600});
+});
+await writeFile(join(checksPath,"guard-result.json"),JSON.stringify({passed:checks.length,failed:0,checks,realServerStarts:0,networkCalls:0,modelCalls:0},null,2)+'\n');
+console.log(JSON.stringify({passed:checks.length,failed:0}));

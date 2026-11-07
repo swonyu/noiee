@@ -1,0 +1,36 @@
+import Foundation
+
+@main struct FetchPluginCheck {
+    @MainActor static func main() async throws {
+        var passed=0
+        for input:[String:Any] in [["action":"catalog"],["action":"install"],["action":"set_enabled","enabled":true],["action":"set_enabled","enabled":false]] {_ = try FetchPluginRequest.parse(input);passed+=1}
+        for input:[String:Any] in [["action":"install","url":"https://example.com"],["action":"set_enabled","enabled":1],["action":"set_enabled"],["action":"catalog","path":"/tmp"],["action":"remove"]] {
+            do {_ = try FetchPluginRequest.parse(input);fatalError("Invalid request was accepted")}
+            catch {passed+=1}
+        }
+        let args=CommandLine.arguments
+        guard args.count==3 else {fatalError("Private fixture parent and resources are required")}
+        let session=FetchPluginSession()
+        let value=try await session.perform(["action":"catalog"],parent:URL(fileURLWithPath:args[1],isDirectory:true),resources:URL(fileURLWithPath:args[2],isDirectory:true))
+        guard value["id"] as? String=="managed-fetch",value["available"] as? Bool==true,value["installed"] as? Bool==true else {fatalError("Qualified fixture catalog was unavailable")}
+        session.invalidate();await session.drain();passed+=2
+        let stopped=URL(fileURLWithPath:args[1]).deletingLastPathComponent().appendingPathComponent("native-stop-"+UUID().uuidString.lowercased(),isDirectory:true)
+        try FileManager.default.createDirectory(at:stopped,withIntermediateDirectories:false,attributes:[.posixPermissions:0o700])
+        let install=Task {try await session.perform(["action":"install"],parent:stopped,resources:URL(fileURLWithPath:args[2],isDirectory:true))}
+        let stages=stopped.appendingPathComponent("extensions/fetch",isDirectory:true)
+        var observed=false
+        for _ in 0..<1000 {
+            if let names=try? FileManager.default.contentsOfDirectory(atPath:stages.path),names.contains(where:{$0.hasPrefix(".install-")}) {observed=true;break}
+            try await Task.sleep(nanoseconds:5_000_000)
+        }
+        guard observed,session.active else {fatalError("Private install stage was not observed")}
+        do {_ = try await session.perform(["action":"catalog"],parent:stopped,resources:URL(fileURLWithPath:args[2]));fatalError("Concurrent native plugin action was accepted")}
+        catch {passed+=1}
+        session.invalidate();await session.drain()
+        do {_ = try await install.value;fatalError("Stopped native install claimed success")}
+        catch {passed+=1}
+        guard !session.active,!FileManager.default.fileExists(atPath:stopped.appendingPathComponent("fetch-plugin-v1.json").path),!FileManager.default.fileExists(atPath:stages.appendingPathComponent(FetchPluginSession.revision).path) else {fatalError("Stopped native install published state or remained active")}
+        passed+=1
+        print("PASS \(passed) fixed native parser/catalog/drain checks; generated fixture only")
+    }
+}

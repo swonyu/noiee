@@ -1,0 +1,51 @@
+// Private pre-import guard: no test may connect beyond its live ephemeral servers.
+import assert from 'node:assert/strict';
+import net from 'node:net';
+import {writeSync} from 'node:fs';
+
+const live = new Map();
+const counts = {allowed:0, denied:0, unexpected:0};
+let expected = 0;
+const listen = net.Server.prototype.listen;
+net.Server.prototype.listen = function (...args) {
+  const options = args[0];
+  const ephemeral = options === 0 || (options && typeof options === 'object' && options.port === 0);
+  this.prependOnceListener('listening', () => {
+    const address = this.address();
+    if (ephemeral && address?.address === '127.0.0.1' && address.port !== 1234) {
+      live.set(address.port, this);
+      this.once('close', () => live.delete(address.port));
+    }
+  });
+  return listen.apply(this, args);
+};
+const connect = net.Socket.prototype.connect;
+net.Socket.prototype.connect = function (...args) {
+  // node:http/native fetch also pass Node's normalized [options, callback] form.
+  const values = Array.isArray(args[0]) ? args[0] : args;
+  const first = values[0];
+  const options = first && typeof first === 'object' ? first : {port:first,host:values[1]};
+  const host = options.host ?? options.hostname;
+  const port = Number(options.port);
+  if (options.path || host !== '127.0.0.1' || !live.get(port)?.listening || port === 1234) {
+    counts.denied++;
+    if (!expected) counts.unexpected++;
+    throw Object.assign(Error('Private network guard denied socket before connect.'), {code:'PRIVATE_NETWORK_DENIED'});
+  }
+  counts.allowed++;
+  return connect.apply(this, args);
+};
+export const guard = Object.freeze({
+  snapshot:() => ({...counts,livePorts:[...live.keys()]}),
+  async expectBlocked(action) {
+    const before = {...counts};
+    expected++;
+    try { await action(); } finally { expected--; }
+    assert(counts.denied > before.denied, 'Negative control must reach the socket guard.');
+    assert.equal(counts.allowed, before.allowed, 'Forbidden destination must not call original connect.');
+  }
+});
+process.on('exit', () => {
+  writeSync(2, 'PRIVATE_NETWORK_EXIT_GUARD ' + JSON.stringify(guard.snapshot()) + '\n');
+  if (counts.unexpected) process.exitCode = 1;
+});

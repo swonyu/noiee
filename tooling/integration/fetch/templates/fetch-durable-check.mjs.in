@@ -1,0 +1,42 @@
+import assert from 'node:assert/strict';
+import {readFile,writeFile,mkdtemp,mkdir} from 'node:fs/promises';
+import {Readable} from 'node:stream';
+import {randomUUID} from 'node:crypto';
+import {spawn} from 'node:child_process';
+import {createInterface} from 'node:readline';
+import {once} from 'node:events';
+import {dirname,join} from 'node:path';
+import {fileURLToPath,pathToFileURL} from 'node:url';
+import {toolRoutes,nativeSignature} from "/Users/saleh/Documents/Noiee/source/agent.mjs";
+const root="/Users/saleh/Library/Caches/NoieeFetchQualification-current-ds23jv0w",source="/Users/saleh/Documents/Noiee/source",checksPath="/Users/saleh/Documents/Noiee/checks/fetch/current-runtime";
+const {ChatRuns,chatRunDigest}=await import(pathToFileURL(process.argv[2]??join(source,'chat-runs.mjs')));
+const fixture=await mkdtemp(join(root,'durable-fixture-')),directory=join(fixture,'receipts'),parent=join(fixture,'app-parent');await mkdir(directory,{mode:0o700});await mkdir(parent,{mode:0o700});
+const stopped=async()=>({stopped:true}),blocked=async()=>{throw Error('A real model/network call is forbidden');},token=randomUUID();
+const managedFetch=Object.assign(async()=>null,{holdDisabled(){},admitEnable(){},isHeldDisabled:()=>false});
+const route=toolRoutes({instanceToken:token,upstream:'http://127.0.0.1:9',fetchImpl:blocked,managedFetch,fullAccess:true,unconfinedBoot:true,hub:{disconnect:stopped,stop:stopped,close:stopped},coding:{dataDir:join(parent,'Coding'),assertUnconfinedAccess:async()=>{},stop:stopped,close:stopped},worktrees:{assertUnconfinedAccess:async()=>{},stop:stopped,close:stopped},gitWorkflow:{stop:stopped,close:stopped}});
+async function send(input){
+ const url='/api/tools/fetchPlugin',body=Buffer.from(JSON.stringify(input)),nonce=randomUUID(),time=String(Date.now()),req=Readable.from([body]);req.method='POST';req.headers={'content-type':'application/json','x-qwen-nonce':nonce,'x-qwen-time':time,'x-qwen-permit':nativeSignature(token,url,nonce,time,body)};
+ const res={destroyed:false,writableEnded:false,headersSent:false,once(){},off(){}};let result;await route(req,res,url,(status,body)=>{result={status,body};});return result;
+}
+async function until(fn){const deadline=Date.now()+10000;while(Date.now()<deadline){if(await fn())return;await new Promise(r=>setTimeout(r,5));}throw Error('Private durable fixture timed out');}
+const input={runId:randomUUID(),chatId:randomUUID(),userMessageId:randomUUID(),assistantMessageId:randomUUID(),messages:[{role:'user',content:'Generated offline fixture: install the fixed Fetch plugin.'}],model:'qwen3.8-27b-uncensored-hauhaucs-aggressive-mtp',thinking:'standard',kind:'agent',sources:[]};let replies=0;
+const store=new ChatRuns({directory,admissionGeneration:route.admissionGeneration,beginInference:route.beginInference,prepare:blocked,fetchImpl:blocked,upstream:'http://127.0.0.1:9',agentReply:async()=>({model:input.model,message:++replies===1?{role:'assistant',content:null,tool_calls:[{id:'fetch_fixture',type:'function',function:{name:'fetch_plugin',arguments:'{"action":"install"}'}}]}:{role:'assistant',content:'Synthetic fixture completed from the actual fixed native result.'}})});
+route.setDurableRuns(store);const generation=route.admissionGeneration(),ticket=store.prepareAdmission({runId:input.runId,inputDigest:chatRunDigest(input),generation});await store.start(input,{generation,ticket:ticket.ticket});
+let pending;await until(async()=>{const v=await store.inspect(input.runId);pending=v.run.pendingStep;return pending?.state==='pending'&&v.persistence==='saved';});
+const seen=await store.agentStep({action:'inspect',runId:input.runId,stepId:pending.stepId}),claimId=randomUUID(),binding={runId:input.runId,stepId:pending.stepId,claimId};
+await store.agentStep({action:'claim',runId:input.runId,stepId:seen.stepId,stepDigest:seen.stepDigest,generation:seen.generation,claimId});
+assert.equal((await send({action:'set_enabled',enabled:true,agentClaim:binding})).status,400,'A claimed install cannot become enable');
+const admitted=await send({action:'install',agentClaim:binding});assert.equal(admitted.status,200,'Exact durable Fetch install effect must be admitted');assert.equal(admitted.body.admitted,true);
+assert.equal((await send({action:'install',agentClaim:binding})).status,400,'Claimed effect must be single-use');
+const child=spawn(join(checksPath,"fetch-native-client"),[parent,source],{cwd:fixture,env:{HOME:fixture,TMPDIR:fixture,PATH:'/usr/bin:/bin',LANG:'en_US.UTF-8'},stdio:['pipe','pipe','pipe']});
+let stderr='';child.stderr.on('data',b=>{stderr+=b;});const lines=createInterface({input:child.stdout})[Symbol.asyncIterator]();const closed=once(child,'close');
+try{
+ child.stdin.write('{"action":"install"}\n');const next=await lines.next();assert(!next.done);const result=JSON.parse(next.value);assert(result.installed&&!result.enabled&&!result.isError,result.message);
+ const completed=await store.agentStep({action:'complete',runId:input.runId,stepId:pending.stepId,claimId,outcome:{kind:'returned',result}});assert.equal(completed.persistence,'saved');
+ await until(async()=>{const v=await store.inspect(input.runId);return v.run.status==='complete'&&v.persistence==='saved'&&v.durableRevision>=v.run.revision;});
+ const disk=JSON.parse(await readFile(join(directory,input.runId+'.json'),'utf8'));assert.equal(disk.status,'complete');assert.match(disk.receipts[0].output,/managed-fetch/);assert.equal(replies,2);
+ const cold=new ChatRuns({directory,admissionGeneration:()=>randomUUID(),beginInference:blocked,prepare:blocked,fetchImpl:blocked,upstream:'http://127.0.0.1:9',agentReply:blocked});assert.equal((await cold.inspect(input.runId)).run.status,'complete');
+ child.stdin.end();const [code,signal]=await closed;assert.equal(code,0,stderr);assert.equal(signal,null);
+ await writeFile(join(checksPath,"durable-result.json"),JSON.stringify({passed:6,failed:0,checks:['exact durable native claim','wrong action refused','single-use effect','actual fixed native install result','saved Agent receipt/final result','cold read without replay and native fixture normal closure'],fixture,parent,syntheticModelReplies:replies,actualModelCalls:0,networkCalls:0,nativeFixtureExitCode:code},null,2)+'\n');
+ console.log('PASS 6 actual durable Agent/native Fetch fixture checks; synthetic replies only');
+}finally{if(child.exitCode===null){child.stdin.end();await closed;}await route.close();}
