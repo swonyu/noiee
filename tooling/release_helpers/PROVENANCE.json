@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "scope": "Exact historical guard implementations; imported definitions only by release_host.py, never their legacy CLI entry points.",
+  "files": {
+    "build-candidate.py": {
+      "originalPath": "/Users/saleh/Library/Application Support/Saleh Uncensored Release Staging/Build40-85mocrz7/scripts/build-candidate.py",
+      "sha256": "185fd10cf66b9a87054db4d3a13b6cdfa82c22190ad219b6492bc9ee5528ae03",
+      "bytes": 18132,
+      "unchanged": true
+    },
+    "prepare-release.py": {
+      "originalPath": "/Users/saleh/Library/Application Support/Saleh Uncensored Release Staging/Build40-85mocrz7/scripts/prepare-release.py",
+      "sha256": "4b87319ee9bbfb558690d640ed96fd10d6c65bdb62e42bc75f740cc06057213c",
+      "bytes": 15052,
+      "unchanged": true
+    },
+    "install-guarded.py": {
+      "originalPath": "/Users/saleh/Library/Application Support/Saleh Uncensored Release Staging/Build40-85mocrz7/scripts/install-guarded.py",
+      "sha256": "3dca6ef18a6e2900648ddf8d62b28b6aac590fd8f67fe557894798a3991cfc9f",
+      "bytes": 10477,
+      "unchanged": true
+    }
+  },
+  "filesystemIdentity": {
+    "originalPath": "/Users/saleh/Documents/Codex/2026-10-16/sa/work/build88/release-final/release88.py",
+    "originalModuleSHA256": "ff0a46d60e51954811ce5b6f08090e4856f3d2102251463d60eb9d3ec570d90f",
+    "function": "filesystem_identity",
+    "functionSHA256": "f270c5df7e468dcabaf51df062dbbc1e05e2a17fc85689827bfc48948b5d625f",
+    "functionBodyUnchanged": true,
+    "vendoredFile": "filesystem_identity.py",
+    "sha256": "4a113bd4073d391080ad1941c307109498e359d22072339a605adcc559454d55"
+  },
+  "adapterPredecessor": {
+    "path": "/Users/saleh/Documents/Noiee/release/noiee_release.py",
+    "sha256": "55da4278a2959c77240b9e1c6863abcceaed420826493c5159ebe756c8a1e842",
+    "unchanged": true
+  }
+}

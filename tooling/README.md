@@ -54,3 +54,7 @@ For the 171→172 update, preserve the existing bundle identifier, designated si
 A host release adapter must bind the committed source freeze, immutable native receipt, actual source-bound check reports, fresh closed-store capture, and exact signed predecessor package. It assembles and verifies a signed candidate and archive, makes a complete four-store backup, and uses the existing guarded replacement/rollback transaction. Native startup support and both runtime contracts must be included in the resource manifest.
 
 Portable source compilation and host-specific installation are separate. Do not edit a historical closure/admission receipt to match a new boot, turn a fixture pass into installed acceptance, or bypass an actual ownership refusal. First-launch task execution and cold reopen are recorded independently.
+
+## Reviewed host update tooling
+
+[RELEASE.md](RELEASE.md) documents the isolated Build171-to-Build172 host adapter, current closed-boundary capture, vendored guard provenance, exact qualification schema, and rollback/acceptance boundaries. The source compiler remains separate from installation.
