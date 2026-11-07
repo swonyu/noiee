@@ -122,6 +122,23 @@ def invocation():
     # orig_argv preserves the actual -B option and executable spelling.
     return list(sys.orig_argv)
 
+def launched_interpreter():
+    # macOS framework sys.executable may name a launcher that execs Python.app.
+    # Launch the actual invocation identity so a child's recorded argv stays exact.
+    original = invocation()
+    require(original and isinstance(original[0], str) and original[0],
+            "Actual interpreter invocation is unavailable")
+    name = original[0]
+    located = name if os.path.isabs(name) or os.sep in name else shutil.which(name)
+    require(located, "Actual invocation interpreter could not be resolved")
+    path = Path(located).resolve(strict=True)
+    require(path.is_file() and os.access(path, os.X_OK),
+            "Actual invocation interpreter is not executable")
+    return str(path)
+
+def verify_command(recorded, executed):
+    require(recorded == executed, "Recorded command differs from the executed command")
+
 def parse_json_lines(text):
     values = []
     for line in text.splitlines():
@@ -191,7 +208,7 @@ class Suite:
                         TMPDIR=str(self.cache / "tmp") + "/",
                         PYTHONDONTWRITEBYTECODE="1")
         self.node = str(Path(args.node).resolve(strict=True))
-        self.python = str(Path(sys.executable).resolve(strict=True))
+        self.python = launched_interpreter()
         self.started_ns = time.time_ns()
 
     def retain(self, path, pin=None):
@@ -464,7 +481,7 @@ def main():
     else:
         rows = []
         for name in SUITES:
-            command = [str(Path(sys.executable).resolve(strict=True)), "-B", str(SELF),
+            command = [launched_interpreter(), "-B", str(SELF),
                        "--project", str(project), "--suite", name, "--output", str(output / name),
                        "--node", str(Path(args.node).resolve(strict=True))]
             log = output / (name + ".log")
@@ -479,9 +496,9 @@ def main():
                         and actual.get("failed") == 0 and actual.get("sourceUnchanged") is True
                         and actual.get("sourceDirectory") == str(project / "source")
                         and actual.get("sourcePins") == before
-                        and actual.get("gitCommit") == commit
-                        and actual.get("command") == command,
+                        and actual.get("gitCommit") == commit,
                         "Suite execution/provenance did not qualify: " + name)
+                verify_command(actual.get("command"), command)
                 require(type(actual.get("passed")) is int and actual["passed"] > 0,
                         "Positive actual suite count required")
                 row.update(passed=actual["passed"], failed=0)

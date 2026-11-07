@@ -30,3 +30,6 @@ A focused suite RESULT is useful for diagnosis but is not a complete release qua
 The unit checks use generated files and short child processes. They verify that missing/duplicated TAP summaries, skipped browser tests, failed commands, wrong artifact digests, linked source files, stale report receipts and unsafe output paths fail instead of becoming passing qualification evidence.
 
 Generated fixture state remains under private Caches directories where the existing adapters require it. No generated state is treated as user data or installed acceptance. Native application compilation, signed packaging, guarded installation and live/cold-reopen acceptance are separate release gates owned by the release operator.
+
+
+Python workers launch the interpreter resolved from the actual `sys.orig_argv[0]` invocation identity. On macOS framework builds, `sys.executable` can name a launcher that execs a different Python.app binary; using that launcher would make an otherwise passing child report a different command. The executor keeps exact command equality and rejects a genuinely different executable or argument list. It never rewrites an older execution receipt to make its command match.

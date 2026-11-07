@@ -7,6 +7,7 @@ import os
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 PATH = Path(__file__).resolve().parents[1] / "qualify.py"
 spec = importlib.util.spec_from_file_location("noiee_qualify_fixture", PATH)
@@ -58,6 +59,39 @@ class QualificationChecks(unittest.TestCase):
         self.assertEqual(result["exitCode"], 7)
         self.assertIn("not a passing run", log.read_text())
         self.assertEqual(result["log"], q.ref(log))
+    def test_framework_launcher_alias_does_not_change_executed_argv(self):
+        # A generated distinct launcher models macOS sys.executable; the real
+        # invocation executable must be used and must match the child's own argv.
+        launcher = self.root / "framework-launcher"
+        launcher.write_text("generated launcher identity; never executed")
+        launcher.chmod(0o700)
+        actual_interpreter = q.launched_interpreter()
+        with patch.object(q.sys, "executable", str(launcher)):
+            chosen = q.launched_interpreter()
+        self.assertEqual(chosen, actual_interpreter)
+        self.assertNotEqual(chosen, str(launcher))
+        script = self.root / "record-argv.py"
+        script.write_text("import json,sys;print(json.dumps(sys.orig_argv))\n")
+        command = [chosen, "-B", str(script), "generated argument"]
+        log = self.root / "argv.log"
+        result = q.execute(command, log, self.root, os.environ.copy(), timeout=10)
+        self.assertEqual(result["exitCode"], 0)
+        recorded = json.loads(log.read_text())
+        q.verify_command(recorded, command)
+        with self.assertRaises(RuntimeError):
+            q.verify_command(recorded, [str(launcher), *command[1:]])
+        with self.assertRaises(RuntimeError):
+            q.verify_command(recorded, [chosen, str(script), "generated argument"])
+    def test_actual_interpreter_name_resolves_through_path(self):
+        binary = self.root / "generated-python"
+        binary.write_text("generated executable identity; never executed")
+        binary.chmod(0o700)
+        with patch.object(q.sys, "orig_argv", [binary.name, "-B", "fixture.py"]), patch.dict(os.environ, {"PATH":str(self.root)}):
+            self.assertEqual(q.launched_interpreter(), str(binary))
+    def test_unknown_invocation_never_falls_back_to_launcher(self):
+        with patch.object(q.sys, "orig_argv", ["missing-generated-python", "fixture.py"]), patch.dict(os.environ, {"PATH":str(self.root)}):
+            with self.assertRaises(RuntimeError):
+                q.launched_interpreter()
     def test_retained_evidence_is_exact_exclusive_copy(self):
         suite = self.suite()
         original = self.project / "fixture.json"
