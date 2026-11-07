@@ -85,7 +85,7 @@ export class CodingOwners {
  #quarantineCatalog=false; #quarantines=new Map(); #unconfinedStatus;
  #followups=null; #followupPrepared=new Map(); #followupPumps=new Map(); #followupWrites=new Set(); #followupFailure=null;
  #origins=new Map(); #hostGitFailures=new Map(); #diskReviews=new Map(); #verifiedFailedReleases=new Map();
- #startupCopies=null; #goals=null;
+ #startupCopies=null; #goals=null; #catalogScan=null;
  constructor({dataDir,openExecutor,engineFactory=options=>new CodingEngine(options),engineOptions={},assertLegacyClosed,legacyAdmission,forkFiles,executorPolicy,mcpConfigPath,handoffStatus,unconfinedStatus,managedMutationBlocked=false}={}) {
   if(typeof managedMutationBlocked!=='boolean')throw Error('Invalid trusted mutation access setting.');this.#managedMutationBlocked=managedMutationBlocked;
   if(typeof dataDir!=='string'||!isAbsolute(dataDir)||typeof openExecutor!=='function'||typeof engineFactory!=='function')throw Error('Invalid trusted coding owner configuration.');
@@ -664,7 +664,7 @@ export class CodingOwners {
    this.#legacy.nativeOpen=false;await this.#save();if(this.#legacyLive===live)this.#legacyLive=null;
   })();try{return await live.retiring;}catch(e){if(!this.closed)live.retiring=null;throw e;}
  }
- async #legacyOwner(epoch,operation){
+ async #legacyOwner(epoch,operation,scan=null){
   if(!this.#legacy)return null;if(this.#stopping)throw Error('Legacy history reader is stopping; wait for Stop to finish.');let live=this.#legacyLive;if(this.#current(live)&&live.inventory)return live;
   if(live){await this.#closeLegacy(live);this.#check(epoch);}
   if(this.#legacy.nativeOpen)throw Error('Previous legacy native reader exit is unconfirmed; recovery is required.');
@@ -689,9 +689,9 @@ export class CodingOwners {
    for(const archived of [false,true]){let cursor;const cursors=new Set();do{
     this.#pinLegacy(live);const page=await live.engine.handle({action:'list',archived,...(cursor?{cursor}:{})});this.#check(epoch);
     if(page.truncated||!Array.isArray(page.threads))throw Error('Legacy history inventory is incomplete.');
-    for(const thread of page.threads){if(!id(thread.id)||ids.has(thread.id))throw Error('Duplicate or invalid legacy history identity.');ids.add(thread.id);bytes+=Buffer.byteLength(JSON.stringify(thread));if(ids.size>4096||bytes>8*1024*1024)throw Error('Legacy history inventory exceeds its verification limit.');
-     this.#pinLegacy(live);await live.engine.resolveFamily(thread.id);this.#check(epoch);this.#legacyCollision(live);inventory[archived?'archived':'active'].push(legacyView(thread));
-    }
+    for(const thread of page.threads){if(!id(thread.id)||ids.has(thread.id))throw Error('Duplicate or invalid legacy history identity.');ids.add(thread.id);bytes+=Buffer.byteLength(JSON.stringify(thread));if(ids.size>4096||bytes>8*1024*1024)throw Error('Legacy history inventory exceeds its verification limit.');}
+    await this.#catalogFamilies(live.engine,page.threads,()=>{this.#check(epoch,operation);this.#pinLegacy(live);},()=>this.#legacyCollision(live),scan);
+    inventory[archived?'archived':'active'].push(...page.threads.map(legacyView));
     cursor=page.nextCursor;if(cursor&&(typeof cursor!=='string'||cursor.length>4096||cursors.has(cursor)||cursors.size>=128))throw Error('Legacy history pagination is invalid or incomplete.');if(cursor)cursors.add(cursor);
    }while(cursor);}
    this.#pinLegacy(live);live.inventory=inventory;return live;
@@ -1225,12 +1225,45 @@ export class CodingOwners {
    }
   }for(const id of this.#controls.keys())if(!active.has(id))this.#controls.set(id,null);for(const [id,value] of active)this.#controls.set(id,value);if(this.#controls.size>4096)throw Error('Coding capability history limit reached; close the coordinator before continuing.');return active;
  }
+ #catalogBegin(input,operation){
+  const now=performance.now(),scan={id:randomUUID(),requestId:operation?.requestId??null,archived:!!input.archived,searching:input.searchTerm!==undefined,state:'loading',phase:'legacy-history',ownersTotal:this.#rows.length,ownersCompleted:0,threadsVerified:0,startedAt:now,phaseAt:now,endedAt:null,phaseTimingsMs:{'legacy-history':0,'owner-history':0,'reader-close':0,finalizing:0}};
+  this.#catalogScan=scan;return scan;
+ }
+ #catalogPhase(scan,phase){
+  const now=performance.now();scan.phaseTimingsMs[scan.phase]+=now-scan.phaseAt;scan.phase=phase;scan.phaseAt=now;
+ }
+ #catalogFinish(scan,state){
+  const now=performance.now();scan.phaseTimingsMs[scan.phase]+=now-scan.phaseAt;scan.endedAt=now;scan.state=state;
+ }
+ #catalogView(scan=this.#catalogScan){
+  if(!scan)return null;
+  const now=scan.endedAt??performance.now(),timings={...scan.phaseTimingsMs};if(scan.endedAt===null)timings[scan.phase]+=now-scan.phaseAt;
+  return {schemaVersion:1,id:scan.id,requestId:scan.requestId,archived:scan.archived,searching:scan.searching,state:scan.state,phase:scan.phase,ownersTotal:scan.ownersTotal,ownersCompleted:scan.ownersCompleted,threadsVerified:scan.threadsVerified,elapsedMs:Math.max(0,Math.round(now-scan.startedAt)),phaseElapsedMs:Math.max(0,Math.round(now-scan.phaseAt)),phaseTimingsMs:Object.fromEntries(Object.entries(timings).map(([key,value])=>[key,Math.max(0,Math.round(value))]))};
+ }
+ async #catalogFamilies(engine,threads,check,verify,scan=null){
+  if(!Array.isArray(threads))throw Error('Invalid coding history page.');
+  // Only admitted history readers overlap family RPCs. Writers keep their
+  // original order; owner acquisition, catalog writes and retirement stay serial.
+  // Drain all admitted reads before an error can retire their shared reader.
+  let next=0,failed=false,failure;
+  const worker=async()=>{
+   while(!failed&&next<threads.length){
+    try{const thread=threads[next++];check();const family=await engine.resolveFamily(thread.id);check();verify(family,thread);if(scan)scan.threadsVerified++;}
+    catch(error){if(!failed){failed=true;failure=error;}}
+   }
+  };
+  const settled=await Promise.allSettled(Array.from({length:Math.min(engine.historyOnly?4:1,threads.length)},()=>worker()));
+  for(const result of settled)if(result.status==='rejected'&&!failed){failed=true;failure=result.reason;}
+  if(failed)throw failure;check();
+ }
  async #list(input,epoch,operation){
   let snapshot,offset=0;const searchTerm=input.searchTerm??null,search=searchTerm===null?{}:{searchTerm};
   if(input.cursor){const [token,index]=input.cursor.split(':');offset=Number(index);snapshot=this.#snapshots.get(token);if(!snapshot||snapshot.searchTerm!==searchTerm||snapshot.archived!==!!input.archived||snapshot.expires<Date.now()||!Number.isSafeInteger(offset)||offset<0||String(offset)!==index)throw Error('Expired or invalid coding list cursor.');}
   else{
+   const scan=this.#catalogBegin(input,operation);
+   try{
    const threads=[],ids=new Set();let truncated=false,bytes=0,historyIncomplete=false,handoffIncomplete=false;
-   const legacy=await this.#legacyOwner(epoch,operation);if(legacy){
+   const legacy=await this.#legacyOwner(epoch,operation,scan);if(legacy){
     let inventory=legacy.inventory[input.archived?'archived':'active'];
     if(searchTerm!==null){const allowed=new Map(inventory.map(t=>[t.id,t])),matches=[],seen=new Set();let cursor;
      do{this.#pinLegacy(legacy);const page=await legacy.engine.handle({action:'list',archived:!!input.archived,...search,...(cursor?{cursor}:{})});this.#check(epoch,operation);this.#pinLegacy(legacy);this.#legacyCollision(legacy);truncated||=!!page.truncated;
@@ -1240,34 +1273,40 @@ export class CodingOwners {
     }
     for(const thread of inventory){ids.add(thread.id);threads.push(thread);bytes+=Buffer.byteLength(JSON.stringify(thread));if(bytes>8*1024*1024)throw Error('Coding list exceeds its snapshot byte limit.');}
    }
+   this.#catalogPhase(scan,'owner-history');
    for(const row of this.#rows){
-    if(row.handoff&&!this.#handoffHistoryReadable(row)){historyIncomplete=true;handoffIncomplete=true;continue;}
+    if(row.handoff&&!this.#handoffHistoryReadable(row)){historyIncomplete=true;handoffIncomplete=true;scan.ownersCompleted++;continue;}
     if(row.state!=='ready'){
-     if(row.state==='creating'&&row.generation?.nativeOpen===false&&row.generation.executorClosed===true&&!this.#live.has(row.id)&&(!row.fork?.worker||row.fork.worker.closed===true)){historyIncomplete=true;continue;}
+     if(row.state==='creating'&&row.generation?.nativeOpen===false&&row.generation.executorClosed===true&&!this.#live.has(row.id)&&(!row.fork?.worker||row.fork.worker.closed===true)){historyIncomplete=true;scan.ownersCompleted++;continue;}
      throw Error('Coding owner creation needs recovery; chat list is incomplete.');
     }
     const existing=this.#live.get(row.id)?.engine;
     const engine=await this.#owner(row,false,epoch,undefined,operation),reader=engine.historyOnly&&engine!==existing?this.#live.get(row.id):null;let cursor;const seen=new Set();
     try{
     do{this.#pin(row,engine);const page=await engine.handle({action:'list',archived:!!input.archived,...search,...(cursor?{cursor}:{})});this.#check(epoch,operation);truncated||=!!page.truncated;
-     for(const t of page.threads){this.#pin(row,engine);const {root}=await engine.resolveFamily(t.id);if(root.id!==row.rootThreadId||root.cwd!==row.cwd||root.model!==row.model||root.modelProvider!==({local:'saleh_local',cloud:'saleh_cloud'}[row.provider]))throw Error('Native history contains a root outside its assigned owner.');if(ids.has(t.id))throw Error('Duplicate native history ownership.');ids.add(t.id);bytes+=Buffer.byteLength(JSON.stringify(t));if(bytes>8*1024*1024)throw Error('Coding list exceeds its snapshot byte limit.');threads.push(ownerThread(row,t));if(threads.length>4096)throw Error('Coding list exceeds its verification limit.');}
+     await this.#catalogFamilies(engine,page.threads,()=>{this.#check(epoch,operation);this.#pin(row,engine);},({root})=>{if(root.id!==row.rootThreadId||root.cwd!==row.cwd||root.model!==row.model||root.modelProvider!==({local:'saleh_local',cloud:'saleh_cloud'}[row.provider]))throw Error('Native history contains a root outside its assigned owner.');},scan);
+     for(const t of page.threads){if(ids.has(t.id))throw Error('Duplicate native history ownership.');ids.add(t.id);bytes+=Buffer.byteLength(JSON.stringify(t));if(bytes>8*1024*1024)throw Error('Coding list exceeds its snapshot byte limit.');threads.push(ownerThread(row,t));if(threads.length>4096)throw Error('Coding list exceeds its verification limit.');}
      cursor=page.nextCursor;if(cursor&&seen.has(cursor))throw Error('Native history pagination did not advance.');if(cursor)seen.add(cursor);if(seen.size>128)throw Error('Native history pagination exceeds its verification limit.');
     }while(cursor);await this.#remember(row,engine);
     if(!row.handoff&&searchTerm===null&&!ids.has(row.rootThreadId)&&(nativeOwner(row)||!input.archived&&row.creation)){
      const resolved=await this.#thread(row.rootThreadId,false,epoch,operation);this.#pin(row,engine);
      // A real rollout wins over a retained receipt, including a lost archive reply.
      const thread=resolved.creation?(!input.archived?resolved.creation.thread:null):nativeOwner(row)?await engine.ownedEmptyRoot(!!input.archived):engine.threadView(resolved.nativeRoot,8000).value;
-     this.#check(epoch,operation);this.#pin(row,engine);if(!thread)continue;
-     if(ids.has(thread.id))throw Error('Duplicate native history ownership.');ids.add(thread.id);bytes+=Buffer.byteLength(JSON.stringify(thread));if(bytes>8*1024*1024||threads.length>=4096)throw Error('Coding list exceeds its snapshot limit.');threads.push(ownerThread(row,thread));
+     this.#check(epoch,operation);this.#pin(row,engine);if(thread){
+      if(ids.has(thread.id))throw Error('Duplicate native history ownership.');ids.add(thread.id);bytes+=Buffer.byteLength(JSON.stringify(thread));if(bytes>8*1024*1024||threads.length>=4096)throw Error('Coding list exceeds its snapshot limit.');threads.push(ownerThread(row,thread));
+     }
     }
     }finally{
      // Listing must not retain one idle native process per saved workspace.
-     if(reader&&this.#live.get(row.id)===reader)await this.#retire(row,reader);
+     if(reader&&this.#live.get(row.id)===reader){this.#catalogPhase(scan,'reader-close');await this.#retire(row,reader);this.#catalogPhase(scan,'owner-history');}
     }
+    scan.ownersCompleted++;
    }
-   this.#check(epoch,operation);threads.sort((a,b)=>(b.updatedAt??0)-(a.updatedAt??0)||a.id.localeCompare(b.id));const token=randomUUID();snapshot={token,searchTerm,archived:!!input.archived,threads,truncated,historyIncomplete,historyWarning:handoffIncomplete?'Some worktree handoffs remain incomplete. Their history is unavailable; verified saved chats are listed.':historyIncomplete?'Some task startups remain incomplete. Their history is unavailable; verified saved chats are listed.':null,expires:Date.now()+120000};this.#snapshots.set(token,snapshot);while(this.#snapshots.size>8)this.#snapshots.delete(this.#snapshots.keys().next().value);
+   this.#catalogPhase(scan,'finalizing');
+   this.#check(epoch,operation);threads.sort((a,b)=>(b.updatedAt??0)-(a.updatedAt??0)||a.id.localeCompare(b.id));const token=randomUUID();this.#catalogFinish(scan,'complete');snapshot={token,searchTerm,archived:!!input.archived,threads,truncated,historyIncomplete,historyWarning:handoffIncomplete?'Some worktree handoffs remain incomplete. Their history is unavailable; verified saved chats are listed.':historyIncomplete?'Some task startups remain incomplete. Their history is unavailable; verified saved chats are listed.':null,expires:Date.now()+120000,catalogProgress:this.#catalogView(scan)};this.#snapshots.set(token,snapshot);while(this.#snapshots.size>8)this.#snapshots.delete(this.#snapshots.keys().next().value);
+   }catch(error){this.#catalogFinish(scan,this.closed||epoch!==this.#epoch||operation.controller.signal.aborted?'cancelled':'failed');throw error;}
   }
-  const threads=snapshot.threads.slice(offset,offset+50);return {threads:structuredClone(threads),nextCursor:offset+50<snapshot.threads.length?snapshot.token+':'+(offset+50):null,truncated:snapshot.truncated,historyIncomplete:snapshot.historyIncomplete,historyWarning:snapshot.historyWarning};
+  const threads=snapshot.threads.slice(offset,offset+50);return {threads:structuredClone(threads),nextCursor:offset+50<snapshot.threads.length?snapshot.token+':'+(offset+50):null,truncated:snapshot.truncated,historyIncomplete:snapshot.historyIncomplete,historyWarning:snapshot.historyWarning,catalogProgress:structuredClone(snapshot.catalogProgress)};
  }
  async #status(){
   const base=await this.#authority.handle({action:'status'}),states=await Promise.all([...this.#live.values()].filter(x=>x.engine&&!x.engine.closed&&this.#rows.some(r=>r.state==='ready'&&this.#home(r)===x.engine.dataDir)).map(x=>x.engine.handle({action:'status'})));
@@ -1484,7 +1523,7 @@ export class CodingOwners {
   // Snapshots verify and persist ownership on the mutation queue. Defer a poll
   // instead of waiting through startup or exposing a partial/unverified snapshot.
   if(input.action==='events'&&!this.#stopping&&this.#queuePending){
-   try{this.#check(epoch,operation);const after=input.after??0;if(!Number.isSafeInteger(after)||after<0||after>this.#journal.sequence)throw Error('Invalid event cursor.');return {deferred:true};}
+   try{this.#check(epoch,operation);const after=input.after??0;if(!Number.isSafeInteger(after)||after<0||after>this.#journal.sequence)throw Error('Invalid event cursor.');return {deferred:true,catalogProgress:this.#catalogView()};}
    finally{this.#release(operation);}
   }
   const dispatch=()=>this.#serial(async()=>{
