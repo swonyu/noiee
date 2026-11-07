@@ -330,7 +330,10 @@ enum NoieeStartupReports {
     }
     static func write(_ receipt: NoieeStartupReceipt, root: URL = defaultRoot) throws -> URL {
         let manager = FileManager.default
-        guard root.standardizedFileURL == root, root.resolvingSymlinksInPath() == root else {
+        // Foundation home URLs can lose their directory hint when resolving a
+        // missing path. Canonical filesystem paths must match; URL hints need not.
+        guard root.isFileURL, root.standardizedFileURL.path == root.path,
+              root.resolvingSymlinksInPath().path == root.path else {
             throw NoieeStartupFailure(.invalidConfiguration)
         }
         // Only the new diagnostics directories are created; no app store or history is read.

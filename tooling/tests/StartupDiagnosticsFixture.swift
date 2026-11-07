@@ -129,6 +129,67 @@ struct StartupFixture {
         let report = NoieeStartupReceipt(recordedAt: "fixture", build: "172", outcome: "failed", phase: "fixture",
             failureCode: .backendDependencyMissing, exitStatus: 1, requiredNodeVersion: version,
             observedNodeVersion: version, nodeExecutableSHA256: hash, runtimeContractSHA256: hash, stderr: summary)
+        // FileManager's home URL is Foundation/NSURL-originated. Unlike a new
+        // Swift URL(fileURLWithPath:), its missing-directory resolution can drop
+        // the directory hint while preserving the exact canonical file path.
+        let generatedHome = root.appendingPathComponent("foundation-home", isDirectory: true)
+        try FileManager.default.createDirectory(at: generatedHome.appendingPathComponent("Library/Logs", isDirectory: true),
+                                                withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        let foundationHome = NSURL(fileURLWithPath: generatedHome.path, isDirectory: true) as URL
+        let firstUseRoot = foundationHome.appendingPathComponent("Library/Logs/Noiee/Startup", isDirectory: true)
+        check(!FileManager.default.fileExists(atPath: firstUseRoot.deletingLastPathComponent().path) &&
+              !FileManager.default.fileExists(atPath: firstUseRoot.path), "first-use diagnostic directories start absent")
+        check(firstUseRoot.resolvingSymlinksInPath().path == firstUseRoot.path &&
+              firstUseRoot.resolvingSymlinksInPath() != firstUseRoot,
+              "Foundation missing-directory URL reproduces the installed directory-hint mismatch")
+        let firstUse: URL
+        do { firstUse = try NoieeStartupReports.write(report, root: firstUseRoot) }
+        catch { print("FAIL: Foundation-origin first-use support receipt was refused"); exit(1) }
+        let firstUseData = try Data(contentsOf: firstUse)
+        check(firstUseData.count <= 16_384 &&
+              !String(decoding: firstUseData, as: UTF8.self).contains("SHOULD-NOT-APPEAR"),
+              "Foundation-origin receipt remains bounded and redacted")
+        for directory in [firstUseRoot.deletingLastPathComponent(), firstUseRoot] {
+            let attributes = try FileManager.default.attributesOfItem(atPath: directory.path)
+            check((attributes[.posixPermissions] as? NSNumber)?.intValue == 0o700 &&
+                  (attributes[.ownerAccountID] as? NSNumber)?.uint32Value == getuid(),
+                  "new diagnostic directory is private and owned")
+        }
+        let firstUseAttributes = try FileManager.default.attributesOfItem(atPath: firstUse.path)
+        check((firstUseAttributes[.posixPermissions] as? NSNumber)?.intValue == 0o600,
+              "Foundation-origin support receipt is private")
+        let nextUse = try NoieeStartupReports.write(report, root: firstUseRoot)
+        check(firstUse != nextUse && FileManager.default.fileExists(atPath: nextUse.path),
+              "repeat Foundation-origin save creates a separate receipt")
+        check(try Data(contentsOf: firstUse) == firstUseData, "repeat save preserves the first receipt")
+
+        let unsafeParent = root.appendingPathComponent("unsafe-report-parent", isDirectory: true)
+        try FileManager.default.createDirectory(at: unsafeParent, withIntermediateDirectories: false,
+                                                attributes: [.posixPermissions: 0o755])
+        let refusedChild = unsafeParent.appendingPathComponent("Startup", isDirectory: true)
+        refuses(.invalidConfiguration) { _ = try NoieeStartupReports.write(report, root: refusedChild) }
+        check(!FileManager.default.fileExists(atPath: refusedChild.path),
+              "unsafe report parent is refused before creating a child")
+        check((try FileManager.default.attributesOfItem(atPath: unsafeParent.path)[.posixPermissions] as? NSNumber)?.intValue == 0o755,
+              "unsafe existing parent permissions are not changed")
+        let safeParent = root.appendingPathComponent("unsafe-report-root", isDirectory: true)
+        try FileManager.default.createDirectory(at: safeParent, withIntermediateDirectories: false,
+                                                attributes: [.posixPermissions: 0o700])
+        let unsafeRoot = safeParent.appendingPathComponent("Startup", isDirectory: true)
+        try FileManager.default.createDirectory(at: unsafeRoot, withIntermediateDirectories: false,
+                                                attributes: [.posixPermissions: 0o755])
+        refuses(.invalidConfiguration) { _ = try NoieeStartupReports.write(report, root: unsafeRoot) }
+        let unsafeRootAttributes = try FileManager.default.attributesOfItem(atPath: unsafeRoot.path)
+        let unsafeRootContents = try FileManager.default.contentsOfDirectory(atPath: unsafeRoot.path)
+        check((unsafeRootAttributes[.posixPermissions] as? NSNumber)?.intValue == 0o755 && unsafeRootContents.isEmpty,
+              "unsafe existing report directory is left untouched")
+        let nonDirectory = root.appendingPathComponent("report-root-file")
+        let sentinel = Data("retained fixture".utf8)
+        try sentinel.write(to: nonDirectory, options: .withoutOverwriting)
+        refuses(.invalidConfiguration) { _ = try NoieeStartupReports.write(report, root: nonDirectory) }
+        check(try Data(contentsOf: nonDirectory) == sentinel, "non-directory report target is preserved")
+        refuses(.invalidConfiguration) { _ = try NoieeStartupReports.write(report, root: URL(string: "https://example.invalid/Startup/")!) }
+
         let reportRoot = root.appendingPathComponent("reports/Startup", isDirectory: true)
         let first = try NoieeStartupReports.write(report, root: reportRoot)
         let second = try NoieeStartupReports.write(report, root: reportRoot)
