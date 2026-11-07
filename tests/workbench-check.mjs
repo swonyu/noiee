@@ -123,6 +123,24 @@ try{
   await page.locator('#welcome-commands').click();check(await page.locator('#workspace-quick-dialog').isVisible(),'empty-state command discovery opens the same palette');await page.keyboard.press('Escape');
   await context.close();
 
+  {
+    const {page,context}=await makePage(),before=await snapshot(page);
+    await page.locator('#archive-chat').click();await stable(page);
+    await page.waitForFunction(()=>document.getElementById('notice').textContent.startsWith('Chat archived.'));
+    const archivedSnapshot=await snapshot(page),retained=archivedSnapshot.chats.find(row=>row.id===chat.id);
+    check(retained.archived===true&&retained.draft===draft&&JSON.stringify(retained.messages)===JSON.stringify(chat.messages)&&await page.locator('#notice').isVisible(),'archive confirmation belongs to the retained chat and preserves its exact draft and history');
+    await page.locator('#new-chat').click();await stable(page);
+    const fresh=await snapshot(page);
+    check(fresh.selectedId!==before.selectedId&&!await page.locator('#notice').isVisible()&&JSON.stringify(fresh.chats.find(row=>row.id===chat.id))===JSON.stringify(retained),'New chat clears the previous archive confirmation while leaving the archived chat unchanged');
+    await page.evaluate(()=>window.dispatchEvent(new CustomEvent('chat-run-error',{detail:'Generated run-state failure.'})));
+    const error=await page.locator('#notice').textContent();
+    await page.locator('#new-chat').click();await stable(page);
+    check(await page.locator('#notice').isVisible()&&await page.locator('#notice').textContent()===error,'rendering another chat preserves a workspace-wide run-state error');
+    await page.evaluate(id=>window.notice('Late archive confirmation.','',id),chat.id);
+    check(await page.locator('#notice').textContent()===error,'a late archive confirmation for a different chat cannot replace the current error');
+    await context.close();
+  }
+
   for(const [label,access,expected,notice] of [
     ['full',{mode:'full',managedChangesBlocked:true},'Agent · Full Access',false],
     ['reviewed',{mode:'reviewed',managedChangesBlocked:false},'Agent · Ask Before Tools',false],

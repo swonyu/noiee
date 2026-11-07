@@ -70,7 +70,11 @@ async function verifySnapshot(payload) {
   pendingSavedChats=await hydratedSnapshot(pendingSavedChats);
 }
 function messageRoom(chat){if(chat.messages.length<=9998)return true;notice('This chat has reached its saved-message limit. Your draft and previous answers are kept; continue in a new chat.');return false;}
-function notice(text, source = '') { $('notice').textContent = text; $('notice').hidden = !text; $('notice').dataset.source = source; }
+function notice(text, source = '', chatId = '') {
+  if (chatId && chatId !== selectedId) return;
+  $('notice').textContent = text; $('notice').hidden = !text;
+  $('notice').dataset.source = source; $('notice').dataset.chatId = chatId;
+}
 function storageNotice(text) { $('storage-notice').textContent=text; $('storage-notice').hidden=!text; }
 const openedChat=new URLSearchParams(location.search).get('chatId');
 try {
@@ -494,7 +498,7 @@ function renderContext() {
   const size = chat.notes.length + (chat.file?.text.length || 0);
   $('context-count').textContent = size ? `${size.toLocaleString()} characters in notes and the context file. Conversation and tool history are additional.` : 'No additional notes or context file.';
 }
-function render() { showArchived = current().archived === true; $('title').textContent = current().title; $('prompt').value = current().draft; $('thinking').value = current().longOutput === true ? 'long' : current().thinking; $('chat-mode').value=current().mode; renderSidebar(); renderMessages(); renderContext(); resize(); controls(); window.dispatchEvent(new CustomEvent('chat-selection-change',{detail:{chatId:selectedId}})); if ($('chat-find').hidden) bottom(); }
+function render() { if ($('notice').dataset.chatId && $('notice').dataset.chatId !== selectedId) notice(''); showArchived = current().archived === true; $('title').textContent = current().title; $('prompt').value = current().draft; $('thinking').value = current().longOutput === true ? 'long' : current().thinking; $('chat-mode').value=current().mode; renderSidebar(); renderMessages(); renderContext(); resize(); controls(); window.dispatchEvent(new CustomEvent('chat-selection-change',{detail:{chatId:selectedId}})); if ($('chat-find').hidden) bottom(); }
 function refreshReply(chat) {
   if (chat.id !== selectedId) return;
   const thread = $('thread'), follow = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 110;
@@ -899,7 +903,7 @@ $('archive-chat').onclick = async () => {
     if(!chats.includes(chat)||(chat.archived===true)!==archived)throw Error('The chat changed before archiving.');
     const candidate={...chat};if(archived)delete candidate.archived;else candidate.archived=true;
     return {value:{...snapshotFields,chats:chats.map(row=>row===chat?candidate:row),selectedId},apply:()=>{if(archived)delete chat.archived;else chat.archived=true;}};
-  });render();notice(archived?'Chat moved back to Chats.':'Chat archived. Its history and draft are kept, including in exports.');}catch(error){notice('Archive state was kept. '+error.message);controls();}
+  });render();notice(archived?'Chat moved back to Chats.':'Chat archived. Its history and draft are kept, including in exports.','',chat.id);}catch(error){notice('Archive state was kept. '+error.message);controls();}
 };
 function overlayPanel(){return matchMedia('(max-width: 650px)').matches&&document.body.classList.contains('sidebar-open')?$('sidebar'):matchMedia('(max-width: 1249px)').matches&&!$('context-panel').hidden?$('context-panel'):null;}
 function syncOverlay(){
