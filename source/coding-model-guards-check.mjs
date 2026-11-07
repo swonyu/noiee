@@ -10,7 +10,7 @@ import test from 'node:test';
 // Optional positional argument selects the exact integrated coding.js under test.
 const sourcePath = process.argv[2] ? resolve(process.argv[2]) : process.env.MODEL_PICKER_SOURCE ? resolve(process.env.MODEL_PICKER_SOURCE, 'coding.js') : fileURLToPath(new URL('./coding.js', import.meta.url));
 const source = readFileSync(sourcePath, 'utf8');
-const submissionSource = readFileSync(resolve(dirname(sourcePath), 'coding-submission.js','coding-goals.js'), 'utf8');
+const submissionSource = readFileSync(resolve(dirname(sourcePath), 'coding-submission.js'), 'utf8');
 const noOp = () => {};
 function statement(start) {
   for (let end = source.indexOf('\n', start); end >= 0; end = source.indexOf('\n', end + 1)) {
@@ -51,7 +51,7 @@ function harness(extra = {}) {
     // View-only surfaces outside these model/admission fixtures stay inert.
     observeTurns:noOp,closeSavedHistory:noOp,managedCloudChat:()=>false,renderComposerAttachments:noOp,clearImagePreviews:noOp,renderDraftAttachments:noOp,
     codingSkillProjects: new Map(), codingSkillRequests: new Set(), codingSkillsComponent: null, codingSkillsHost: null, codingSkillsOpen: false, codingSkillsScope: '', codingSkillsGeneration: 0,
-    mcpSetup: null, mcpOutcomes: {invalidate: noOp, refresh: noOp, select: noOp, current:()=>({error:'',loading:false})},
+    goals: null, mcpSetup: null, mcpOutcomes: {invalidate: noOp, refresh: noOp, select: noOp, current:()=>({error:'',loading:false})},
     bridge: {}, engine: {available: true}, acting: false, newModel: 'exact', localModels: {online: true, models: [{id: 'exact', loaded: true, available: true, capabilities: {coding: true, standard: true, deep: true}}]},
     preferences: {unread: {}, pendingThreads: {}, gitDrafts: {repo: {}}, handoffChats: {}}, sessionView: false, familyReadSequence: 0, pendingFamilyStops: new Map(), pendingTerminalStarts: new Map(),
     gitResults: new Map([[thread.id, git]]), gitOperation: null, gitEpoch: 0, gitFormRepository: '', gitCall: async (...args) => {calls.push(['git', ...args]); return {cancelled: true};},
