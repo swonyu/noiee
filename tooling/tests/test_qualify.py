@@ -67,6 +67,23 @@ class QualificationChecks(unittest.TestCase):
         self.assertEqual(Path(saved["path"]).read_bytes(), original.read_bytes())
         self.assertEqual(suite.retain(original), saved)
         self.assertEqual(len(suite.retained), 1)
+    def test_browser_hardlink_exception_is_exact_and_pinned(self):
+        suite = self.suite()
+        executable = self.root / "fixture-browser"
+        executable.write_bytes(b"generated launcher fixture")
+        os.link(executable, self.root / "second-link")
+        old = q.CHROME_LAUNCHER
+        q.CHROME_LAUNCHER = executable
+        try:
+            with self.assertRaises(RuntimeError):
+                q.read_regular(executable)
+            with self.assertRaises(RuntimeError):
+                suite.retain(executable)
+            saved = suite.retain(executable, q.digest(executable.read_bytes()))
+            self.assertEqual(Path(saved["path"]).stat().st_nlink, 1)
+            self.assertEqual(Path(saved["path"]).read_bytes(), executable.read_bytes())
+        finally:
+            q.CHROME_LAUNCHER = old
     def test_wrong_evidence_digest_is_rejected_before_copy(self):
         suite = self.suite()
         original = self.project / "fixture.json"

@@ -10,7 +10,7 @@ The runner executes compaction/recovery, model stabilization, startup diagnostic
 
 Each run has an exclusive directory under this checkout's .artifacts. qualification.json binds the final Git commit, the complete flat source namespace, source stability, actual suite commands, process exits, pass/fail counts and separate logs and execution RESULT files. Every suite RESULT retains its actual constituent command records and opaque copies of the unchanged raw reports. Logs, templates and generated fixture scripts referenced by those reports are copied into the current qualification's evidence directory when directly referenced; original execution paths remain plain provenance strings. Old reports never supply fresh pass counts.
 
-The source and Git commit must remain unchanged throughout the run. Source files and retained evidence must be canonical owned regular files, and an existing output directory is refused. Complete current source pins accompany every suite. The host release adapter independently checks the normalized report, execution counts and artifact hashes against its final frozen source.
+The source and Git commit must remain unchanged throughout the run. Source files and retained evidence must be canonical owned regular files, and an existing output directory is refused. The exact installed Chrome launcher named by browser-fixture receipts is also read and copied as dependency evidence after checking its recorded digest; its observed hard links do not relax the single-link rule for source or retained artifacts. Complete current source pins accompany every suite. The host release adapter independently checks the normalized report, execution counts and artifact hashes against its final frozen source.
 
 ## Model browser coverage
 

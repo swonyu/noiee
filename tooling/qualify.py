@@ -23,6 +23,7 @@ import uuid
 
 SELF = Path(__file__).resolve()
 DEFAULT_PROJECT = SELF.parents[1]
+CHROME_LAUNCHER = Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
 SUITES = ("compaction-recovery", "model-stabilization", "startup-diagnostics",
           "presentation", "mcp-skills", "fetch", "worktrees", "release-inputs")
 SCOPES = {
@@ -61,6 +62,23 @@ def read_regular(path, limit=32 * 1024 * 1024):
     require(len(data) == before.st_size and all(
         getattr(before, key) == getattr(after, key) for key in keys),
         "File changed during read: " + str(path))
+    return data
+
+def read_browser_runtime(path):
+    # Chrome ships a multiply linked launcher on this host. Keep that observed
+    # dependency exception separate from the single-link source/artifact policy.
+    path = Path(path)
+    require(path == CHROME_LAUNCHER and path.resolve(strict=True) == path,
+            "Only the exact browser fixture launcher may use this read")
+    before = path.lstat()
+    require(stat.S_ISREG(before.st_mode) and before.st_uid in (0, os.getuid())
+            and 0 < before.st_nlink and before.st_size <= 8 * 1024 * 1024,
+            "Unsafe browser launcher")
+    data = path.read_bytes()
+    after = path.lstat()
+    keys = ("st_dev", "st_ino", "st_size", "st_mode", "st_uid", "st_nlink", "st_mtime_ns", "st_ctime_ns")
+    require(len(data) == before.st_size and all(getattr(before, key) == getattr(after, key) for key in keys),
+            "Browser launcher changed during evidence capture")
     return data
 
 def ref(path):
@@ -178,11 +196,13 @@ class Suite:
 
     def retain(self, path, pin=None):
         path = Path(path)
-        allowed = path.is_relative_to(self.project) or (
+        runtime = path == CHROME_LAUNCHER
+        allowed = runtime or path.is_relative_to(self.project) or (
             path.is_relative_to(Path.home() / "Library/Caches")
             and any(part.startswith(("Noiee", "noiee")) for part in path.parts))
         require(allowed, "Evidence is outside this checkout/generated fixtures: " + str(path))
-        data = read_regular(path)
+        require(not runtime or isinstance(pin, str), "Browser runtime evidence requires its observed digest")
+        data = read_browser_runtime(path) if runtime else read_regular(path)
         actual = digest(data)
         require(pin is None or actual == pin, "Evidence digest differs: " + str(path))
         key = (str(path), actual)
