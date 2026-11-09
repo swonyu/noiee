@@ -1,3 +1,4 @@
+import {cancelModelBody} from './model-response-cleanup.mjs';
 import './attachments.js';
 import './work.js';
 import {validateToolAccess,recoveryStartupAllows,RECOVERY_STARTUP_MESSAGE} from './recovery-startup.mjs';
@@ -181,8 +182,8 @@ export function toolRoutes({instanceToken,hub=new MCPHub(),managedFetch,upstream
     const payload={model:selected.id,messages:[{role:'system',content:system},{role:'user',content:[{type:'text',text:'User task: '+input.task+'\nAvailable controls: '+JSON.stringify(input.controls)},{type:'image_url',image_url:{url:input.image}}]}],temperature:0,...selected.generation,stream:false,response_format:{type:'json_schema',json_schema:{name:'next_action',strict:true,schema}}};
     assertModelContext(selected,payload);
     const response=await fetchImpl(upstream+'/v1/chat/completions',{method:'POST',redirect:'error',signal,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    if(signal.aborted){await response.body?.cancel();signal.throwIfAborted();}
-    if(!response.ok||response.redirected){await response.body?.cancel();throw Error('LM Studio could not produce a computer proposal.');}
+    if(signal.aborted){cancelModelBody(response.body);signal.throwIfAborted();}
+    if(!response.ok||response.redirected){cancelModelBody(response.body);throw Error('LM Studio could not produce a computer proposal.');}
     const result=await readCompletion(response,{signal}),choice=result.choices?.[0],message=choice?.message;
     if(choice?.finish_reason!=='stop'||message?.tool_calls?.length||message?.function_call!=null||!text(message?.content,16000))throw Error('LM Studio returned an incomplete or invalid computer proposal.');
     return {model:selected.id,content:message.content};
@@ -205,9 +206,9 @@ export function toolRoutes({instanceToken,hub=new MCPHub(),managedFetch,upstream
       combined.throwIfAborted();const selected=await localModels.resolve(selectedID,{...generation,vision,signal:combined});combined.throwIfAborted();
       const payload=agentPayload(selected,messages,{finalize,currentRunStart:input.currentRunStart??null,sources:input.sources??[],style:responseStyleInstructions(generation)});
       const response=await fetchImpl(upstream+'/v1/chat/completions',{method:'POST',redirect:'error',signal:combined,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-      if(combined.aborted){await response.body?.cancel();combined.throwIfAborted();}
-      if(response.redirected||response.status>=300&&response.status<400){await response.body?.cancel();throw Error('Local model redirects are not allowed.');}
-      if(!response.ok){await response.body?.cancel();throw Error('LM Studio agent request failed (HTTP '+response.status+').');}
+      if(combined.aborted){cancelModelBody(response.body);combined.throwIfAborted();}
+      if(response.redirected||response.status>=300&&response.status<400){cancelModelBody(response.body);throw Error('Local model redirects are not allowed.');}
+      if(!response.ok){cancelModelBody(response.body);throw Error('LM Studio agent request failed (HTTP '+response.status+').');}
       const data=await readCompletion(response,{signal:combined,onReasoning,onContent}),message=data.choices?.[0]?.message;combined.throwIfAborted();
       if(!message||data.choices[0].finish_reason==='length')throw Error('The agent reply was incomplete. No action was performed for this step.');
       if(finalize&&((message.tool_calls!=null&&(!Array.isArray(message.tool_calls)||message.tool_calls.length>0))||message.function_call!=null||['tool_calls','function_call'].includes(data.choices[0].finish_reason)))throw Error('Final synthesis returned a tool request. No further action was performed.');
@@ -414,8 +415,8 @@ export function toolRoutes({instanceToken,hub=new MCPHub(),managedFetch,upstream
         if(controller.signal.aborted||req.aborted||res.destroyed)return true;
         const payload=agentPayload(selected,messages,{finalize,stream,style:responseStyleInstructions(generation)});
         const response=await fetchImpl(`${upstream}/v1/chat/completions`,{method:'POST',redirect:'error',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-        if(response.redirected||response.status>=300&&response.status<400){await response.body?.cancel();throw Error('Local model redirects are not allowed.');}
-        if(!response.ok){await response.body?.cancel();throw new Error(`LM Studio agent request failed (HTTP ${response.status}).`);}
+        if(response.redirected||response.status>=300&&response.status<400){cancelModelBody(response.body);throw Error('Local model redirects are not allowed.');}
+        if(!response.ok){cancelModelBody(response.body);throw new Error(`LM Studio agent request failed (HTTP ${response.status}).`);}
         if(stream){res.writeHead(200,{'Content-Type':'text/event-stream; charset=utf-8','X-Accel-Buffering':'no'});res.flushHeaders();}
         const data=await readCompletion(response,{signal:controller.signal,onReasoning:chunk=>{if(stream&&!res.destroyed)res.write(`data: ${JSON.stringify({reasoning:chunk})}\n\n`);}}),message=data.choices?.[0]?.message;
         controller.signal.throwIfAborted();

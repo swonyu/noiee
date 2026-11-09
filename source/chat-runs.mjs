@@ -1,3 +1,4 @@
+import {cancelModelBody} from './model-response-cleanup.mjs';
 import {open,lstat,realpath,readdir,mkdir,rename} from 'node:fs/promises';
 import {constants} from 'node:fs';
 import {join,dirname,isAbsolute,normalize} from 'node:path';
@@ -224,8 +225,8 @@ export class ChatRuns{
    if(compact){if(payload.model!==input.model)throw Error('Context compaction resolved a different model. No substitute was used.');payload={...payload,max_tokens:4096,tool_choice:'none'};delete payload.tools;}
    entry.row.resolvedModel=payload.model;entry.row.status='running';changed();
    const response=await this.#fetch(this.#url,{method:'POST',signal,redirect:'error',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-   if(signal.aborted){await response.body?.cancel();signal.throwIfAborted();}
-   if(response.redirected||response.status>=300&&response.status<400||!response.ok){await response.body?.cancel();throw Error('Local model request failed or redirected (HTTP '+response.status+').');}
+   if(signal.aborted){cancelModelBody(response.body);signal.throwIfAborted();}
+   if(response.redirected||response.status>=300&&response.status<400||!response.ok){cancelModelBody(response.body);throw Error('Local model request failed or redirected (HTTP '+response.status+').');}
    const append=(key,chunk)=>{if(compact&&(bytes(entry.row.content)+bytes(entry.row.reasoning)+bytes(chunk)>COMPACTION_SUMMARY_BYTES||bytes(JSON.stringify(entry.row.content+(key==='content'?chunk:'')))>COMPACTION_CARRY_JSON_BYTES))throw Error('Context summary exceeded its UTF-8 carry budget (12,000 raw bytes or 16,000 JSON-encoded bytes). Partial output is retained; original history and compaction progress are unchanged.');entry.row[key]+=chunk;changed();};
    const result=await readCompletion(response,{signal,onContent:chunk=>append('content',chunk),onReasoning:chunk=>append('reasoning',chunk)});signal.throwIfAborted();
    const choice=result.choices?.[0];if(compact&&(bytes(choice?.message?.content??'')+bytes(choice?.message?.reasoning_content??'')>COMPACTION_SUMMARY_BYTES||bytes(JSON.stringify(choice?.message?.content??''))>COMPACTION_CARRY_JSON_BYTES))throw Error('Context summary exceeded its UTF-8 carry budget. Original history and compaction progress are unchanged.');if(!['stop','length'].includes(choice?.finish_reason)||choice.message?.tool_calls?.length||choice.message?.function_call||!choice.message?.content?.trim()&&!(choice.finish_reason==='length'&&input.thinking==='deep'&&choice.message?.reasoning_content?.trim()))throw Error('The text answer did not finish without tools. Partial text is retained.');

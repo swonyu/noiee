@@ -1,3 +1,4 @@
+import {cancelModelBody} from './model-response-cleanup.mjs';
 // LM Studio inventory is a read-only local observation, never a download/load request.
 // Capability metadata admits a transport; it is not a model-quality guarantee.
 import {createLocalModelHTTPTransport,validateLocalModelOrigin} from './local-model-http.mjs';
@@ -70,18 +71,18 @@ export class LocalModelCatalog {
     try {
       const response=await this.fetchImpl(this.upstream+'/api/v1/models',{method:'GET',redirect:'error',signal:requestSignal,headers:{Accept:'application/json'}});
       connected=true;
-      if(requestSignal.aborted){await response.body?.cancel().catch(()=>{});requestSignal.throwIfAborted();}
-      if(response.redirected||response.status>=300&&response.status<400){await response.body?.cancel();throw failure('LOCAL_MODEL_REDIRECT','LM Studio redirected its inventory response. The configured local endpoint was kept.','invalid');}
+      if(requestSignal.aborted){cancelModelBody(response.body);requestSignal.throwIfAborted();}
+      if(response.redirected||response.status>=300&&response.status<400){cancelModelBody(response.body);throw failure('LOCAL_MODEL_REDIRECT','LM Studio redirected its inventory response. The configured local endpoint was kept.','invalid');}
       if(!response.ok) {
-        await response.body?.cancel();
+        cancelModelBody(response.body);
         if([401,403].includes(response.status))throw failure('LOCAL_MODEL_AUTH_REQUIRED','LM Studio requires authentication for model inventory. Check its API access settings; no credentials or model were changed.','authentication');
         throw failure('LOCAL_MODEL_HTTP_ERROR','LM Studio model inventory returned HTTP '+response.status+'. Check the local server, then refresh.','server-error');
       }
-      if(Number(response.headers.get('content-length'))>LIMIT){await response.body?.cancel();throw failure('LOCAL_MODEL_INVENTORY_INVALID','LM Studio model inventory exceeds its size limit.','invalid');}
+      if(Number(response.headers.get('content-length'))>LIMIT){cancelModelBody(response.body);throw failure('LOCAL_MODEL_INVENTORY_INVALID','LM Studio model inventory exceeds its size limit.','invalid');}
       const reader=response.body?.getReader();if(!reader)throw failure('LOCAL_MODEL_INVENTORY_INVALID','LM Studio returned an empty model inventory response.','invalid');
       let size=0;const chunks=[];
       try {while(true){const {done,value}=await reader.read();requestSignal.throwIfAborted();if(done)break;size+=value.byteLength;if(size>LIMIT)throw failure('LOCAL_MODEL_INVENTORY_INVALID','LM Studio model inventory exceeds its size limit.','invalid');chunks.push(value);}}
-      catch(error){await reader.cancel().catch(()=>{});throw error;}finally{reader.releaseLock();}
+      catch(error){cancelModelBody(reader);throw error;}finally{reader.releaseLock();}
       const bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
       let data;try{data=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));}catch{throw failure('LOCAL_MODEL_INVENTORY_INVALID','LM Studio model inventory is not valid UTF-8 JSON.','invalid');}
       if(!Array.isArray(data.models)||data.models.length>256)throw failure('LOCAL_MODEL_INVENTORY_INVALID','LM Studio model inventory has an unsupported schema or size.','invalid');
