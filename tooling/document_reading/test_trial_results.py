@@ -47,7 +47,7 @@ class TrialResultTests(unittest.TestCase):
             raw = (json.dumps(observation)+'\n').encode()
             self.assertEqual(hashlib.sha256(raw).hexdigest(), steps['convert-'+name]['output_sha256'])
             self.assertEqual(observation['status'], 'success')
-        child_hash = hashlib.sha256((ROOT/'research/trial_child.py').read_bytes()).hexdigest()
+        child_hash = hashlib.sha256((RESULT/'measured_source/trial_child.py.txt').read_bytes()).hexdigest()
         self.assertEqual(child_hash, self.receipt['conversion_child_sha256'])
 
     def test_pdf_limits_and_office_tables_are_not_overclaimed(self):
@@ -66,8 +66,9 @@ class TrialResultTests(unittest.TestCase):
 class TrialManifestTests(unittest.TestCase):
     def test_manifest_and_no_host_private_paths(self):
         manifest = json.loads((RESULT/'manifest.json').read_text())
+        correction = json.loads((RESULT/'runner_correction.json').read_text())
         for row in manifest['files']:
-            path = ROOT/row['path']
+            path = ROOT/correction['historical_source_snapshots'].get(row['path'], row['path'])
             self.assertEqual(path.stat().st_size, row['bytes'])
             self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), row['sha256'])
         for path in RESULT.glob('*.json'):

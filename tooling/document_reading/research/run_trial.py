@@ -83,15 +83,16 @@ def main(baseline_dir):
 
     try:
         if not step('stage', [PYTHON, '-I', str(job/'trial_stage.py'), str(job/'wheel-plan.json'), str(job/'wheels')], 120):
-            return
+            return 1
         if not step('venv', [PYTHON, '-I', '-m', 'venv', str(job/'venv')], 120):
-            return
+            return 1
         python = str(job/'venv/bin/python')
         if not step('install', SANDBOX+[python, '-I', '-m', 'pip', '--isolated', '--disable-pip-version-check', 'install', '--no-index', '--no-deps', '--require-hashes', '--only-binary=:all:', '--no-compile', '--find-links', str(job/'wheels'), '-r', str(job/'requirements.lock')], 120):
-            return
+            return 1
         if not step('network-probe', SANDBOX+[python, '-I', str(job/'trial_child.py'), 'network-probe']):
-            return
-        step('import-probe', SANDBOX+[python, '-I', str(job/'trial_child.py'), 'import-probe'])
+            return 1
+        if not step('import-probe', SANDBOX+[python, '-I', str(job/'trial_child.py'), 'import-probe']):
+            return 1
     finally:
         stop.set()
         thread.join(timeout=2)
@@ -100,6 +101,12 @@ def main(baseline_dir):
         (job/'receipt.json').write_text(json.dumps(receipt, indent=2)+'\n')
         print('JOB_DIRECTORY='+str(job), flush=True)
 
+    return 1 if disk_exceeded.is_set() else 0
+
+
+def cli():
+    raise SystemExit(main(Path(sys.argv[1])))
+
 
 if __name__ == '__main__':
-    main(Path(sys.argv[1]))
+    cli()

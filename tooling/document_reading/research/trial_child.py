@@ -110,6 +110,7 @@ def convert_synthetic(name):
     with (Path.cwd() / (name + '.result.json')).open('x') as output:
         output.write(encoded+'\n')
     print(encoded)
+    return 0 if observation['status'] == 'success' else 2
 
 
 if __name__ == '__main__':
@@ -120,6 +121,6 @@ if __name__ == '__main__':
     elif sys.argv[1] == 'generate-office':
         generate_office()
     elif sys.argv[1] == 'convert':
-        convert_synthetic(sys.argv[2])
+        raise SystemExit(convert_synthetic(sys.argv[2]))
     else:
         raise SystemExit('Unknown trial command')

@@ -1,0 +1,64 @@
+{
+  "measured_source_commit": "6ae6b4af2d5e479fcec7dd7c543ca0193cc023dd",
+  "historical_receipt_sha256": "844e93c14ef1eb70ad01240c51b9aee8f3268d576cead9de690801075f629ac9",
+  "historical_manifest_sha256": "f378fb20dfaa45b3473633f2d76a8518ceb05dc0bdc27bc75ee7332a974785de",
+  "historical_source_snapshots": {
+    "research/run_trial.py": "trial_result/measured_source/run_trial.py.txt",
+    "research/continue_trial.py": "trial_result/measured_source/continue_trial.py.txt",
+    "research/trial_child.py": "trial_result/measured_source/trial_child.py.txt",
+    "test_trial_results.py": "trial_result/measured_source/test_trial_results.py.txt"
+  },
+  "correction_scope": "Exit status/failure propagation only; historical observations unchanged; corrected runner not asserted to have produced old measurements.",
+  "files": [
+    {
+      "path": "research/continue_trial.py",
+      "bytes": 3944,
+      "sha256": "960164c44e4fe570c970251161c53309b81fcf184e3c951b21fb5fe8ece93fd9"
+    },
+    {
+      "path": "research/run_trial.py",
+      "bytes": 5094,
+      "sha256": "86ad61293d0fc89d6ab37a5db35473fdbad58a8e1c9d89565b975d577be10ec7"
+    },
+    {
+      "path": "research/trial_child.py",
+      "bytes": 5959,
+      "sha256": "48a392b42ab45bd1c6666a3c71deca5d39ad23ceef4ba3838a260bdf8dea7197"
+    },
+    {
+      "path": "test_trial_failures.py",
+      "bytes": 6330,
+      "sha256": "852dd615f57e2534766798b1b9a7bb1c26c45a2b52c213dea2dd32652b01b9e6"
+    },
+    {
+      "path": "test_trial_results.py",
+      "bytes": 4501,
+      "sha256": "3e9563406896c35b4501f3a4ab5bfed888834755161d6f88e936d570d8961240"
+    },
+    {
+      "path": "trial_result/RUNNER_CORRECTION.md",
+      "bytes": 2184,
+      "sha256": "fe7aa8c39d6a1a64087b59a30ab7488c010fb89f29f6c807e54b99862e6e498d"
+    },
+    {
+      "path": "trial_result/measured_source/continue_trial.py.txt",
+      "bytes": 3855,
+      "sha256": "7521bc9dad1ada3b3ea83224b6fdc761d6b3bf93e568fdf99afb2b3d01402f94"
+    },
+    {
+      "path": "trial_result/measured_source/run_trial.py.txt",
+      "bytes": 4969,
+      "sha256": "cfa52726341b7479425ad7245de906f7b923a3fb2456f15dfd11ed0e6c4a3d69"
+    },
+    {
+      "path": "trial_result/measured_source/test_trial_results.py.txt",
+      "bytes": 4349,
+      "sha256": "7d818bc139faff28e1d071c536c1f77fce3173bba7913ab34285c960fd9b7516"
+    },
+    {
+      "path": "trial_result/measured_source/trial_child.py.txt",
+      "bytes": 5883,
+      "sha256": "f894a83d282bfeebcd16efcea78cbf77b29ad1d653b9a044d4e122b4eb799654"
+    }
+  ]
+}

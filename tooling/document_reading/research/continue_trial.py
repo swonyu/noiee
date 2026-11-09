@@ -62,7 +62,7 @@ def main(job):
 
     try:
         if not step('generate-office', ['generate-office']):
-            return
+            return 1
         receipt['office_fixtures'] = json.loads((job/'fixtures/office-manifest.json').read_text())
         for name in ['text.pdf', 'table.pdf', 'columns.pdf', 'image.pdf', 'blank.pdf',
                      'synthetic.docx', 'synthetic.pptx', 'synthetic.xlsx']:
@@ -70,7 +70,7 @@ def main(job):
             if not step('convert-'+name, ['convert', name]):
                 # No dependency widening or fallback parser after a failure.
                 receipt['stopped_after'] = name
-                break
+                return 1
     finally:
         stop.set()
         monitor.join(timeout=2)
@@ -79,6 +79,12 @@ def main(job):
         (job/'receipt.json').write_text(json.dumps(receipt, indent=2)+'\n')
         print('JOB_DIRECTORY='+str(job), flush=True)
 
+    return 1 if disk_stop.is_set() else 0
+
+
+def cli():
+    raise SystemExit(main(Path(sys.argv[1])))
+
 
 if __name__ == '__main__':
-    main(Path(sys.argv[1]))
+    cli()
