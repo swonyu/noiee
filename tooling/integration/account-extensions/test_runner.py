@@ -241,13 +241,16 @@ class Cases(unittest.TestCase):
             self.assertNotEqual(before, r.digest(r.canonical(r.dependency_snapshot(root))))
 
     def test_child_commands_partial_duplicate_or_no_compile(self):
-        value = {'sequence': 1, 'executable': '/usr/bin/xcrun', 'argv': ['/usr/bin/xcrun', 'swiftc', '-o', '/tmp/fixture'], 'cwd': '/tmp', 'executableIdentity': {'sha256': 'a' * 64}, 'inputsBefore': {}, 'inputsAfter': {}, 'outputs': [{'sha256': 'a' * 64}], 'exitCode': 0}
-        second = {**value, 'sequence': 2, 'executable': '/tmp/fixture', 'argv': ['/tmp/fixture']}
-        encode = lambda rows: ('\n'.join(json.dumps(row) for row in rows) + '\n').encode()
-        self.assertEqual(len(r.audit_result(encode([value, second]), 'private-accounts')), 2)
-        for rows in [[value], [value, value], [second, second], [value, second, second]]:
-            self.reject(r.audit_result, encode(rows), 'private-accounts')
-        self.reject(r.audit_result, encode([value, second]), 'external-launch-native')
+        with self.complete_receipt() as (value, path, save, before):
+            row = next(item for item in value['rows'] if item['name'] == 'github-accounts')
+            original = [json.loads(line) for line in Path(row['childCommands']['path']).read_text().splitlines()]
+            encode = lambda rows: ('\n'.join(json.dumps(row) for row in rows) + '\n').encode()
+            for rows in [original[:1], [original[0], original[0]], original + [original[1]]]:
+                self.reject(r.audit_result, encode(rows), 'github-accounts', before, Path(value['fixtureHome']))
+            changed = copy.deepcopy(original)
+            changed[0]['argv'] = ['/usr/bin/xcrun', 'swiftc', '-o', original[1]['argv'][0]]
+            changed[0]['inputsBefore'] = changed[0]['inputsAfter'] = {}
+            self.reject(r.audit_result, encode(changed), 'github-accounts', before, Path(value['fixtureHome']))
 
     def test_runner_nonzero_exit(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -286,7 +289,15 @@ class Cases(unittest.TestCase):
             digest = 'a' * 64
             ident = lambda path: {'path': str(path), 'sha256': digest, 'bytes': 1}
             tools = {'python': ident(sys.executable), 'node': ident('/pinned/node'), 'xcrun': ident('/usr/bin/xcrun')}
-            before = {'git': {'commit': 'b' * 40, 'status': ''}, 'source': {}, 'tools': tools}
+            source_names = {name for _, _, names in r.NATIVE_COMPILE.values() for name in names if not name.startswith('@')}
+            source_names.update([item[0] for item in r.NATIVE.values()])
+            source_names.update(['tooling/github_accounts_check.swift', 'tooling/gmail_accounts_check.swift', 'source/runtime-contract.json'])
+            source = {}
+            for name in source_names:
+                data = r.read_file(r.ROOT / name)
+                source[name] = {'sha256': r.digest(data), 'bytes': len(data)}
+            before = {'git': {'commit': 'b' * 40, 'status': ''}, 'source': source, 'tools': tools}
+            work = root / 'noiee-account-extensions-synthetic'
             contract = r.parse_json(r.read_file(r.HERE / 'CONTRACT.json'))
             rows = []
             for name in r.ORDER:
@@ -298,6 +309,8 @@ class Cases(unittest.TestCase):
                     text = tap()
                 elif name == 'agent-syntax':
                     text = ''
+                elif name == 'native-evidence-mutations':
+                    text = json.dumps({'passed': True, 'caseNames': contract['nativeEvidenceTestCases'], 'testCases': len(contract['nativeEvidenceTestCases'])}) + '\n'
                 else:
                     text = json.dumps({'passed': True, 'caseNames': contract['selfTestCases'], 'testCases': len(contract['selfTestCases'])}) + '\n'
                 log = root / (name + '.log')
@@ -305,15 +318,24 @@ class Cases(unittest.TestCase):
                 row = {'name': name, 'command': r.commands(name, tools, root), 'cwd': str(r.ROOT), 'exitCode': 0, 'failure': None,
                        'log': r.ref(log), 'result': {'syntaxOnly': True} if name == 'agent-syntax' else r.parse_result(name, text, contract)}
                 if name in r.NATIVE:
-                    binary = '/temporary/check'
-                    base = {'sequence': 1, 'executable': '/usr/bin/xcrun', 'argv': ['/usr/bin/xcrun', 'swiftc', '-o', binary],
-                            'cwd': str(r.ROOT), 'executableIdentity': tools['xcrun'], 'inputsBefore': {}, 'inputsAfter': {},
-                            'outputs': [ident(binary)], 'exitCode': 0}
-                    child = [base, {**base, 'sequence': 2, 'executable': binary, 'executableIdentity': ident(binary), 'argv': [binary], 'outputs': []}]
+                    binary = str(work / 'tmp' / (r.NATIVE_COMPILE[name][0] + 'abcdefgh') / 'check')
+                    compiler_argv, compiler_inputs = r.native_compile_contract(name, before, work, binary)
+                    base = {'sequence': 1, 'executable': '/usr/bin/xcrun', 'argv': compiler_argv,
+                            'cwd': str(r.ROOT), 'executableIdentity': tools['xcrun'], 'inputsBefore': compiler_inputs,
+                            'inputsAfter': compiler_inputs, 'outputs': [ident(binary)], 'exitCode': 0}
+                    child = [base, {**base, 'sequence': 2, 'executable': binary, 'executableIdentity': ident(binary),
+                                   'argv': [binary], 'inputsBefore': {}, 'inputsAfter': {}, 'outputs': []}]
                     if name == 'external-launch-native':
-                        child.extend([{**base, 'sequence': 3, 'executable': str(r.PINNED_NODE), 'executableIdentity': tools['node'], 'outputs': [],
-                                       'argv': [str(r.PINNED_NODE), '--input-type=module', '-e', 'synthetic parity script', (r.ROOT / 'source/external-tool-runtime.mjs').as_uri(), '/temporary']},
-                                      {**child[1], 'sequence': 4, 'argv': [binary, '--validate-review']}])
+                        parent = work / 'home/Library/Caches/noiee-review-parity-abcdefgh'
+                        review = str(parent / 'review.json')
+                        runtime = r.source_identity('source/runtime-contract.json', before)
+                        review_inputs = {review: ident(review), runtime['path']: runtime}
+                        child.extend([{**base, 'sequence': 3, 'executable': str(r.PINNED_NODE), 'executableIdentity': tools['node'],
+                                       'inputsBefore': {}, 'inputsAfter': {}, 'outputs': [ident(review)],
+                                       'argv': [str(r.PINNED_NODE), '--input-type=module', '-e', r.parity_script(before),
+                                                (r.ROOT / 'source/external-tool-runtime.mjs').as_uri(), str(parent)]},
+                                      {**child[1], 'sequence': 4, 'inputsBefore': review_inputs, 'inputsAfter': review_inputs,
+                                       'argv': [binary, '--validate-review', review, runtime['path'], str(parent), r.digest(r.PARITY_ARTIFACT)]}])
                     path = root / (name + '.commands.jsonl')
                     path.write_text(''.join(json.dumps(row) + '\n' for row in child))
                     row['childCommands'] = r.ref(path)
@@ -323,6 +345,8 @@ class Cases(unittest.TestCase):
                      'releaseEligible': False, 'scope': r.SCOPE, 'fixtureHome': str(work), 'environment': r.fixture_environment(work),
                      'inputsBefore': r.save_new(root / 'before.json', before), 'inputsAfter': r.save_new(root / 'after.json', before),
                      'rows': rows, 'totals': r.totals(rows)}
+            value['nativeEvidence'] = r.save_new(root / 'NATIVE-EVIDENCE.json',
+                {'inputs': value['inputsBefore'], 'fixtureHome': str(work), 'rows': [row for row in rows if row['name'] in r.NATIVE]})
             path = root / 'RESULT.json'
             def save():
                 path.write_bytes(r.canonical(value) + b'\n')

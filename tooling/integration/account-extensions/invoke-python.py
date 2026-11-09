@@ -44,6 +44,8 @@ class RecordedPopen(OriginalPopen):
         self.inputs = {arg: identity(arg) for arg in argv[1:] if arg.startswith('/') and Path(arg).is_file()}
         self.evidence['inputsBefore'] = self.inputs
         self.output_path = Path(argv[argv.index('-o') + 1]) if argv[:2] == ['/usr/bin/xcrun', 'swiftc'] else None
+        if argv[:3] == ['/opt/homebrew/bin/node', '--input-type=module', '-e'] and len(argv) == 6:
+            self.output_path = Path(argv[5]) / 'review.json'
         self.recorded = False
         super().__init__(args, *other, **kwargs)
 

@@ -53,7 +53,7 @@ TOOL_CASES = [
     'single connection action retains its existing direct-child layout',
     'only single direct actions receive grid placement; grouped actions wrap in flex flow',
 ]
-ORDER = ['runner-adversarial-tests', *NATIVE, *JS, 'tool-actions', 'agent-syntax']
+ORDER = ['runner-adversarial-tests', *NATIVE, 'native-evidence-mutations', *JS, 'tool-actions', 'agent-syntax']
 SCOPE = {
     'network': 'All suite processes and descendants run under macOS sandbox-exec deny network*. Auth uses injected HTTP/listener/store/consent fixtures; no production sockets, providers or Keychain.',
     'execution': 'Runtime suite executes only locally authored synthetic loader/stdio fixture processes. Installed artifact bytes remain inert; no unknown/downloaded code runs.',
@@ -283,9 +283,10 @@ def parse_result(name, text, contract):
         return {'completionMarkers': lines, **({'durableClaimFamilies': 6} if name == 'external-claims' else {'completedSuites': 1})}
     if name == 'tool-actions':
         return tap_result(text)
-    if name == 'runner-adversarial-tests':
+    if name in ['runner-adversarial-tests', 'native-evidence-mutations']:
+        case_key = 'selfTestCases' if name == 'runner-adversarial-tests' else 'nativeEvidenceTestCases'
         value = parse_json(text)
-        require(type(value) is dict and canonical(value) == canonical({'passed': True, 'caseNames': contract['selfTestCases'], 'testCases': len(contract['selfTestCases'])})
+        require(type(value) is dict and canonical(value) == canonical({'passed': True, 'caseNames': contract[case_key], 'testCases': len(contract[case_key])})
                 and value['testCases'] > 0 and len(set(value['caseNames'])) == value['testCases'], 'Incomplete harness tests')
         return value
     raise ValueError('Unknown suite')
@@ -350,6 +351,8 @@ def commands(name, tools, out):
         inner = [node, '--preserve-symlinks', str(ROOT / JS[name][0])]
     elif name == 'tool-actions':
         inner = [node, '--preserve-symlinks', '--test', '--test-reporter=tap', str(ROOT / 'tests/tool-actions-check.mjs')]
+    elif name == 'native-evidence-mutations':
+        inner = [python, '-B', str(HERE / 'test_child_evidence.py'), str(out / 'NATIVE-EVIDENCE.json')]
     elif name == 'agent-syntax':
         inner = [node, '--check', str(ROOT / 'source/agent.mjs')]
     else:
@@ -358,35 +361,140 @@ def commands(name, tools, out):
     return ['/usr/bin/sandbox-exec', '-p', PROFILE, *inner]
 
 
-def audit_result(data, name, inputs=None):
-    rows = [parse_json(line) for line in data.decode().splitlines()]
+# Order, flags, sources and generated inputs are part of each reviewed fixture's
+# execution contract. A command count or matching success line is not sufficient.
+NATIVE_COMPILE = {
+    'private-account-dispatch': ('noiee-account-dispatch-', True, [
+        'source/PrivateAccounts.swift', 'source/GitHubAccount.swift', 'source/GmailOAuth.swift',
+        'source/GmailAccount.swift', 'source/PrivateAccountsDispatch.swift', '@generated/fixtures.swift',
+        'tooling/private_account_dispatch_check.swift']),
+    'private-accounts': ('noiee-private-accounts-', True, [
+        'source/PrivateAccounts.swift', 'source/PrivateAccountOAuth.swift', 'tooling/private_accounts_check.swift']),
+    'github-accounts': ('noiee-github-account-', True, [
+        'source/PrivateAccounts.swift', 'source/GitHubAccount.swift', 'tooling/github_accounts_check.swift']),
+    'gmail-accounts': ('noiee-gmail-account-', True, [
+        'source/PrivateAccounts.swift', 'source/GmailOAuth.swift', 'source/GmailAccount.swift', 'tooling/gmail_accounts_check.swift']),
+    'external-install-native': ('noiee-external-compile-', False, [
+        'source/CodingTemporary.swift', 'source/ExternalToolInstall.swift', 'tooling/tests/ExternalToolInstallFixture.swift']),
+    'external-launch-native': ('noiee-launch-compile-', False, [
+        'source/CodingTemporary.swift', 'source/ExternalToolInstall.swift', 'source/ExternalToolLaunch.swift',
+        'tooling/tests/ExternalToolLaunchFixture.swift']),
+}
+PARITY_ARTIFACT = b'throw Error("never executed parity artifact");'
+
+
+def identity_shape(value, path, limit=256 * MAX_LOG):
+    require(type(value) is dict and set(value) == {'path', 'sha256', 'bytes'}
+            and value['path'] == str(path) and type(value['bytes']) is int and 0 < value['bytes'] <= limit
+            and type(value['sha256']) is str and re.fullmatch(r'[a-f0-9]{64}', value['sha256']),
+            'Malformed child file/executable identity')
+    return value
+
+
+def source_identity(relative, inputs):
+    require(relative in inputs['source'], 'Required native source missing from input snapshot: ' + relative)
+    value = inputs['source'][relative]
+    return identity_shape({'path': str(ROOT / relative), 'sha256': value['sha256'], 'bytes': value['bytes']}, ROOT / relative)
+
+
+def bound_source_bytes(relative, inputs):
+    expected = source_identity(relative, inputs)
+    data = read_file(ROOT / relative)
+    require(digest(data) == expected['sha256'] and len(data) == expected['bytes'], 'Current fixture differs from bound source')
+    return data
+
+
+def dispatch_fixture_bytes(inputs):
+    fragments = []
+    for relative, anchor in [('tooling/github_accounts_check.swift', '@main struct GitHubAccountsCheck'),
+                             ('tooling/gmail_accounts_check.swift', '@main struct GmailAccountsCheck')]:
+        text = bound_source_bytes(relative, inputs).decode('utf8')
+        require(text.count(anchor) == 1, 'Generated dispatch fixture anchor changed')
+        fragments.append(text.split(anchor)[0])
+    return '\n'.join(fragments).encode('utf8')
+
+
+def parity_script(inputs):
+    import ast
+    tree = ast.parse(bound_source_bytes(NATIVE['external-launch-native'][0], inputs))
+    assignments = [node.value for node in ast.walk(tree) if isinstance(node, ast.Assign)
+                   and any(isinstance(target, ast.Name) and target.id == 'script' for target in node.targets)]
+    require(len(assignments) == 1 and isinstance(assignments[0], ast.Constant)
+            and type(assignments[0].value) is str, 'Expected one literal reviewed parity script')
+    return assignments[0].value
+
+
+def private_temp(path, parent, prefix):
+    path = Path(path)
+    require(path.is_absolute() and str(path) == os.path.normpath(str(path)) and path.parent == parent
+            and re.fullmatch(re.escape(prefix) + r'[a-z0-9_]{8}', path.name), 'Child temporary path outside exact fixture scope')
+    return path
+
+
+def native_compile_contract(name, inputs, work, binary):
+    require(name in NATIVE_COMPILE, 'Unknown native fixture')
+    prefix, cache, names = NATIVE_COMPILE[name]
+    binary = Path(binary)
+    require(binary.name == 'check', 'Unexpected compiled binary name')
+    tmp = private_temp(binary.parent, work / 'tmp', prefix)
+    argv = ['/usr/bin/xcrun', 'swiftc']
+    if cache:
+        argv.extend(['-parse-as-library', '-module-cache-path', str(tmp / 'modules')])
+    refs = {}
+    for name in names:
+        if name == '@generated/fixtures.swift':
+            path = str(tmp / 'fixtures.swift')
+            data = dispatch_fixture_bytes(inputs)
+            refs[path] = {'path': path, 'bytes': len(data), 'sha256': digest(data)}
+        else:
+            path = str(ROOT / name)
+            refs[path] = source_identity(name, inputs)
+        argv.append(path)
+    argv.extend(['-o', str(binary)])
+    return argv, refs
+
+
+def audit_result(data, name, inputs, work):
+    require(name in NATIVE, 'Unknown native fixture')
+    work = Path(work)
+    rows = [parse_json(line) for line in data.decode('utf8').splitlines()]
     expected = 4 if name == 'external-launch-native' else 2
-    require(len(rows) == expected and [r.get('sequence') for r in rows] == list(range(1, expected + 1)), 'Missing/duplicate child commands')
+    require(len(rows) == expected and [row.get('sequence') for row in rows] == list(range(1, expected + 1)), 'Missing/duplicate child commands')
     for row in rows:
-        require(set(row) == {'sequence', 'executable', 'argv', 'cwd', 'executableIdentity', 'inputsBefore', 'inputsAfter', 'outputs', 'exitCode'} and type(row['argv']) is list
-                and row['argv'] and all(type(arg) is str for arg in row['argv']), 'Malformed child command')
-        require(type(row['executableIdentity']) is dict and re.fullmatch(r'[a-f0-9]{64}', row['executableIdentity'].get('sha256', '')), 'Missing child executable identity')
-        require(row['exitCode'] == 0 and type(row['exitCode']) is int and row['inputsBefore'] == row['inputsAfter'], 'Failed child or changed child inputs')
-    require(rows[0]['argv'][:2] == ['/usr/bin/xcrun', 'swiftc'], 'Missing actual native compilation')
-    binary = rows[0]['argv'][rows[0]['argv'].index('-o') + 1]
-    require(rows[1]['argv'] == [binary] and rows[0]['outputs'] == [rows[1]['executableIdentity']], 'Missing native fixture execution or different compiled binary')
+        require(set(row) == {'sequence', 'executable', 'argv', 'cwd', 'executableIdentity', 'inputsBefore', 'inputsAfter', 'outputs', 'exitCode'}
+                and type(row['sequence']) is int and type(row['argv']) is list and row['argv']
+                and all(type(arg) is str for arg in row['argv']), 'Malformed child command')
+        require(type(row['exitCode']) is int and row['exitCode'] == 0 and row['cwd'] == str(ROOT), 'Failed child or changed cwd')
+        require(type(row['inputsBefore']) is dict and type(row['inputsAfter']) is dict
+                and canonical(row['inputsBefore']) == canonical(row['inputsAfter']), 'Changed or malformed child inputs')
+    require(len(rows[1]['argv']) == 1, 'Unexpected native fixture invocation')
+    binary = Path(rows[1]['argv'][0])
+    binary_ref = identity_shape(rows[1]['executableIdentity'], binary)
+    compiler_argv, compiler_inputs = native_compile_contract(name, inputs, work, binary)
+
+    def exact(row, argv, executable, executable_ref, required_inputs, outputs):
+        require(row['argv'] == argv and row['executable'] == executable
+                and canonical(row['executableIdentity']) == canonical(executable_ref)
+                and canonical(row['inputsBefore']) == canonical(required_inputs)
+                and canonical(row['inputsAfter']) == canonical(required_inputs)
+                and canonical(row['outputs']) == canonical(outputs), 'Child command/input/output differs from exact fixture contract')
+
+    exact(rows[0], compiler_argv, '/usr/bin/xcrun', inputs['tools']['xcrun'], compiler_inputs, [binary_ref])
+    exact(rows[1], [str(binary)], str(binary), binary_ref, {}, [])
     if expected == 4:
-        require(rows[2]['argv'][:3] == [str(PINNED_NODE), '--input-type=module', '-e']
-                and rows[3]['argv'][:2] == [binary, '--validate-review']
-                and rows[1]['executableIdentity'] == rows[3]['executableIdentity'], 'Missing actual Node-to-Swift parity execution')
-    if inputs is not None:
-        require(rows[0]['executableIdentity'] == inputs['tools']['xcrun'], 'Different native compiler launcher')
-        for row in rows:
-            for path, identity in row['inputsBefore'].items():
-                require(identity['path'] == path, 'Noncanonical child input')
-                relative = Path(path).relative_to(ROOT).as_posix() if Path(path).is_relative_to(ROOT) else None
-                if relative is not None:
-                    require(relative in inputs['source'] and identity['sha256'] == inputs['source'][relative]['sha256']
-                            and identity['bytes'] == inputs['source'][relative]['bytes'], 'Different compiled source/fixture input')
-        if expected == 4:
-            require(rows[2]['executableIdentity'] == inputs['tools']['node'] and len(rows[2]['argv']) == 6
-                    and rows[2]['argv'][4] == (ROOT / 'source/external-tool-runtime.mjs').as_uri(), 'Different Node parity runtime')
+        require(len(rows[2]['argv']) == 6, 'Missing complete Node parity arguments')
+        parent = private_temp(Path(rows[2]['argv'][5]), work / 'home/Library/Caches', 'noiee-review-parity-')
+        review_path = str(parent / 'review.json')
+        require(type(rows[2]['outputs']) is list and len(rows[2]['outputs']) == 1, 'Missing Node review output')
+        review_ref = identity_shape(rows[2]['outputs'][0], review_path, MAX_LOG)
+        node_argv = [str(PINNED_NODE), '--input-type=module', '-e', parity_script(inputs),
+                     (ROOT / 'source/external-tool-runtime.mjs').as_uri(), str(parent)]
+        exact(rows[2], node_argv, str(PINNED_NODE), inputs['tools']['node'], {}, [review_ref])
+        runtime = source_identity('source/runtime-contract.json', inputs)
+        native_argv = [str(binary), '--validate-review', review_path, runtime['path'], str(parent), digest(PARITY_ARTIFACT)]
+        exact(rows[3], native_argv, str(binary), binary_ref, {review_path: review_ref, runtime['path']: runtime}, [])
     return rows
+
 
 
 def totals(rows):
@@ -394,6 +502,7 @@ def totals(rows):
             'toolActionTestCases': next(row['result']['testCases'] for row in rows if row['name'] == 'tool-actions'),
             'durableClaimFamilies': 6, 'completionOnlyJSSuites': 5,
             'runnerAdversarialTestCases': rows[0]['result']['testCases'],
+            'nativeEvidenceMutationTestCases': next(row['result']['testCases'] for row in rows if row['name'] == 'native-evidence-mutations'),
             'nodeSwiftParity': True, 'agentSyntax': True}
 
 
@@ -416,7 +525,10 @@ def verify(receipt, expected_hash, expected_commit):
     contract = parse_json(read_file(HERE / 'CONTRACT.json'))
     rows = value['rows']
     require(type(rows) is list and [row.get('name') for row in rows] == ORDER, 'Missing, duplicate or reordered suite')
-    references = [value['inputsBefore']['path'], value['inputsAfter']['path']]
+    native_bundle = parse_json(read_ref(value['nativeEvidence'], out))
+    require(canonical(native_bundle) == canonical({'inputs': value['inputsBefore'], 'fixtureHome': value['fixtureHome'],
+                                                  'rows': [row for row in rows if row['name'] in NATIVE]}), 'Fresh native evidence bundle differs')
+    references = [value['inputsBefore']['path'], value['inputsAfter']['path'], value['nativeEvidence']['path']]
     for row in rows:
         name = row['name']
         require(row['exitCode'] == 0 and type(row['exitCode']) is int and row['failure'] is None and row['cwd'] == str(ROOT)
@@ -427,7 +539,7 @@ def verify(receipt, expected_hash, expected_commit):
         require(canonical(row['result']) == canonical(expected), 'Parsed result differs from retained log')
         if name in NATIVE:
             references.append(row['childCommands']['path'])
-            audit_result(read_ref(row['childCommands'], out, MAX_LOG), name, before)
+            audit_result(read_ref(row['childCommands'], out, MAX_LOG), name, before, work)
     require(len(references) == len(set(references)), 'Duplicate evidence reference')
     require(canonical(value['totals']) == canonical(totals(rows)), 'Totals differ from complete results')
     return value
@@ -466,6 +578,9 @@ def main():
             result['fixtureHome'] = str(work)
             result['environment'] = env
             for name in ORDER:
+                if name == 'native-evidence-mutations':
+                    result['nativeEvidence'] = save_new(out / 'NATIVE-EVIDENCE.json',
+                        {'inputs': result['inputsBefore'], 'fixtureHome': str(work), 'rows': [row for row in rows if row['name'] in NATIVE]})
                 command = commands(name, before['tools'], out)
                 row = {'name': name, 'command': command, 'cwd': str(ROOT),
                        **run_bounded(command, ROOT, env, out / (name + '.log'))}
@@ -475,7 +590,7 @@ def main():
                 row['result'] = {'syntaxOnly': True} if name == 'agent-syntax' and text == '' else parse_result(name, text, contract)
                 if name in NATIVE:
                     path = out / (name + '.commands.jsonl')
-                    audit_result(read_file(path, MAX_LOG), name, before)
+                    audit_result(read_file(path, MAX_LOG), name, before, work)
                     row['childCommands'] = ref(path, MAX_LOG)
                 print(json.dumps({'suite': name, 'passed': True, 'result': row['result']}), flush=True)
         after = preflight()
