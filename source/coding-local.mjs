@@ -1,3 +1,4 @@
+import {cancelModelBody} from './model-response-cleanup.mjs';
 import {assertCodingContext} from './coding-context.mjs';
 import http from 'node:http';
 import {randomBytes,timingSafeEqual} from 'node:crypto';
@@ -175,7 +176,7 @@ export async function createQwenRelay({upstream,localModels,fetchImpl,contextPro
       controller.signal.throwIfAborted();
       const restore=namespaceAdapter(body);
       const response=await fetchImpl(upstream,{method:'POST',redirect:'error',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:controller.signal});
-      if(response.redirected||response.status>=300&&response.status<400){await response.body?.cancel();throw Error('Local model redirects are not allowed.');}
+      if(response.redirected||response.status>=300&&response.status<400){cancelModelBody(response.body);throw Error('Local model redirects are not allowed.');}
       const headers={'Content-Type':response.headers.get('content-type')||'application/json','Cache-Control':'no-store'};
       const write=async chunk=>{if(!res.headersSent)res.writeHead(response.status,headers);if(!res.write(chunk))await once(res,'drain',{signal:controller.signal});};
       if(response.body){

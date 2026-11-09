@@ -1,3 +1,4 @@
+import {cancelModelBody} from './model-response-cleanup.mjs';
 import http from 'node:http';
 import {validateToolAccess,RECOVERY_STARTUP_MESSAGE} from './recovery-startup.mjs';
 import './attachments.js';
@@ -199,9 +200,9 @@ export function createServer({ upstream, model = MODEL, instanceToken = '', hub,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-        if(response.redirected||response.status>=300&&response.status<400){await response.body?.cancel();return json(502,{error:'Local model redirects are not allowed.'});}
+        if(response.redirected||response.status>=300&&response.status<400){cancelModelBody(response.body);return json(502,{error:'Local model redirects are not allowed.'});}
         if (!response.ok) {
-          await response.body?.cancel();
+          cancelModelBody(response.body);
           return json(502, { error: `LM Studio could not answer (HTTP ${response.status}). Check that the selected model is loaded, then retry.` });
         }
         if (!response.body) return json(502, { error: 'LM Studio returned no response.' });
