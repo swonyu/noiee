@@ -980,6 +980,7 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
         if ["gmail_messages","gmail_message_metadata"].contains(input["action"] as? String ?? "") {return try await gmailAccount.perform(input)}
         return try await privateAccounts.perform(input)
     }
+    private let externalTools = ExternalToolInstallSession()
     private let codingFilePreview = CodingFilePreviewSession()
     private let codingSetup = CodingMCPSetupSession()
     private let provisioning = CodingProvisioning()
@@ -1013,6 +1014,7 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
         }
         await projectSkills.drain()
         await fetchPlugin.drain()
+        await externalTools.drain()
         if let failure=agentStepSettlementError {throw ComputerError.message("Agent completion persistence is unconfirmed. "+failure)}
         let result = try await request("shutdown",[:])
         guard let stopped = result["stopped"] as? NSNumber,
@@ -1035,6 +1037,7 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
                 if let pending {_ = await pending.result}
                 await self.projectSkills.drain()
                 await self.fetchPlugin.drain()
+                await self.externalTools.drain()
                 let result=try await stopping.value
                 if let failure=agentStepSettlementError {throw ComputerError.message("Agent completion persistence is unconfirmed. "+failure)}
                 let flag=result["stopped"] as? NSNumber,valid=flag.map{CFGetTypeID($0)==CFBooleanGetTypeID()}==true
@@ -1051,7 +1054,7 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
         codingAnswer?.cancel()
         provisioning.invalidate()
         privateAccountsUI.cancel()
-        codingSkills.invalidate(); projectSkills.invalidate(); fetchPlugin.invalidate(); codingFilePreview.invalidate(); codingSetup.invalidate(); codingQueue.invalidate(); queueAlertRoot=nil; setupAlertID=nil;providerBinding=nil;providerBindingAlert=nil
+        codingSkills.invalidate(); projectSkills.invalidate(); fetchPlugin.invalidate(); externalTools.invalidate(); codingFilePreview.invalidate(); codingSetup.invalidate(); codingQueue.invalidate(); queueAlertRoot=nil; setupAlertID=nil;providerBinding=nil;providerBindingAlert=nil
         epoch=UUID(); worktreeEpoch=UUID(); scheduleEpoch=UUID(); gitEpoch=UUID(); gitRequest=nil; routineReads=[:]; codingGrants=[]; codingInteractive.revoke(); computer.stop()
         if includeCoding { codingTerminals=[:] }
         let event=includeCoding ? "agent-stopped":"tools-stopped"
@@ -1278,6 +1281,9 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
                 case "projectSkills":
                     guard Set(body.keys)==["op","input"],let input=body["input"] as? [String:Any] else {throw ComputerError.message("Invalid project skill request.")}
                     result=try await performProjectSkills(input,expected:expected)
+                case "externalArtifact":
+                    guard Set(body.keys)==["op","input"],let input=body["input"] as? [String:Any] else {throw ComputerError.message("Invalid external artifact request.")}
+                    result=try await performExternalArtifact(input,expected:expected)
                 case "fetchPlugin":
                     guard Set(body.keys)==["op","input"],let input=body["input"] as? [String:Any] else {throw ComputerError.message("Invalid fixed Fetch request.")}
                     result=try await performFetchPlugin(input,expected:expected)
@@ -1363,6 +1369,7 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
         }
         if name.hasPrefix("computer_") {return try await computer.agentTool(name,arguments:arguments,beforeEffect:beforeEffect)}
         if name=="project_skills" {return try await performProjectSkills(arguments,expected:expected,beforeEffect:beforeEffect,agentClaim:agentClaim)}
+        if name=="external_tool_artifact" {return try await performExternalArtifact(arguments,expected:expected,beforeEffect:beforeEffect,agentClaim:agentClaim)}
         if name=="fetch_plugin" {return try await performFetchPlugin(arguments,expected:expected,beforeEffect:beforeEffect,agentClaim:agentClaim)}
         if name=="private_accounts" {try await beforeEffect?();try require(expected);let result=try await performPrivateAccounts(arguments);try require(expected);return result}
         if name=="call_contact" {guard Set(arguments.keys)==["name"],let contact=arguments["name"] as? String else{throw ComputerError.message("A contact name is required.")};return try await call(contact,expected:expected,beforeEffect:beforeEffect)}
@@ -1388,6 +1395,22 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
             try await beforeEffect?();try require(expected);return try await dispatch("call",arguments)
         }
         throw ComputerError.message("Unknown tool.")
+    }
+    private func performExternalArtifact(_ input:[String:Any],expected:UUID,beforeEffect:(() async throws -> Void)?=nil,agentClaim:(() -> [String:Any]?)?=nil) async throws -> [String:Any] {
+        if !(Set(input.keys)==["action"] && input["action"] as? String=="inspect") {_ = try ExternalToolInstall.proposal(input)}
+        try await beforeEffect?();try require(expected)
+        if input["action"] as? String=="inspect" {
+            var body=input;if let claim=agentClaim?(){body["agentClaim"]=claim}
+            let response=try await self.request("externalArtifact",body);try require(expected)
+            guard response["admitted"] as? Bool==true else {throw ComputerError.message("External artifact inspection was not admitted.")}
+        }
+        let parent=try runtimePaths.get().dataDir.deletingLastPathComponent().path
+        return try await externalTools.perform(input,parent:parent,check:{try self.require(expected)},download:{ proposal in
+            var body=proposal;if let claim=agentClaim?(){body["agentClaim"]=claim}
+            let response=try await self.request("externalArtifact",body);try self.require(expected);return response
+        },ask:{ detail in
+            try await self.approve("Install unknown-source artifact?",detail:detail,button:"Install inert file once",expected:expected,operational:false)
+        })
     }
     private func performFetchPlugin(_ input:[String:Any],expected:UUID,beforeEffect:(() async throws -> Void)?=nil,agentClaim:(() -> [String:Any]?)?=nil) async throws -> [String:Any] {
         let request=try FetchPluginRequest.parse(input);try require(expected)

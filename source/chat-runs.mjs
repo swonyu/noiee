@@ -263,7 +263,8 @@ export class ChatRuns{
    ||step.name==='search_tools'&&operation==='search'&&equal(input,step.args);
   const skillValid=step.name==='project_skills'&&operation==='projectSkills'&&equal(input,step.args);
   const fetchValid=step.name==='fetch_plugin'&&operation==='fetchPlugin'&&equal(input,step.args);
-  if(!valid&&!skillValid&&!fetchValid)throw Error('Agent effect differs from its exact claimed tool.');
+  const externalValid=step.name==='external_tool_artifact'&&operation==='externalArtifact'&&equal(input,step.args);
+  if(!valid&&!skillValid&&!fetchValid&&!externalValid)throw Error('Agent effect differs from its exact claimed tool.');
   const check=()=>{entry.inference.controller.signal.throwIfAborted();step.controller.signal.throwIfAborted();if(this.#active.get(claim.runId)!==entry||step.settled||step.generation!==this.#generation())throw Error('Agent effect authority expired.');};
   check();step.effectUsed=true;return {check,signal:AbortSignal.any([entry.inference.controller.signal,step.controller.signal])};
  }
