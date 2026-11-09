@@ -45,11 +45,11 @@ def run(name,command,expected=None,style="json"):
  row={"name":name,"command":command,"exitCode":result.returncode,"passed":passed,"failed":failed if good else max(failed,1),"expected":expected,"log":ref(log),"startedUTC":start,"qualified":good}
  rows.append(row);print(json.dumps(row),flush=True)
  if not good:print(text[-10000:],flush=True);raise RuntimeError(name+" failed")
-result={"schemaVersion":1,"name":"mcp-skills","sourceDirectory":str(SOURCE),"sourcePins":before,"fixtureDirectory":str(CACHE),"rows":rows,"adaptations":adapted,"scope":"77 fresh generated MCP recovery, project-skills native/agent/UI checks. Fake transports; no installed app, model or original stores."}
+result={"schemaVersion":1,"name":"mcp-skills","sourceDirectory":str(SOURCE),"sourcePins":before,"fixtureDirectory":str(CACHE),"rows":rows,"adaptations":adapted,"scope":"83 fresh generated MCP recovery, project-skills native/agent/UI checks. Fake transports; no installed app, model or original stores."}
 try:
  for fixture,binary in [("ProjectSkillsHarness.swift","project-skills-native-fixture"),("ProjectSkillsClientFixture.swift","project-skills-native-client-fixture")]:
   run(binary+"-compile",["/usr/bin/xcrun","swiftc","-parse-as-library","-target","arm64-apple-macos15.2","-module-cache-path",str(CACHE/"swift-cache"),*[str(SOURCE/name) for name in ["CodingTemporary.swift","HandoffFiles.swift","CodingSkills.swift","ProjectSkills.swift"]],str(CHECKS/fixture),"-o",str(CHECKS/binary)])
- for name,file,count in [("mcp-recovery-lifecycle","recovery-check.mjs",25),("mcp-recovery-unavailable","unavailable-check.mjs",10),("mcp-recovery-tools-ui","tools-ui-check.mjs",5)]:
+ for name,file,count in [("mcp-recovery-lifecycle","recovery-check.mjs",31),("mcp-recovery-unavailable","unavailable-check.mjs",10),("mcp-recovery-tools-ui","tools-ui-check.mjs",5)]:
   run(name,[str(NODE),"--preserve-symlinks",str(CHECKS/file)],count)
  run("project-skills-native",[str(CHECKS/"project-skills-native-fixture"),str(CACHE/"native-fixtures")],26,"native")
  for name,file,count in [("project-skills-agent","project-skills-agent-check.mjs",7),("project-skills-ui","project-skills-ui-check.mjs",4)]:

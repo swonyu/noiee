@@ -9,10 +9,14 @@
       "originSHA256": "b27f10401029ab5fa3335c4ed0b73a4f129237baf6f00691470326e921be9e3f"
     },
     {
-      "template": "recovery-check.mjs.in",
-      "sha256": "43e95d450ead231e87a018af1b45d3f2c4d4ab4e8baf9f59a48cd6b92a56562b",
+      "template": "recovery-external-shutdown-check.mjs.in",
+      "sha256": "fd0e92b4e23a642bbb9470e597350da93a52254a77ddb899cf4071df95563de4",
       "origin": "/Users/saleh/Documents/Noiee/checks/tools/recovery-check.mjs",
-      "originSHA256": "43e95d450ead231e87a018af1b45d3f2c4d4ab4e8baf9f59a48cd6b92a56562b"
+      "originSHA256": "43e95d450ead231e87a018af1b45d3f2c4d4ab4e8baf9f59a48cd6b92a56562b",
+      "generatedName": "recovery-check.mjs",
+      "predecessorTemplate": "recovery-check.mjs.in",
+      "predecessorSHA256": "43e95d450ead231e87a018af1b45d3f2c4d4ab4e8baf9f59a48cd6b92a56562b",
+      "adaptation": "Retains all 25 recovery cases and original assertions; expands the exact shutdown result keys to include externalArtifacts/externalRuntime and verifies both idle outcomes. Adds six signed-route cases covering independent abort/drain waits, unchanged legacy owners, runtime partial/failed closure, persisted aggregate uncertainty, shared shutdown and closed admission."
     },
     {
       "template": "unavailable-check.mjs.in",
@@ -55,7 +59,7 @@
       "adaptation": "DOM mock supports setAttribute; Install/Read lookup validates the accessible action group. All four behavioral tests and request/preservation assertions retained."
     }
   ],
-  "adaptationPolicy": "Historical templates remain unchanged. The Build177 UI successor retains behavioral assertions and adapts the DOM mock and action lookup to accessible grouped controls.",
+  "adaptationPolicy": "Historical templates remain unchanged. The Build177 UI successor adapts accessible grouped controls. The external-shutdown recovery successor retains the original recovery behavior and asserts the exact expanded current-source shutdown contract.",
   "existingBehavioralAssertionsPreserved": true,
-  "additionalAssertions": "Successor UI fixture additionally checks the labeled action group, exact two controls, and independent handlers."
+  "additionalAssertions": "The UI successor checks the labeled action group, exact two controls and independent handlers. The recovery successor adds six external-owner shutdown cases with both drain-release orderings, exact key sets and retained failure evidence."
 }

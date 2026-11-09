@@ -645,7 +645,7 @@ class Suite:
                           catalog_consistency_result)
                 self.case("core-skills", py("tooling/integration/core-skills/run.py"),
                           self.core_skills_parser)
-            expected = {"mcp-skills": 77, "fetch": 74, "worktrees": 147}[name]
+            expected = {"mcp-skills": 83, "fetch": 74, "worktrees": 147}[name]
             command = py("tooling/integration/" + name + "/run.py")
             if name == "worktrees":
                 command += ["--source", str(self.source), "--node", self.node, "--python", self.python]
