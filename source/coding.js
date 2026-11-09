@@ -972,7 +972,12 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
       renderMessages();
       const matches = [...$('messages').querySelectorAll('.turn[data-turn-id]')].filter(node => node.dataset.turnId === turnId);
       if (!fresh() || matches.length !== 1) return {shown:false,reason:'The exact result could not be displayed. Refresh history and try again.'};
-      const result = matches[0];result.tabIndex = -1;result.setAttribute('aria-label','Goal continuation result');
+      const section = matches[0];
+      // Prefer the last rendered model answer, not the potentially long continuation
+      // prompt. A tool-only or failed turn still has an explicit execution outcome.
+      const result = [...section.querySelectorAll('.message[data-item-type="agentMessage"]')].at(-1) ||
+        section.querySelector('.execution-summary') || section;
+      result.tabIndex = -1;result.setAttribute('aria-label','Goal continuation result');
       result.focus({preventScroll:true});result.scrollIntoView({block:'start'});
       return {shown:true};
     } catch (error) {return {shown:false,reason:'The saved result could not be read. ' + message(error)};}
@@ -1624,7 +1629,7 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
           const whitespace = item.type === 'agentMessage' && !text.trim();
           // Display only; the final whitespace-only response stays visible and copyable.
           if (!whitespace || turn.status !== 'inProgress' && item === turn.items.findLast(other => other.type === 'agentMessage')) {
-            const article = element('article', `message ${user ? 'user' : 'assistant'}`), content = element('div', 'content'); content.dir = 'auto'; article.dataset.itemId = item.id;
+            const article = element('article', `message ${user ? 'user' : 'assistant'}`), content = element('div', 'content'); content.dir = 'auto'; article.dataset.itemId = item.id; article.dataset.itemType = item.type;
             if(item===view?.matchItem){article.classList.add('history-match');article.tabIndex=-1;article.setAttribute('aria-label','Matching message');}
             article.append(element('div', 'message-label', inheritedContext ? user ? 'You · inherited parent context' : 'Parent · inherited model output' : user ? 'You' : item.type === 'plan' ? 'Proposed plan · model output' : 'Assistant · model output'));
             if (whitespace) content.append(element('p', 'muted', 'The model returned only whitespace.')); else formatContent(content, text, !view && !inheritedContext); article.append(content);
