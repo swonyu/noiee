@@ -4,6 +4,11 @@
   let panelBusy=false, nextOffset=null, catalogQuery='', recoveryUnavailable=false, statusText='';
   const native=body=>bridge ? bridge.postMessage(body) : Promise.reject(new Error('Agent tools require the native Mac app.'));
   const status=text=>{statusText=text;$('tools-status').textContent=text+(recoveryUnavailable?' Automatic MCP recovery is unavailable. Retained connection state needs inspection.':'');};
+  function toolActions(label,...buttons){
+    const group=document.createElement('div');group.className='tool-server-actions';group.setAttribute('role','group');group.setAttribute('aria-label',label);
+    for(const button of buttons)button.type='button';
+    group.append(...buttons);return group;
+  }
   let skillScope=null,skillGeneration=0;
   const skillNative=async input=>{const value=await native({op:'projectSkills',input});if(value.isError)throw Error(value.message||'Project skill access is held.');return value;};
   async function refreshSkills(){
@@ -21,7 +26,7 @@
       install.onclick=()=>skillAction(()=>skillNative({action:'install',scopeId:skillScope.scopeId,id:entry.id}));
       const read=document.createElement('button');read.textContent='Read';read.disabled=!skillScope||!state?.installed;
       read.onclick=()=>skillAction(()=>skillNative({action:'read',scopeId:skillScope.scopeId,id:entry.id}),false);
-      row.append(name,detail,install,read);$('skills-catalog').append(row);
+      row.append(name,detail,toolActions(entry.name+' actions',install,read));$('skills-catalog').append(row);
     }
   }
   function skillAction(fn,reload=true){
@@ -50,7 +55,7 @@
     const detail=document.createElement('small');detail.textContent=!value.available?'Unavailable · see status':!value.installed?'Not installed':value.connectionHeld?'Connection held · enable explicitly to release':active?'Enabled · connection status below':'Installed · disabled';
     const install=document.createElement('button');install.textContent=value.installed?'Installed':'Install';install.disabled=!value.available||value.installed!==false;install.onclick=()=>fetchAction({action:'install'});
     const enabled=document.createElement('button');enabled.textContent=active?'Disable':'Enable';enabled.disabled=!value.available||!value.installed;enabled.onclick=()=>fetchAction({action:'set_enabled',enabled:!active});
-    row.append(name,detail,install,enabled);$('fetch-catalog').append(row);$('fetch-status').textContent=value.message||'Install and enable do not connect or call Fetch.';
+    row.append(name,detail,toolActions('Fetch actions',install,enabled));$('fetch-catalog').append(row);$('fetch-status').textContent=value.message||'Install and enable do not connect or call Fetch.';
   }
   async function refreshFetch(){const generation=fetchGeneration,value=await fetchNative({action:'catalog'});if(generation===fetchGeneration)renderFetch(value);}
   function fetchAction(input){return panelAction(async()=>{

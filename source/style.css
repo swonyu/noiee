@@ -194,7 +194,10 @@ textarea::placeholder, input::placeholder { color: var(--muted); opacity: 1; }
 .tool-server { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 6px; padding: 14px 0; border-bottom: 1px solid var(--line); }
 .tool-server strong { min-width: 0; overflow-wrap: anywhere; font-size: 12px; }
 .tool-server small { grid-column: 1; color: var(--muted); overflow-wrap: anywhere; }
-.tool-server button { grid-column: 2; grid-row: 1/3; align-self: center; padding: 6px 8px; font-size: 12px; }
+.tool-server > button { grid-column: 2; grid-row: 1/3; align-self: center; }
+.tool-server button { padding: 6px 8px; font-size: 12px; }
+.tool-server-actions { grid-column: 1/-1; display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.tool-server-actions > button { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
 .tool-catalog-entry { min-width: 0; padding: 10px 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
 .tool-catalog-entry summary { cursor: pointer; }
 .tool-catalog-entry pre { max-width: 100%; overflow: auto; max-height: 220px; font-size: 11px; }
