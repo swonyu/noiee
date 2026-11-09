@@ -63,3 +63,7 @@ Portable source compilation and host-specific installation are separate. Do not 
 The accepted Build175 status remains in place until fresh Build176 native acceptance. Preserve it before finalization and use the exact predecessor digest as a compare-and-swap guard, as documented in RELEASE.md. Historical phase receipts and the Build173-specific native acceptance helper remain unchanged.
 
 The fresh full qualifier also requires the generated `catalog` suite for saved Tasks owner/history loading. Its named assertions, the existing Goal suites, and the submission-origin suites report counts from the actual current execution. Earlier native observations and automated totals are not substituted for the new source-bound release qualification.
+
+## Private-account foundation
+
+[PRIVATE_ACCOUNTS.md](PRIVATE_ACCOUNTS.md) describes the offline-only Gmail/Drive/GitHub foundation, exact missing production grant/read prerequisites, and isolated checks. The Agent status tool reports all three unconfigured. This is not account-connection or installed-app acceptance.

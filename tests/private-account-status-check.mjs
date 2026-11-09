@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+const agent=readFileSync(new URL('../source/agent.mjs',import.meta.url),'utf8');
+const native=readFileSync(new URL('../source/Tools.swift',import.meta.url),'utf8');
+const statement=agent.split('\n').find(line=>line.startsWith("AGENT_TOOLS.push(tool('private_accounts'"));
+assert(statement,'status tool is advertised');
+const catalog=[];
+vm.runInNewContext(statement,{AGENT_TOOLS:catalog,tool:(name,description,parameters)=>({name,description,parameters}),object:properties=>({type:'object',properties,required:Object.keys(properties),additionalProperties:false})});
+const tool=JSON.parse(JSON.stringify(catalog[0]));
+assert.equal(tool.name,'private_accounts');
+assert.deepEqual(tool.parameters,{type:'object',properties:{action:{type:'string',enum:['status']}},required:['action'],additionalProperties:false});
+assert.match(tool.description,/no configured accounts or working grant flow/);
+assert.match(native,/if name=="private_accounts" \{let result=try PrivateAccountsAvailability\.status\(arguments\);try await beforeEffect\?\(\);try require\(expected\);return result\}/);
+assert.doesNotMatch(native,/PrivateAccount(?:Reader|Keychain|GoogleAuthorization)\(/);
+console.log('PASS: status-only Agent schema and native routing; no production credential/read/grant construction. Static integration test only.');
