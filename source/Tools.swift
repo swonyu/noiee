@@ -962,6 +962,12 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
     private let codingSkills = CodingSkillsSession()
     private let projectSkills = ProjectSkillsSession()
     private let fetchPlugin = FetchPluginSession()
+    private lazy var privateAccounts = GitHubAccountSession(http:GitHubAccountURLHTTP(),store:GitHubAccountKeychain())
+    private lazy var privateAccountsUI = PrivateAccountsUI(session:privateAccounts)
+    func showPrivateAccounts() {
+        guard !recoveryStartup else {return}
+        privateAccountsUI.show()
+    }
     private let codingFilePreview = CodingFilePreviewSession()
     private let codingSetup = CodingMCPSetupSession()
     private let provisioning = CodingProvisioning()
@@ -1032,6 +1038,7 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
     private func revokeTools(includeCoding:Bool,departure:Bool=false) {
         codingAnswer?.cancel()
         provisioning.invalidate()
+        privateAccountsUI.cancel()
         codingSkills.invalidate(); projectSkills.invalidate(); fetchPlugin.invalidate(); codingFilePreview.invalidate(); codingSetup.invalidate(); codingQueue.invalidate(); queueAlertRoot=nil; setupAlertID=nil;providerBinding=nil;providerBindingAlert=nil
         epoch=UUID(); worktreeEpoch=UUID(); scheduleEpoch=UUID(); gitEpoch=UUID(); gitRequest=nil; routineReads=[:]; codingGrants=[]; codingInteractive.revoke(); computer.stop()
         if includeCoding { codingTerminals=[:] }
@@ -1345,7 +1352,7 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
         if name.hasPrefix("computer_") {return try await computer.agentTool(name,arguments:arguments,beforeEffect:beforeEffect)}
         if name=="project_skills" {return try await performProjectSkills(arguments,expected:expected,beforeEffect:beforeEffect,agentClaim:agentClaim)}
         if name=="fetch_plugin" {return try await performFetchPlugin(arguments,expected:expected,beforeEffect:beforeEffect,agentClaim:agentClaim)}
-        if name=="private_accounts" {let result=try PrivateAccountsAvailability.status(arguments);try await beforeEffect?();try require(expected);return result}
+        if name=="private_accounts" {try await beforeEffect?();try require(expected);let result=try await privateAccounts.perform(arguments);try require(expected);return result}
         if name=="call_contact" {guard Set(arguments.keys)==["name"],let contact=arguments["name"] as? String else{throw ComputerError.message("A contact name is required.")};return try await call(contact,expected:expected,beforeEffect:beforeEffect)}
         if name=="connect_tool_server" {guard Set(arguments.keys)==["server"],let id=arguments["server"] as? String else{throw ComputerError.message("Invalid server request.")};return try await connect(id,expected:expected,beforeEffect:beforeEffect,agentClaim:agentClaim)}
         if name=="list_tools" {guard arguments.isEmpty else{throw ComputerError.message("Invalid catalog request.")};try await beforeEffect?();try require(expected);return try await dispatch("catalog",[:])}

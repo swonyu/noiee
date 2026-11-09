@@ -66,4 +66,4 @@ The fresh full qualifier also requires the generated `catalog` suite for saved T
 
 ## Private-account foundation
 
-[PRIVATE_ACCOUNTS.md](PRIVATE_ACCOUNTS.md) describes the offline-only Gmail/Drive/GitHub foundation, exact missing production grant/read prerequisites, and isolated checks. The Agent status tool reports all three unconfigured. This is not account-connection or installed-app acceptance.
+[PRIVATE_ACCOUNTS.md](PRIVATE_ACCOUNTS.md) describes the native GitHub App device/refresh/read flow, required user registration/consent, unavailable Gmail/Drive grant flows, and isolated checks. Only synthetic validation has run. This branch is excluded from the Build 181 core release pending review and separately authorized live acceptance.

@@ -35,6 +35,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     private var startupTask: Task<Void, Never>?
     private var startupFailureMessage: String?
 
+    @objc private func showPrivateAccounts() {tools.showPrivateAccounts()}
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.applicationIconImage = NSImage(size: NSSize(width: 1024, height: 1024), flipped: false) { _ in
             NSColor(calibratedRed: 0.14, green: 0.17, blue: 0.16, alpha: 1).setFill()
@@ -47,6 +49,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
         let appItem = NSMenuItem(); let appMenu = NSMenu()
         appMenu.addItem(withTitle: "About Noiee", action: #selector(about), keyEquivalent: "")
         appMenu.addItem(withTitle: "Mac Access…", action: #selector(showMacAccess), keyEquivalent: ",")
+        appMenu.addItem(withTitle:"Private Accounts…",action:#selector(showPrivateAccounts),keyEquivalent:"")
         let accessItem=NSMenuItem(title:"Tool Access (next launch)",action:nil,keyEquivalent:"")
         let accessMenu=NSMenu(title:"Tool Access")
         for mode in [ToolAccessMode.reviewed,.full] {
