@@ -66,4 +66,13 @@ The fresh full qualifier also requires the generated `catalog` suite for saved T
 
 ## Private-account foundation
 
-[PRIVATE_ACCOUNTS.md](PRIVATE_ACCOUNTS.md) describes the native GitHub App device/refresh/read flow, required user registration/consent, unavailable Gmail/Drive grant flows, and isolated checks. Only synthetic validation has run. This branch is excluded from the Build 181 core release pending review and separately authorized live acceptance.
+[PRIVATE_ACCOUNTS.md](PRIVATE_ACCOUNTS.md) describes native Gmail and GitHub consent/read flows, required registration, the still-unavailable Drive flow, and isolated checks. Only offline validation has run. This branch is excluded from the Build 181 core release pending review and separately authorized live acceptance.
+
+### Native private accounts (isolated branch)
+
+See `PRIVATE_ACCOUNTS.md` and `GMAIL_ACCOUNTS.md` for GitHub/Gmail registration,
+native consent, exact read limits, local Agent destination, tests and live gates.
+`check_gmail_accounts.py` uses only injected fixtures and a public RSA test vector;
+it never opens a listener/browser or touches a real Keychain/account. Drive remains
+unavailable until verified file selection is implemented. Offline qualification is
+not live acceptance or release authorization.

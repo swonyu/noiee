@@ -3,10 +3,11 @@ import AppKit
 // Native menu only: no JavaScript action, deep link or model input starts grants.
 @MainActor final class PrivateAccountsUI:NSObject,NSWindowDelegate {
     private let session:GitHubAccountSession
+    private let gmailUI:GmailAccountUI
     private var panel:NSWindow?,work:Task<Void,Never>?,sheet:NSAlert?,generation=UUID()
     private let slug=NSTextField(),client=NSTextField(),status=NSTextField(wrappingLabelWithString:""),code=NSTextField(labelWithString:"")
     private var connectButton:NSButton?,disconnectButton:NSButton?,verifyButton:NSButton?
-    init(session:GitHubAccountSession) {self.session=session}
+    init(session:GitHubAccountSession,gmail:GmailAccountSession) {self.session=session;gmailUI=GmailAccountUI(session:gmail)}
     func show() {
         if let panel {panel.makeKeyAndOrderFront(nil);NSApp.activate();return}
         let window=NSWindow(contentRect:NSRect(x:0,y:0,width:650,height:740),styleMask:[.titled,.closable,.resizable],backing:.buffered,defer:false)
@@ -29,11 +30,12 @@ import AppKit
         content.addArrangedSubview(status);status.widthAnchor.constraint(equalTo:content.widthAnchor).isActive=true
         let revoke=NSButton(title:"How to revoke access on GitHub",target:self,action:#selector(openRevocationHelp));content.addArrangedSubview(revoke)
         label("Disconnect removes this app's local tokens, not GitHub's authorization. To revoke the remote grant, open GitHub Settings → Applications → Authorized GitHub Apps and revoke this registered app yourself.")
-        label("Gmail: native Google connection is not implemented yet. Drive: Google connection and verified file Picker are not implemented. Neither provider can read your account in this build.")
+        content.addArrangedSubview(NSButton(title:"Configure Gmail…",target:self,action:#selector(showGmail)))
+        label("Gmail uses separate native Google consent. Drive remains unavailable until Google consent and verified file Picker selection are implemented.")
         panel=window;window.center();window.makeKeyAndOrderFront(nil);NSApp.activate()
     }
     func cancel() {
-        generation=UUID();work?.cancel();session.cancel();code.stringValue="";verifyButton?.isEnabled=false
+        generation=UUID();work?.cancel();session.cancel();gmailUI.cancel();code.stringValue="";verifyButton?.isEnabled=false
         if let sheet,let owner=sheet.window.sheetParent {owner.endSheet(sheet.window,returnCode:.abort)}
         sheet=nil
     }
@@ -80,7 +82,7 @@ import AppKit
                 guard try await self.review("Choose the GitHub installation",detail:"Only verified selected-repository, read-only installations are shown. You will review the full repository list next.",button:"Review selected installation",expected:expected,accessory:picker),installations.indices.contains(picker.indexOfSelectedItem) else {return nil}
                 return installations[picker.indexOfSelectedItem].id
             },approve:{selection in
-                try await self.review("Allow these GitHub reads?",detail:"Authenticated account: \(selection.user.login) (ID \(selection.user.id))\nApp: \(selection.registration.slug) (ID \(selection.appID))\nInstallation owner: \(selection.installation.owner.login)\n\nRepositories:\n"+selection.repositories.map {"• \($0.name) (ID \($0.id))"}.joined(separator:"\n")+"\n\nAllow Noiee to read metadata and issue/PR summaries for exactly these repositories when you use Agent. Returned data goes to Agent's selected model and saved conversation. Content cannot grant more access. Tokens stay in this Mac's Keychain. This grant survives app restart and allows automatic token refresh and reads within the same verified account and repository IDs. Verified names can update; removed repository IDs stay excluded. New repository IDs require a new native grant. No sending, writes, cloning or publishing is enabled. Disconnect locally here; revoke remote authorization yourself in GitHub Settings.",button:"Allow and save access",expected:expected)
+                try await self.review("Allow these GitHub reads?",detail:"Authenticated account: \(selection.user.login) (ID \(selection.user.id))\nApp: \(selection.registration.slug) (ID \(selection.appID))\nInstallation owner: \(selection.installation.owner.login)\n\nRepositories:\n"+selection.repositories.map {"• \($0.name) (ID \($0.id))"}.joined(separator:"\n")+"\n\nAllow Noiee to read metadata and issue/PR summaries for exactly these repositories when you use Agent. Returned data goes to Agent's selected local model through its loopback LM Studio connection and this app's saved conversation. Cloud Coding chats do not receive this connector; a future cloud account-tool destination needs a separate grant. Content cannot grant more access. Tokens stay in this Mac's Keychain. This grant survives app restart and allows automatic token refresh and reads within the same verified account and repository IDs. Verified names can update; removed repository IDs stay excluded. New repository IDs require a new native grant. No sending, writes, cloning or publishing is enabled. Disconnect locally here; revoke remote authorization yourself in GitHub Settings.",button:"Allow and save access",expected:expected)
             })
             return "GitHub account access saved. Agent can now read only the approved repository metadata and issue summaries."
         }
@@ -92,6 +94,7 @@ import AppKit
             return "Local GitHub tokens removed and reads blocked. Remote GitHub authorization remains until you revoke it in GitHub Settings → Applications → Authorized GitHub Apps."
         }
     }
+    @objc private func showGmail() {gmailUI.show()}
     @objc private func openVerification() {guard verifyButton?.isEnabled==true,work != nil else {return};_ = NSWorkspace.shared.open(URL(string:"https://github.com/login/device")!)}
     @objc private func openRevocationHelp() {_ = NSWorkspace.shared.open(URL(string:"https://docs.github.com/en/apps/using-github-apps/reviewing-and-revoking-authorization-of-github-apps")!)}
 }

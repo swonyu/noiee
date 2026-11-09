@@ -3,8 +3,8 @@ import Security
 import CryptoKit
 import LocalAuthentication
 
-// Native-only foundation. No production grant loader, callback listener or Picker
-// exists yet. The app exposes status only, never these credential-bearing APIs.
+// Shared native read projections. Production Gmail and GitHub coordinators own
+// their grants; Drive remains unavailable until a verified Picker is implemented.
 enum PrivateAccountProvider: String, CaseIterable, Codable {
     case gmail, drive, github
     var scope: String {
@@ -16,7 +16,7 @@ enum PrivateAccountProvider: String, CaseIterable, Codable {
     }
     var prerequisite: String {
         switch self {
-        case .gmail: return "Register a Google Desktop OAuth client, enable Gmail API, configure consent for restricted gmail.readonly, and complete the native browser callback integration."
+        case .gmail: return "Register a Google Desktop OAuth client, enable Gmail API, configure consent for restricted gmail.readonly, then connect in the native Gmail panel."
         case .drive: return "Register a Google Desktop OAuth client, enable Drive API and complete native consent plus a verified Google Picker selection. drive.file permits writes at the provider; this connector permits only reads of selected file metadata."
         case .github: return "Register a GitHub App with selected repositories and read-only metadata/issues permissions; complete installation, user consent and secure token delivery. No gh credentials or embedded app secret/private key are used."
         }
@@ -326,8 +326,8 @@ private final class PrivateAccountNoRedirect:NSObject,URLSessionTaskDelegate,@un
     }
 }
 
-// Only status is reachable from Agent/Tools in this release. In particular no
-// connect, token import, URL, scope, repository selection or revoke API is exposed.
+// Baseline availability, replaced by each production coordinator after verified
+// native grants. No connect, token import, arbitrary URL or revoke decoder exists.
 enum PrivateAccountsAvailability {
     static func status(_ input:[String:Any]) throws -> [String:Any] {
         guard Set(input.keys)==["action"],input["action"] as? String=="status" else {throw PrivateAccountFailure.invalid}
