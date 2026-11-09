@@ -24,10 +24,11 @@ MAX_JSON = 8 * MAX_LOG
 PINNED_NODE = Path('/opt/homebrew/bin/node')
 DEPENDENCIES = Path('/Users/saleh/Documents/Noiee/dependencies/node-26.13.0-build171')
 NATIVE = {
-    'private-account-dispatch': ('tooling/check_private_account_dispatch.py', 17, 'PASS: 17 aggregate account Stop assertions, including actual injected GitHub/Gmail sessions and no subsequent refresh. No network, browser, UI, listener or Keychain.'),
+    'private-account-dispatch': ('tooling/check_private_account_dispatch.py', 21, 'PASS: 21 aggregate account Stop assertions, including actual injected GitHub/Gmail/Drive sessions and no subsequent refresh. No network, browser, UI, listener or Keychain.'),
     'private-accounts': ('tooling/check_private_accounts.py', 197, 'PASS: 197 offline connector assertions. No Keychain access, browser, accounts, network, app UI or model used.'),
     'github-accounts': ('tooling/check_github_accounts.py', 256, 'PASS: 256 offline GitHub device/identity/consent/refresh/read/disconnect assertions. No browser, network, Keychain, app UI or real account used.'),
     'gmail-accounts': ('tooling/check_gmail_accounts.py', 187, 'PASS: 187 offline Gmail OAuth/identity/consent/read/refresh/revoke assertions. Public RSA vector verified; all session transports, listener, stores and consent injected. No live provider, socket, browser, UI or Keychain.'),
+    'drive-accounts': ('tooling/check_drive_accounts.py', 208, 'PASS: 208 offline Drive Picker/identity/selected-ID/metadata/text/refresh/revoke assertions. HTTP, stores, listener and consent injected; no network, browser, UI, actual Picker, Keychain or downloads.'),
     'external-install-native': ('tooling/tests/test_external_tool_install.py', 60, 'PASS: 60 external artifact native fixture assertions. No external code executed.'),
     'external-launch-native': ('tooling/tests/test_external_tool_launch.py', 76, 'PASS: 76 external launch native fixture assertions. No provider or external code executed.'),
 }
@@ -37,8 +38,8 @@ STATIC = {
     'external-launch-native': {'nativeMandatoryLaunchReview': True, 'fixedLoaderParity': True, 'ownedStopAndDrain': True},
 }
 JS = {
-    'private-account-status': ('tests/private-account-status-check.mjs', 'PASS: Gmail/GitHub read-only schema, native-only account controls, local destination, Stop wiring and no Full Access consent bypass. Static integration test only.'),
-    'private-account-destination': ('tests/private-account-destination-check.mjs', 'PASS: local model destination validation, immutable origin, no cloud fallback/redirect, durable Gmail destination and separate Coding exposure. No network.'),
+    'private-account-status': ('tests/private-account-status-check.mjs', 'PASS: Gmail/Drive/GitHub read-only schema, native-only controls, exact local destination, Picker/write-capability disclosure and aggregate Stop routing. Static integration test only.'),
+    'private-account-destination': ('tests/private-account-destination-check.mjs', 'PASS: local model destination validation, immutable origin, no cloud fallback/redirect, durable Google-account destinations and separate Coding exposure. No network.'),
     'external-download': ('source/external-artifact-download-check.mjs', 'PASS strict external-artifact parser, DNS pinning, peer/TLS checks, bounded inert stream, timeout/abort, hash and response validation (offline only)'),
     'external-route': ('source/external-artifact-route-check.mjs', 'PASS: inert external artifact signed routes, replay/forgery, clean/recovery boot, Stop and exact Agent binding. No sockets, network or external execution.'),
     'external-claims': ('source/external-tool-claims-check.mjs', 'PASS: six real durable Agent claim families reject forged/mutated/replayed effects and model-made launch commits. No model/network/provider execution.'),
@@ -57,7 +58,7 @@ ORDER = ['runner-adversarial-tests', *NATIVE, 'native-evidence-mutations', *JS, 
 SCOPE = {
     'network': 'All suite processes and descendants run under macOS sandbox-exec deny network*. Auth uses injected HTTP/listener/store/consent fixtures; no production sockets, providers or Keychain.',
     'execution': 'Runtime suite executes only locally authored synthetic loader/stdio fixture processes. Installed artifact bytes remain inert; no unknown/downloaded code runs.',
-    'excluded': ['Drive implementation/selection', 'live accounts and OAuth grants', 'real Keychain', 'native UI', 'installed app', 'user stores', 'models', 'real download', 'unknown external execution', 'full native app compilation', 'release adapters', 'signing', 'installation'],
+    'excluded': ['live Drive Picker and provider selection', 'live accounts and OAuth grants', 'real Keychain', 'native UI', 'installed app', 'user stores', 'models', 'real download', 'unknown external execution', 'full native app compilation', 'release adapters', 'signing', 'installation'],
 }
 
 
@@ -366,7 +367,8 @@ def commands(name, tools, out):
 NATIVE_COMPILE = {
     'private-account-dispatch': ('noiee-account-dispatch-', True, [
         'source/PrivateAccounts.swift', 'source/GitHubAccount.swift', 'source/GmailOAuth.swift',
-        'source/GmailAccount.swift', 'source/PrivateAccountsDispatch.swift', '@generated/fixtures.swift',
+        'source/GmailAccount.swift', 'source/DriveOAuth.swift', 'source/DriveAccount.swift',
+        'source/PrivateAccountsDispatch.swift', '@generated/fixtures.swift',
         'tooling/private_account_dispatch_check.swift']),
     'private-accounts': ('noiee-private-accounts-', True, [
         'source/PrivateAccounts.swift', 'source/PrivateAccountOAuth.swift', 'tooling/private_accounts_check.swift']),
@@ -374,6 +376,9 @@ NATIVE_COMPILE = {
         'source/PrivateAccounts.swift', 'source/GitHubAccount.swift', 'tooling/github_accounts_check.swift']),
     'gmail-accounts': ('noiee-gmail-account-', True, [
         'source/PrivateAccounts.swift', 'source/GmailOAuth.swift', 'source/GmailAccount.swift', 'tooling/gmail_accounts_check.swift']),
+    'drive-accounts': ('noiee-drive-account-', True, [
+        'source/PrivateAccounts.swift', 'source/GmailOAuth.swift', 'source/GmailAccount.swift',
+        'source/DriveOAuth.swift', 'source/DriveAccount.swift', 'tooling/drive_accounts_check.swift']),
     'external-install-native': ('noiee-external-compile-', False, [
         'source/CodingTemporary.swift', 'source/ExternalToolInstall.swift', 'tooling/tests/ExternalToolInstallFixture.swift']),
     'external-launch-native': ('noiee-launch-compile-', False, [
@@ -407,7 +412,8 @@ def bound_source_bytes(relative, inputs):
 def dispatch_fixture_bytes(inputs):
     fragments = []
     for relative, anchor in [('tooling/github_accounts_check.swift', '@main struct GitHubAccountsCheck'),
-                             ('tooling/gmail_accounts_check.swift', '@main struct GmailAccountsCheck')]:
+                             ('tooling/gmail_accounts_check.swift', '@main struct GmailAccountsCheck'),
+                             ('tooling/drive_accounts_check.swift', '@main struct DriveAccountsCheck')]:
         text = bound_source_bytes(relative, inputs).decode('utf8')
         require(text.count(anchor) == 1, 'Generated dispatch fixture anchor changed')
         fragments.append(text.split(anchor)[0])

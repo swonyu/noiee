@@ -10,8 +10,8 @@
     "source/external-tool-runtime-check.mjs": "30ed7839e690e1ebd7fbcda474e2c22a49cbd790398ce42ffcc337737c41d82d",
     "source/package-lock.json": "6bae892878d2c289b219d9770402f46811dc1c06982023b6d867eaf482636247",
     "source/runtime-contract.json": "c82d3866dc88fee48b5185890018b0c6795d2694dbf4a8c5b23a5f36199d66a4",
-    "tests/private-account-destination-check.mjs": "2968513a885d20eaef8879067621ca087a611afd3a41777a92a7c617822077c8",
-    "tests/private-account-status-check.mjs": "d27e6a356e50a53de4631a77a8b15e0c5633962619a873856f5665ba7cc8594e",
+    "tests/private-account-destination-check.mjs": "b7e3f6bdf7f02740ff313b4272a9ce8a167ac6edab81b966d6dc16f8e1149d07",
+    "tests/private-account-status-check.mjs": "d89f35537e4994f37722e7ab6177b42812191e9d2bed29515f51fce0749388ea",
     "tests/tool-actions-check.mjs": "1f9044b013a8c0dc64625a582eaa86f9a0382189d843360ca8e66f8a03ec8270",
     "tooling/check_github_accounts.py": "51fa707cdde8985c7c9e4d432874abec0be225ce6b3f4d7022990dcca050446d",
     "tooling/check_gmail_accounts.py": "a98e1382073fa28032d108c7b19e51e54a260ce970cf134344ed49b057c14bf3",
@@ -23,8 +23,10 @@
     "tooling/tests/ExternalToolLaunchFixture.swift": "7a83076769de7ae43d7a74d175e172ef2d9873eb8353b1c4ddeb83c4cf30b6b1",
     "tooling/tests/test_external_tool_install.py": "1278c92246177a40952046e98c3daee71cbc6b6c27db0c18c053b26b6e7a1b5a",
     "tooling/tests/test_external_tool_launch.py": "9e5b33195700821e628d8b5769d2e7291aa5285a5addc896583aff4f6b12b01f",
-    "tooling/check_private_account_dispatch.py": "7e5dc9bc8fbb418e390ed3704063da48a7ca4ffaa95ce54318ab1a8320a98697",
-    "tooling/private_account_dispatch_check.swift": "eb92ddebab627b24cc3c4c32a7c2255a4744b11237ada861fbd8fb7855c8f4d7"
+    "tooling/check_private_account_dispatch.py": "60d3a223aa6cc2143fa5c6e920e23dbaeada9de559be10fcf908ad28b7b5c81a",
+    "tooling/private_account_dispatch_check.swift": "e311a34c7d45e2a5970cfc576feacd4208d3f5708b9403da21e3ca7fe5c1204a",
+    "tooling/check_drive_accounts.py": "aa1cab8305240da8fe63a1ef0dcd4967fb6c0c54b423f23efe0a419ba5ef1f21",
+    "tooling/drive_accounts_check.swift": "80f087ce76765179c7279e27fdb0232b12b8effccc2ab3848053b33376331112"
   },
   "selfTestCases": [
     "test_child_commands_partial_duplicate_or_no_compile",
@@ -33,6 +35,9 @@
     "test_dependency_snapshot_missing_and_escape_refused",
     "test_dependency_snapshot_tamper_detected",
     "test_dirty_checkout_refused",
+    "test_dispatch_requires_drive_generated_fixture",
+    "test_drive_compile_inputs_and_execution_are_mandatory",
+    "test_drive_fixture_pins_missing_or_tampered",
     "test_duplicate_nonfinite_json",
     "test_hardlink_and_oversize_file",
     "test_ignored_source_injection_refused",
@@ -51,8 +56,10 @@
     "test_native_partial_routing_receipt",
     "test_native_skipped_or_todo",
     "test_native_wrong_or_zero_assertions",
+    "test_old_aggregate_stop_completion_rejected",
     "test_receipt_altered_command_or_ambient_environment",
     "test_receipt_digest_and_partial_receipt_refused",
+    "test_receipt_drive_row_missing_duplicate_or_replaced",
     "test_receipt_failed_verification_cannot_be_reused",
     "test_receipt_invented_counts_and_release_eligibility",
     "test_receipt_missing_or_symlink_log",
@@ -104,6 +111,11 @@
     "duplicate_child_row",
     "nonzero_child_exit",
     "changed_generated_dispatch_bytes",
+    "removed_drive_oauth_source_and_map",
+    "removed_drive_account_source_and_map",
+    "removed_drive_fixture_source_and_map",
+    "removed_drive_dispatch_fragment",
+    "replaced_drive_execution_with_gmail_binary",
     "changed_parity_node",
     "changed_parity_mode",
     "changed_parity_eval_flag",
@@ -122,5 +134,7 @@
     "missing_parity_input_maps",
     "changed_parity_input_hash",
     "extra_parity_native_output"
-  ]
+  ],
+  "reviewedDriveIntegrationBase": "8d7a8188ee77058a4896305826df719c29d79275",
+  "reviewedDriveCommit": "c90d7762f1692353591b66b07bee7ae3cc05b682"
 }

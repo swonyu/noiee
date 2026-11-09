@@ -252,6 +252,75 @@ class Cases(unittest.TestCase):
             changed[0]['inputsBefore'] = changed[0]['inputsAfter'] = {}
             self.reject(r.audit_result, encode(changed), 'github-accounts', before, Path(value['fixtureHome']))
 
+    def test_drive_fixture_pins_missing_or_tampered(self):
+        contract = r.parse_json(r.read_file(r.HERE / 'CONTRACT.json'))
+        for name in ['tooling/check_drive_accounts.py', 'tooling/drive_accounts_check.swift',
+                     'tooling/check_private_account_dispatch.py', 'tooling/private_account_dispatch_check.swift']:
+            self.assertIn(name, contract['fixtures'])
+            actual = {name: {'sha256': r.digest(r.read_file(r.ROOT / name))}}
+            pins = {name: contract['fixtures'][name]}
+            r.check_pins(actual, pins)
+            self.reject(r.check_pins, {}, pins)
+            actual[name]['sha256'] = 'f' * 64
+            self.reject(r.check_pins, actual, pins)
+
+    def test_drive_compile_inputs_and_execution_are_mandatory(self):
+        with self.complete_receipt() as (value, path, save, before):
+            row = next(item for item in value['rows'] if item['name'] == 'drive-accounts')
+            original = [json.loads(line) for line in Path(row['childCommands']['path']).read_text().splitlines()]
+            def rejected(rows):
+                data = b''.join(r.canonical(item) + b'\n' for item in rows)
+                self.reject(r.audit_result, data, 'drive-accounts', before, Path(value['fixtureHome']))
+            for relative in r.NATIVE_COMPILE['drive-accounts'][2]:
+                target = str(r.ROOT / relative)
+                changed = copy.deepcopy(original)
+                changed[0]['argv'].remove(target)
+                for key in ['inputsBefore', 'inputsAfter']:
+                    changed[0][key].pop(target)
+                rejected(changed)
+                changed = copy.deepcopy(original)
+                for key in ['inputsBefore', 'inputsAfter']:
+                    changed[0][key][target]['sha256'] = 'f' * 64
+                rejected(changed)
+            rejected(original[:1])
+            changed = copy.deepcopy(original)
+            changed[1]['argv'] = ['/usr/bin/true']
+            changed[1]['executable'] = '/usr/bin/true'
+            rejected(changed)
+            rejected(original + [copy.deepcopy(original[-1])])
+
+    def test_receipt_drive_row_missing_duplicate_or_replaced(self):
+        for mutation in ['missing', 'duplicate', 'replaced']:
+            with self.complete_receipt() as (value, path, save, before):
+                index = next(i for i, row in enumerate(value['rows']) if row['name'] == 'drive-accounts')
+                if mutation == 'missing':
+                    value['rows'].pop(index)
+                elif mutation == 'duplicate':
+                    value['rows'].insert(index, copy.deepcopy(value['rows'][index]))
+                else:
+                    value['rows'][index] = copy.deepcopy(next(row for row in value['rows'] if row['name'] == 'gmail-accounts'))
+                self.reject(r.verify, path, save(), before['git']['commit'])
+
+    def test_dispatch_requires_drive_generated_fixture(self):
+        with self.complete_receipt() as (value, path, save, before):
+            row = next(item for item in value['rows'] if item['name'] == 'private-account-dispatch')
+            changed = [json.loads(line) for line in Path(row['childCommands']['path']).read_text().splitlines()]
+            old = b'\n'.join(r.bound_source_bytes(relative, before).split(anchor)[0] for relative, anchor in [
+                ('tooling/github_accounts_check.swift', b'@main struct GitHubAccountsCheck'),
+                ('tooling/gmail_accounts_check.swift', b'@main struct GmailAccountsCheck')])
+            self.assertNotEqual(r.digest(old), r.digest(r.dispatch_fixture_bytes(before)))
+            for key in ['inputsBefore', 'inputsAfter']:
+                generated = next(item for path, item in changed[0][key].items() if path.endswith('/fixtures.swift'))
+                generated.update(bytes=len(old), sha256=r.digest(old))
+            data = b''.join(r.canonical(item) + b'\n' for item in changed)
+            self.reject(r.audit_result, data, 'private-account-dispatch', before, Path(value['fixtureHome']))
+
+    def test_old_aggregate_stop_completion_rejected(self):
+        old = 'PASS: 17 aggregate account Stop assertions, including actual injected GitHub/Gmail sessions and no subsequent refresh. No network, browser, UI, listener or Keychain.\n'
+        self.reject(r.parse_result, 'private-account-dispatch', old, {})
+        self.assertEqual(r.parse_result('private-account-dispatch', native('private-account-dispatch'), {})['assertions'], 21)
+        self.assertEqual(r.parse_result('drive-accounts', native('drive-accounts'), {})['assertions'], 208)
+
     def test_runner_nonzero_exit(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp).resolve()

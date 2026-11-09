@@ -98,6 +98,30 @@ def main(bundle_path):
     reject('nonzero_child_exit', lambda rows: rows[1].update(exitCode=1))
     dispatch = ['private-account-dispatch']
     reject('changed_generated_dispatch_bytes', lambda rows: maps(rows, lambda value: next(ref for path, ref in value.items() if path.endswith('/fixtures.swift')).update(sha256='f' * 64)), dispatch)
+    # These Drive-specific mutations supplement every generic mutation above,
+    # which now also executes against the genuine Drive compiler/runner rows.
+    def remove_drive_source(rows, relative):
+        path = str(r.ROOT / relative)
+        rows[0]['argv'].remove(path)
+        maps(rows, lambda value: value.pop(path))
+
+    reject('removed_drive_oauth_source_and_map', lambda rows: remove_drive_source(rows, 'source/DriveOAuth.swift'), ['drive-accounts', 'private-account-dispatch'])
+    reject('removed_drive_account_source_and_map', lambda rows: remove_drive_source(rows, 'source/DriveAccount.swift'), ['drive-accounts', 'private-account-dispatch'])
+    reject('removed_drive_fixture_source_and_map', lambda rows: remove_drive_source(rows, 'tooling/drive_accounts_check.swift'), ['drive-accounts'])
+
+    def remove_drive_fragment(rows):
+        data = b'\n'.join(r.bound_source_bytes(relative, inputs).split(anchor)[0] for relative, anchor in [
+            ('tooling/github_accounts_check.swift', b'@main struct GitHubAccountsCheck'),
+            ('tooling/gmail_accounts_check.swift', b'@main struct GmailAccountsCheck')])
+        maps(rows, lambda value: next(ref for path, ref in value.items() if path.endswith('/fixtures.swift')).update(bytes=len(data), sha256=r.digest(data)))
+
+    reject('removed_drive_dispatch_fragment', remove_drive_fragment, dispatch)
+
+    def replace_drive_execution(rows):
+        for key in ['argv', 'executable', 'executableIdentity']:
+            rows[1][key] = copy.deepcopy(originals['gmail-accounts'][1][key])
+
+    reject('replaced_drive_execution_with_gmail_binary', replace_drive_execution, ['drive-accounts'])
     launch = ['external-launch-native']
     for index, label in [(0, 'node'), (1, 'mode'), (2, 'eval_flag'), (3, 'script'), (4, 'module_url'), (5, 'directory')]:
         reject('changed_parity_' + label, lambda rows, index=index: rows[2]['argv'].__setitem__(index, 'changed'), launch)
