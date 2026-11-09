@@ -1,0 +1,353 @@
+{
+  "observed_date": "2026-11-09",
+  "status": "metadata-only, NOT a resolved lock or licence clearance",
+  "docling_version": "2.149.0",
+  "requires_python": "<4.0,>=3.10",
+  "docling_requirements": [
+    "docling-slim[standard]==2.149.0",
+    "docling-slim[models-asr-inline]==2.149.0; extra == \"asr\"",
+    "docling-slim[format-audio]==2.149.0; extra == \"audio\"",
+    "docling-slim[feat-ocr-easyocr]==2.149.0; extra == \"easyocr\"",
+    "docling-slim[format-html-render]==2.149.0; extra == \"htmlrender\"",
+    "docling-slim[feat-ocr-mac]==2.149.0; extra == \"ocrmac\"",
+    "docling-slim[models-onnxruntime]==2.149.0; extra == \"onnxruntime\"",
+    "docling-slim[feat-ocr-rapidocr-onnx]==2.149.0; extra == \"rapidocr\"",
+    "docling-slim[models-remote]==2.149.0; extra == \"remote-serving\"",
+    "docling-slim[feat-ocr-tesserocr]==2.149.0; extra == \"tesserocr\"",
+    "docling-slim[models-vlm-inline]==2.149.0; extra == \"vlm\"",
+    "docling-slim[format-xml-xbrl]==2.149.0; extra == \"xbrl\""
+  ],
+  "slim_base_and_standard_requirements": [
+    "certifi>=2024.7.4",
+    "docling-core<3.0.0,>=2.106.0",
+    "filetype<2.0.0,>=1.2.0",
+    "langcodes<4.0.0,>=3.5.0",
+    "pluggy<2.0.0,>=1.0.0",
+    "pydantic-settings<3.0.0,>=2.3.0",
+    "pydantic<3.0.0,>=2.0.0",
+    "requests<3.0.0,>=2.32.2",
+    "tqdm<5.0.0,>=4.65.0",
+    "accelerate<2,>=1.0.0; extra == \"standard\"",
+    "beautifulsoup4<5.0.0,>=4.12.3; extra == \"standard\"",
+    "defusedxml<0.8.0,>=0.7.1; extra == \"standard\"",
+    "docling-core[chunking]<3.0.0,>=2.106.0; extra == \"standard\"",
+    "docling-ibm-models<5,>=4.0.2; extra == \"standard\"",
+    "docling-parse<8.0.0,>=7.22.2; extra == \"standard\"",
+    "httpx<1.0.0,>=0.28; extra == \"standard\"",
+    "huggingface-hub<3,>=0.23; extra == \"standard\"",
+    "mail-parser<5.0.0,>=4.1.4; extra == \"standard\"",
+    "marko<3.0.0,>=2.1.2; extra == \"standard\"",
+    "numpy<3.0.0,>=1.24.0; extra == \"standard\"",
+    "openpyxl<4.0.0,>=3.1.5; extra == \"standard\"",
+    "pillow<14.0.0,>=10.0.0; extra == \"standard\"",
+    "polyfactory>=2.22.2; extra == \"standard\"",
+    "pylatexenc<3.0,>=2.10; extra == \"standard\"",
+    "pypdfium2!=4.30.1,<6.0.0,>=4.30.0; extra == \"standard\"",
+    "python-docx<2.0.0,>=1.2.0; extra == \"standard\"",
+    "python-dotenv~=1.0; extra == \"standard\"",
+    "python-oxmsg<0.1.0,>=0.0.2; extra == \"standard\"",
+    "python-pptx<2.0.0,>=1.0.2; extra == \"standard\"",
+    "rapidocr<4.0.0,>=3.9.1; extra == \"standard\"",
+    "rich>=13.0.0; extra == \"standard\"",
+    "rtree<2.0.0,>=1.3.0; extra == \"standard\"",
+    "scipy<2.0.0,>=1.9.0; extra == \"standard\"",
+    "torch<3.0.0,>=2.2.2; extra == \"standard\"",
+    "torchvision<1,>=0; extra == \"standard\"",
+    "typer<0.28.0,>=0.19.0; extra == \"standard\"",
+    "websockets<18.0,>=14.0; extra == \"standard\""
+  ],
+  "dependency_metadata": [
+    {
+      "name": "accelerate",
+      "version": "1.15.0",
+      "license_expression": null,
+      "license_metadata": "Apache",
+      "requires_python": ">=3.10.0",
+      "source": "https://pypi.org/pypi/accelerate/1.15.0/json"
+    },
+    {
+      "name": "beautifulsoup4",
+      "version": "4.15.0",
+      "license_expression": null,
+      "license_metadata": "MIT License",
+      "requires_python": ">=3.7.0",
+      "source": "https://pypi.org/pypi/beautifulsoup4/4.15.0/json"
+    },
+    {
+      "name": "certifi",
+      "version": "2026.10.23",
+      "license_expression": null,
+      "license_metadata": "MPL-2.0",
+      "requires_python": ">=3.7",
+      "source": "https://pypi.org/pypi/certifi/2026.10.23/json"
+    },
+    {
+      "name": "defusedxml",
+      "version": "0.7.1",
+      "license_expression": null,
+      "license_metadata": "PSFL",
+      "requires_python": ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*",
+      "source": "https://pypi.org/pypi/defusedxml/0.7.1/json"
+    },
+    {
+      "name": "docling-core",
+      "version": "2.106.0",
+      "license_expression": "MIT",
+      "license_metadata": "",
+      "requires_python": "<4.0,>=3.10",
+      "source": "https://pypi.org/pypi/docling-core/2.106.0/json"
+    },
+    {
+      "name": "docling-ibm-models",
+      "version": "4.0.4",
+      "license_expression": "MIT",
+      "license_metadata": "",
+      "requires_python": "<4.0,>=3.10",
+      "source": "https://pypi.org/pypi/docling-ibm-models/4.0.4/json"
+    },
+    {
+      "name": "docling-parse",
+      "version": "7.25.0",
+      "license_expression": "MIT",
+      "license_metadata": "",
+      "requires_python": ">=3.10",
+      "source": "https://pypi.org/pypi/docling-parse/7.25.0/json"
+    },
+    {
+      "name": "filetype",
+      "version": "1.2.0",
+      "license_expression": null,
+      "license_metadata": "MIT",
+      "requires_python": "",
+      "source": "https://pypi.org/pypi/filetype/1.2.0/json"
+    },
+    {
+      "name": "httpx",
+      "version": "0.28.1",
+      "license_expression": null,
+      "license_metadata": "BSD-3-Clause",
+      "requires_python": ">=3.8",
+      "source": "https://pypi.org/pypi/httpx/0.28.1/json"
+    },
+    {
+      "name": "huggingface-hub",
+      "version": "2.4.0",
+      "license_expression": null,
+      "license_metadata": "Apache-2.0",
+      "requires_python": ">=3.10.0",
+      "source": "https://pypi.org/pypi/huggingface-hub/2.4.0/json"
+    },
+    {
+      "name": "langcodes",
+      "version": "3.5.1",
+      "license_expression": null,
+      "license_metadata": "",
+      "requires_python": ">=3.9",
+      "source": "https://pypi.org/pypi/langcodes/3.5.1/json"
+    },
+    {
+      "name": "mail-parser",
+      "version": "4.10.0",
+      "license_expression": "Apache-2.0",
+      "license_metadata": "",
+      "requires_python": ">=3.9",
+      "source": "https://pypi.org/pypi/mail-parser/4.10.0/json"
+    },
+    {
+      "name": "marko",
+      "version": "2.2.5",
+      "license_expression": null,
+      "license_metadata": "MIT",
+      "requires_python": ">=3.9",
+      "source": "https://pypi.org/pypi/marko/2.2.5/json"
+    },
+    {
+      "name": "numpy",
+      "version": "2.5.4",
+      "license_expression": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+      "license_metadata": "",
+      "requires_python": ">=3.12",
+      "source": "https://pypi.org/pypi/numpy/2.5.4/json"
+    },
+    {
+      "name": "openpyxl",
+      "version": "3.1.5",
+      "license_expression": null,
+      "license_metadata": "MIT",
+      "requires_python": ">=3.8",
+      "source": "https://pypi.org/pypi/openpyxl/3.1.5/json"
+    },
+    {
+      "name": "pillow",
+      "version": "13.0.0",
+      "license_expression": "MIT-CMU",
+      "license_metadata": "",
+      "requires_python": ">=3.11",
+      "source": "https://pypi.org/pypi/pillow/13.0.0/json"
+    },
+    {
+      "name": "pluggy",
+      "version": "1.7.0",
+      "license_expression": null,
+      "license_metadata": "MIT",
+      "requires_python": ">=3.10",
+      "source": "https://pypi.org/pypi/pluggy/1.7.0/json"
+    },
+    {
+      "name": "polyfactory",
+      "version": "3.5.0",
+      "license_expression": null,
+      "license_metadata": "MIT",
+      "requires_python": "<4.0,>=3.9",
+      "source": "https://pypi.org/pypi/polyfactory/3.5.0/json"
+    },
+    {
+      "name": "pydantic",
+      "version": "2.14.3",
+      "license_expression": "MIT",
+      "license_metadata": "",
+      "requires_python": ">=3.10",
+      "source": "https://pypi.org/pypi/pydantic/2.14.3/json"
+    },
+    {
+      "name": "pydantic-settings",
+      "version": "2.16.2",
+      "license_expression": "MIT",
+      "license_metadata": "",
+      "requires_python": ">=3.11",
+      "source": "https://pypi.org/pypi/pydantic-settings/2.16.2/json"
+    },
+    {
+      "name": "pylatexenc",
+      "version": "2.11",
+      "license_expression": null,
+      "license_metadata": "MIT",
+      "requires_python": null,
+      "source": "https://pypi.org/pypi/pylatexenc/2.11/json"
+    },
+    {
+      "name": "pypdfium2",
+      "version": "5.15.1",
+      "license_expression": null,
+      "license_metadata": "BSD-3-Clause, Apache-2.0, dependency licenses",
+      "requires_python": ">=3.6",
+      "source": "https://pypi.org/pypi/pypdfium2/5.15.1/json"
+    },
+    {
+      "name": "python-docx",
+      "version": "1.2.0",
+      "license_expression": null,
+      "license_metadata": "MIT",
+      "requires_python": ">=3.9",
+      "source": "https://pypi.org/pypi/python-docx/1.2.0/json"
+    },
+    {
+      "name": "python-dotenv",
+      "version": "1.2.4",
+      "license_expression": null,
+      "license_metadata": "BSD-3-Clause",
+      "source": "https://pypi.org/pypi/python-dotenv/1.2.4/json"
+    },
+    {
+      "name": "python-oxmsg",
+      "version": "0.0.2",
+      "license_expression": null,
+      "license_metadata": "MIT",
+      "requires_python": ">=3.9",
+      "source": "https://pypi.org/pypi/python-oxmsg/0.0.2/json"
+    },
+    {
+      "name": "python-pptx",
+      "version": "1.0.2",
+      "license_expression": null,
+      "license_metadata": "MIT",
+      "requires_python": ">=3.8",
+      "source": "https://pypi.org/pypi/python-pptx/1.0.2/json"
+    },
+    {
+      "name": "rapidocr",
+      "version": "3.10.0",
+      "license_expression": "Apache-2.0",
+      "license_metadata": "",
+      "requires_python": "<4,>=3.8",
+      "source": "https://pypi.org/pypi/rapidocr/3.10.0/json"
+    },
+    {
+      "name": "requests",
+      "version": "2.34.2",
+      "license_expression": null,
+      "license_metadata": "Apache-2.0",
+      "requires_python": ">=3.10",
+      "source": "https://pypi.org/pypi/requests/2.34.2/json"
+    },
+    {
+      "name": "rich",
+      "version": "15.0.0",
+      "license_expression": null,
+      "license_metadata": "MIT",
+      "requires_python": ">=3.9.0",
+      "source": "https://pypi.org/pypi/rich/15.0.0/json"
+    },
+    {
+      "name": "rtree",
+      "version": "1.4.1",
+      "license_expression": "MIT",
+      "license_metadata": "",
+      "requires_python": ">=3.9",
+      "source": "https://pypi.org/pypi/rtree/1.4.1/json"
+    },
+    {
+      "name": "scipy",
+      "version": "1.18.1",
+      "license_expression": null,
+      "license_metadata": "Copyright (c) 2001-2002 Enthought, Inc. 2003, SciPy Developers.\n         All rights reserved.\n         \n         Redistribution and use in source and binary forms, with or without\n         modification, are permitted provided that the following conditions\n         are met:\n         \n         1. Redi",
+      "requires_python": ">=3.12",
+      "source": "https://pypi.org/pypi/scipy/1.18.1/json"
+    },
+    {
+      "name": "torch",
+      "version": "2.15.0",
+      "license_expression": "Apache-2.0 AND Apache-2.0 WITH LLVM-exception AND BSD-2-Clause AND BSD-3-Clause AND BSL-1.0 AND ISC AND MIT AND Zlib",
+      "license_metadata": "",
+      "requires_python": ">=3.11",
+      "source": "https://pypi.org/pypi/torch/2.15.0/json"
+    },
+    {
+      "name": "torchvision",
+      "version": "0.29.2",
+      "license_expression": null,
+      "license_metadata": "BSD",
+      "requires_python": "!=3.14.1,>=3.10",
+      "source": "https://pypi.org/pypi/torchvision/0.29.2/json"
+    },
+    {
+      "name": "tqdm",
+      "version": "4.70.1",
+      "license_expression": null,
+      "license_metadata": "MPL-2.0 AND MIT",
+      "requires_python": ">=3.8",
+      "source": "https://pypi.org/pypi/tqdm/4.70.1/json"
+    },
+    {
+      "name": "typer",
+      "version": "0.28.0",
+      "license_expression": "MIT",
+      "license_metadata": "",
+      "requires_python": ">=3.10",
+      "source": "https://pypi.org/pypi/typer/0.28.0/json"
+    },
+    {
+      "name": "websockets",
+      "version": "17.4",
+      "license_expression": "BSD-3-Clause",
+      "license_metadata": "",
+      "requires_python": ">=3.11",
+      "source": "https://pypi.org/pypi/websockets/17.4/json"
+    }
+  ],
+  "caveats": [
+    "Latest dependency metadata is not necessarily a satisfiable selection (e.g. typer 0.28.0 is outside <0.28.0).",
+    "Transitive/native bundled libraries and exact wheel notices remain unaudited.",
+    "Model weights have separate licences."
+  ]
+}
