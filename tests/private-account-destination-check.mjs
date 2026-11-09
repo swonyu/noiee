@@ -18,8 +18,10 @@ assert.match(read('local-model-http.mjs'),/url\.origin !== origin/);
 assert.match(read('local-model-http.mjs'),/Local model redirects are unsupported/);
 assert.match(read('GmailAccount.swift'),/destination=="local-agent-conversation-v1"/);
 assert.match(read('GmailAccountUI.swift'),/Any future cloud destination needs separate native consent/);
+assert.match(read('DriveAccount.swift'),/destination==DrivePolicy\.destination/);
+assert.match(read('DriveAccountUI.swift'),/No cloud model or Coding destination is authorized/);
 for(const name of ['coding-engine.mjs','coding-local.mjs']) {
   // No Gmail connector is exposed to either separate Coding engine transport.
-  assert.doesNotMatch(read(name),/gmail_messages|gmail_message_metadata|GmailAccountSession/);
+  assert.doesNotMatch(read(name),/gmail_messages|gmail_message_metadata|GmailAccountSession|drive_file_text|drive_file_metadata|DriveAccountSession/);
 }
-console.log('PASS: local model destination validation, immutable origin, no cloud fallback/redirect, durable Gmail destination and separate Coding exposure. No network.');
+console.log('PASS: local model destination validation, immutable origin, no cloud fallback/redirect, durable Google-account destinations and separate Coding exposure. No network.');

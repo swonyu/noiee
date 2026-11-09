@@ -3,8 +3,8 @@ import Security
 import CryptoKit
 import LocalAuthentication
 
-// Shared native read projections. Production Gmail and GitHub coordinators own
-// their grants; Drive remains unavailable until a verified Picker is implemented.
+// Shared native read projections. Production Gmail, Drive and GitHub coordinators
+// own their verified grants. The foundation alone never establishes account access.
 enum PrivateAccountProvider: String, CaseIterable, Codable {
     case gmail, drive, github
     var scope: String {
@@ -17,7 +17,7 @@ enum PrivateAccountProvider: String, CaseIterable, Codable {
     var prerequisite: String {
         switch self {
         case .gmail: return "Register a Google Desktop OAuth client, enable Gmail API, configure consent for restricted gmail.readonly, then connect in the native Gmail panel."
-        case .drive: return "Register a Google Desktop OAuth client, enable Drive API and complete native consent plus a verified Google Picker selection. drive.file permits writes at the provider; this connector permits only reads of selected file metadata."
+        case .drive: return "Register a Google Desktop OAuth client, enable Drive and Google Picker APIs, then choose files through the native Drive panel. drive.file permits writes at the provider; Noiee permits GET-only reads of its selected IDs."
         case .github: return "Register a GitHub App with selected repositories and read-only metadata/issues permissions; complete installation, user consent and secure token delivery. No gh credentials or embedded app secret/private key are used."
         }
     }

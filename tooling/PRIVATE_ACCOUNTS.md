@@ -1,4 +1,4 @@
-# Private accounts: native Gmail and GitHub, Drive foundation
+# Private accounts: native Gmail, Drive and GitHub
 
 This isolated branch is not part of the Build 181 core release. It has not accessed a live account, browser, Keychain, installed app or model. Source implementation and offline validation do not establish live acceptance.
 
@@ -32,7 +32,7 @@ Native **Disconnect locally** first persists the deny marker, then replaces both
 
 Local disconnect is **not remote revocation**. GitHub's token/grant deletion endpoints require the app's client secret; no such secret is embedded. The native help button opens GitHub's official instructions. The user must revoke the app themselves under GitHub Settings → Applications → Authorized GitHub Apps. A confirmed invalid token, identity/permission change, or complete loss of approved resources also disables local access. Cancelled/rejected native setup can leave a remote authorization already accepted; the UI explains that distinction.
 
-## Gmail native flow; Drive remains unavailable
+## Gmail and Drive native flows
 
 Gmail now has a native production flow after the user's registered Google Desktop client and consent setup. **Configure Gmail…** opens its own native panel. A single exact native Connect review authorizes `gmail.readonly`, `openid`, and `email`, the account the user chooses on Google's consent page, persistent refresh and disclosure only to the local Agent model plus this app's saved conversation. A verified account summary follows without a duplicate permission prompt. The saved record is bound to `local-agent-conversation-v1`; no cloud model or Coding destination is authorized.
 
@@ -40,11 +40,12 @@ Gmail now has a native production flow after the user's registered Google Deskto
 
 Local disconnect and Google project-wide revocation are distinct native controls. Remote revoke requires an explicit native confirmation explaining that all scopes/tokens across the project's OAuth clients may be affected. Uncertain revocation blocks reads and never claims remote success. See [Gmail design, prerequisites and validation](GMAIL_ACCOUNTS.md) for exact protocol, threat cases and untested live gates. No registrations, actual credentials, accounts, browser flows, listeners or Keychain records were exercised during development.
 
-Drive also requires a real Google Picker or supported file-selection integration. `drive.file` grants per-file access and permits modifications at the provider, although this connector exposes only reads. Never substitute full Drive scope or an arbitrary model-supplied file ID for user selection. Selection provenance must remain bound to the verified account and grant. Drive cannot become usable merely by entering a client ID.
+Drive now uses Google's documented desktop OAuth Picker with `drive.file` alone. Register a Desktop client and enable Drive plus Google Picker APIs. The native browser choice supplies the only selected IDs admitted by Noiee; authenticated Drive `permissionId` binds the account without claiming an OpenID subject. Google grants per-file write capability and may retain prior app-authorized files, while Noiee exposes GET-only reads of its exact current selection. The native review explains this distinction. Selected metadata and bounded plain text/Google Docs exports are implemented, with no shortcut following, binary conversion, writes or broad Drive fallback. See [Drive design and exact limits](DRIVE_ACCOUNTS.md). No actual Picker/account was exercised.
 
 ## Offline validation and remaining gates
 
 ```sh
+python3 -B tooling/check_drive_accounts.py
 python3 -B tooling/check_private_account_dispatch.py
 python3 -B tooling/check_gmail_accounts.py
 python3 -B tooling/check_github_accounts.py
@@ -56,9 +57,9 @@ python3 -B tooling/check_private_accounts.py
 python3 -B tooling/build_native.py --build 181 --development
 ```
 
-The native checks use injected in-memory HTTP/credential/listener fixtures and disposable compiler caches/binaries. They never construct production Keychain/URLSession/UI instances or launch the installed app. The GitHub suite has 256 assertions and the foundation suite has 197. A separate 17-assertion dispatch suite cancels after each provider and uses actual injected GitHub/Gmail sessions to prove a held result cannot start subsequent status/read/refresh work or publish a late aggregate. Tests cover native consent denial, bounded polling/slow-down, stable app/account/installation/resource identity, renames during restore/refresh, durable scope reduction and no re-admission, additions ignored, failed/incomplete/paginated inventories, transient HTTP failures, removal during a read, failed reduction publication, rejected broad/partial grants, token reflection/output redaction including escaped slash/quote/backslash refresh echoes, durable automatic restore, uncertain/cancelled refresh without replay, local revocation failures, late cancellation, schema restrictions and native-only consent routing. Foundation Google checks cover PKCE/state/callback expiry/replay/denial separately. Static UI checks do not establish visual usability, OS event origin or real browser lifecycle behavior.
+The native checks use injected in-memory HTTP/credential/listener fixtures and disposable compiler caches/binaries. They never construct production Keychain/URLSession/UI instances or launch the installed app. The GitHub suite has 256 assertions and the foundation suite has 197. A separate 21-assertion dispatch suite cancels after each provider and uses actual injected GitHub/Gmail/Drive sessions to prove a held result cannot start subsequent status/read/refresh work or publish a late aggregate. Tests cover native consent denial, bounded polling/slow-down, stable app/account/installation/resource identity, renames during restore/refresh, durable scope reduction and no re-admission, additions ignored, failed/incomplete/paginated inventories, transient HTTP failures, removal during a read, failed reduction publication, rejected broad/partial grants, token reflection/output redaction including escaped slash/quote/backslash refresh echoes, durable automatic restore, uncertain/cancelled refresh without replay, local revocation failures, late cancellation, schema restrictions and native-only consent routing. Foundation Google checks cover PKCE/state/callback expiry/replay/denial separately. Static UI checks do not establish visual usability, OS event origin or real browser lifecycle behavior.
 
-Before inclusion in a release, independently review the final commit and run authorized live acceptance with registered test clients for both providers: actual native layout/repeated clicks/window close, device denial/expiry/slow-down, locked Keychain, logout/Stop/relaunch, account switch, provider revocation, repository changes, real redirect/stream limits, refresh rotation and local-disconnect failure handling. No accounts, settings, permissions, downloads, grants, actual Keychain records or installed app state were changed during implementation.
+Before inclusion in a release, independently review the final commit and run authorized live acceptance with registered test clients for all three providers: actual native layout/repeated clicks/window close, device denial/expiry/slow-down, locked Keychain, logout/Stop/relaunch, account switch, provider revocation, repository changes, real redirect/stream limits, refresh rotation and local-disconnect failure handling. No accounts, settings, permissions, downloads, grants, actual Keychain records or installed app state were changed during implementation.
 
 ## Official references verified 2026-11-09
 

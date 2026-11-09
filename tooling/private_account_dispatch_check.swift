@@ -61,6 +61,31 @@ import Foundation
         while release==nil {await Task.yield()};cancellation.cancel();release?.resume()
         published=false;do {_ = try await cancellation.value;published=true} catch {}
         expect(later==0 && !published,"Task cancellation blocks late result and next dispatch")
-        print("PASS: \(count) aggregate account Stop assertions, including actual injected GitHub/Gmail sessions and no subsequent refresh. No network, browser, UI, listener or Keychain.")
+        // An expired actual Drive grant must not refresh after an earlier Stop.
+        let drive=DriveFixture();_ = try await drive.connect();drive.now=drive.now.addingTimeInterval(3600)
+        let firstGmail=GmailFixture();_ = try await firstGmail.connect();firstGmail.http.holdPath="/v1/userinfo"
+        var driveEpoch=0,driveStarts=0;let driveRequests=drive.http.requests.count
+        let beforeDrive=Task {try await PrivateAccountsDispatch.collect([
+            {try await firstGmail.session.perform(["action":"status"])},
+            {driveStarts+=1;return try await drive.session.perform(["action":"status"])}
+        ],check:{guard driveEpoch==0 else {throw Stopped.stopped}})}
+        while firstGmail.http.continuation==nil {await Task.yield()};driveEpoch+=1;firstGmail.session.cancel();firstGmail.http.release()
+        published=false;do {_ = try await beforeDrive.value;published=true} catch {}
+        expect(driveStarts==0 && drive.http.requests.count==driveRequests && drive.http.refreshes==0,"later actual Drive status/read/refresh never starts after Stop")
+        expect(!published,"partial Gmail-to-Drive aggregate is withheld")
+        // Actual Drive cancellation returns held status; neither following work
+        // nor a final aggregate is allowed to publish it after Stop.
+        let duringDrive=DriveFixture();_ = try await duringDrive.connect();duringDrive.http.holdPath="/drive/v3/about"
+        var lastEpoch=0,afterDrive=0,driveHeld=false
+        let driveTask=Task {try await PrivateAccountsDispatch.collect([
+            {["provider":"first"]},
+            {let result=try await duringDrive.session.perform(["action":"status"]);driveHeld=result["state"] as? String=="held";return result},
+            {afterDrive+=1;return [:]}
+        ],check:{guard lastEpoch==0 else {throw Stopped.stopped}})}
+        while duringDrive.http.continuation==nil {await Task.yield()};lastEpoch+=1;duringDrive.session.cancel();duringDrive.http.release()
+        published=false;do {_ = try await driveTask.value;published=true} catch {}
+        expect(driveHeld && afterDrive==0,"actual held Drive result cannot start subsequent work")
+        expect(!published,"late Drive aggregate is withheld")
+        print("PASS: \(count) aggregate account Stop assertions, including actual injected GitHub/Gmail/Drive sessions and no subsequent refresh. No network, browser, UI, listener or Keychain.")
     }
 }

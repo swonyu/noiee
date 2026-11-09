@@ -964,7 +964,8 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
     private let fetchPlugin = FetchPluginSession()
     private lazy var privateAccounts = GitHubAccountSession(http:GitHubAccountURLHTTP(),store:GitHubAccountKeychain())
     private lazy var gmailAccount = GmailAccountSession(http:GmailURLHTTP(),store:GmailKeychain())
-    private lazy var privateAccountsUI = PrivateAccountsUI(session:privateAccounts,gmail:gmailAccount)
+    private lazy var driveAccount = DriveAccountSession(http:DriveURLHTTP(),store:DriveKeychain())
+    private lazy var privateAccountsUI = PrivateAccountsUI(session:privateAccounts,gmail:gmailAccount,drive:driveAccount)
     func showPrivateAccounts() {
         guard !recoveryStartup else {return}
         privateAccountsUI.show()
@@ -975,13 +976,15 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
             var status=try PrivateAccountsAvailability.status(input)
             let values=try await PrivateAccountsDispatch.collect([
                 {let value=try await self.privateAccounts.perform(input);return (value["providers"] as! [[String:Any]])[2]},
-                {try await self.gmailAccount.perform(input)}
+                {try await self.gmailAccount.perform(input)},
+                {try await self.driveAccount.perform(input)}
             ],check:{try self.require(expected)})
             var providers=status["providers"] as! [[String:Any]]
-            providers[2]=values[0];providers[0]=values[1];status["providers"]=providers
-            status["message"]="Gmail and GitHub require separate native grants for local Agent reads and saved conversation. Drive is unavailable. Full Access never grants account access."
+            providers[2]=values[0];providers[0]=values[1];providers[1]=values[2];status["providers"]=providers
+            status["message"]="Gmail, Google Picker-selected Drive files and GitHub use separate native grants for local Agent reads and saved conversation. Full Access never grants account access."
             return status
         }
+        if ["drive_file_metadata","drive_file_text"].contains(input["action"] as? String ?? "") {return try await driveAccount.perform(input)}
         if ["gmail_messages","gmail_message_metadata"].contains(input["action"] as? String ?? "") {return try await gmailAccount.perform(input)}
         return try await privateAccounts.perform(input)
     }
