@@ -1,5 +1,18 @@
 const LIMIT=2*1024*1024;
 const object=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
+// Usage is optional provider telemetry, never evidence that a tool ran. Keep
+// only bounded nonnegative counters; absent/invalid values remain unknown.
+function usageCounters(value){
+  if(!object(value))return null;
+  const result={},counter=value=>Number.isSafeInteger(value)&&value>=0;
+  for(const key of ['prompt_tokens','completion_tokens','total_tokens'])if(counter(value[key]))result[key]=value[key];
+  for(const [key,fields] of [['prompt_tokens_details',['cached_tokens','audio_tokens']],['completion_tokens_details',['reasoning_tokens','audio_tokens','accepted_prediction_tokens','rejected_prediction_tokens']]]){
+    if(!object(value[key]))continue;const details={};
+    for(const field of fields)if(counter(value[key][field]))details[field]=value[key][field];
+    if(Object.keys(details).length)result[key]=details;
+  }
+  return Object.keys(result).length?result:null;
+}
 function validateFinish(reason){if(!['stop','tool_calls','length'].includes(reason))throw new Error('Unsupported or invalid completion finish reason.');}
 function validateMessage(message,finishReason){
   if(!object(message)||(message.role!=null&&message.role!=='assistant')||['content','reasoning_content'].some(k=>message[k]!=null&&typeof message[k]!=='string'))throw new Error('Invalid completion message.');
@@ -19,7 +32,7 @@ export async function readCompletion(response,{signal,onReasoning=()=>{},onConte
   const wait=async promise=>{const value=await Promise.race([promise,aborted]);signal?.throwIfAborted();return value;};
   const reasoning=async value=>{signal?.throwIfAborted();if(value)await wait(onReasoning(value));};
   const decoder=new TextDecoder('utf-8',{fatal:true}),stream=/^text\/event-stream(?:\s*;|$)/i.test(response.headers.get('content-type')||'');
-  let size=0,semantic=0,buffer='',scan=0,data=[],ended=false,terminal=false,done=false,finish_reason=null,content='',thought='';const calls=new Map();
+  let size=0,semantic=0,buffer='',scan=0,data=[],ended=false,terminal=false,done=false,finish_reason=null,content='',thought='',usage=null;const calls=new Map();
   const account=value=>{if(!(value??'').isWellFormed())throw new Error('Invalid completion text encoding: malformed Unicode.');semantic+=Buffer.byteLength(value||'','utf8');if(semantic>LIMIT)throw new Error('Completion text exceeds the 2 MiB limit.');};
   async function packet(){
     if(!data.length)return;const text=data.join('\n').trim();data=[];
@@ -28,6 +41,7 @@ export async function readCompletion(response,{signal,onReasoning=()=>{},onConte
     if(!object(value))throw new Error('Malformed completion packet.');
     if(value.error)throw new Error(typeof value.error==='string'?value.error:value.error.message||'Upstream completion error.');
     if(!Array.isArray(value.choices)||value.choices.some(c=>!object(c)))throw new Error('Malformed completion choices.');
+    if(value.usage!=null)usage=usageCounters(value.usage)??usage;
     if(!value.choices.length){if(object(value.usage))return;throw new Error('Malformed completion usage packet.');}
     if(terminal||done)throw new Error('Completion delta arrived after terminal finish.');
     const choice=value.choices.find(c=>c.index===0||c.index===undefined);if(!choice)return;
@@ -80,7 +94,7 @@ export async function readCompletion(response,{signal,onReasoning=()=>{},onConte
     if(!finish_reason)throw new Error('Incomplete completion stream: missing finish reason.');
     const ordered=[...calls].sort((a,b)=>a[0]-b[0]);if(ordered.some(([index],i)=>index!==i))throw new Error('Incomplete tool call indices.');
     const message={role:'assistant',content:content||null,...(thought?{reasoning_content:thought}:{}),...(ordered.length?{tool_calls:ordered.map(([,call])=>call)}:{})};
-    validateMessage(message,finish_reason);signal?.throwIfAborted();return {choices:[{message,finish_reason}]};
+    validateMessage(message,finish_reason);signal?.throwIfAborted();return {choices:[{message,finish_reason}],...(usage?{usage}:{})};
   }finally{
     signal?.removeEventListener('abort',abort);if(!ended)await (cancelled??reader.cancel().catch(()=>{}));reader.releaseLock();
   }

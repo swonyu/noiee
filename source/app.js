@@ -211,7 +211,12 @@ window.salehSaveBeforeLeave = async () => {
 };
 function canNavigate(){if(storageHydrating||restoring||structuralPending||pageDisposed)return false;if(computerBusy){notice('Wait for the current computer action before leaving Chat. Your draft stays in this chat.');return false;}return true;}
 window.salehCanNavigate = canNavigate;
-function scheduleSave() {try{captureSnapshot();}catch(error){persistenceFailure(error);return;}if(!saveTimer)saveTimer=setTimeout(()=>{void save();},500);}
+function scheduleSave() {
+  // Record every edit immediately, including an edit reverted during an in-flight save.
+  // The existing save boundary serializes and validates the full snapshot once due.
+  dirtyRevision++;
+  if(!saveTimer)saveTimer=setTimeout(()=>{void save();},500);
+}
 function groupChatSidebar(rows, query, archived, isPinned = () => false) {
   const needle = query.toLowerCase(), grouped = {pinned: [], projects: [], recent: []}, projects = new Map();
   const matching = rows.filter(chat => (chat.archived === true) === archived && `${chat.title} ${chat.project} ${chat.messages.map(message => message.content).join(" ")}`.toLowerCase().includes(needle));
