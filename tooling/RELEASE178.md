@@ -26,10 +26,10 @@ All host/capture guard functions are preserved apart from successor identities. 
 
 Intentional qualification coverage increases:
 
-- Model suite retains local-models, coding-model, generated model-picker browser fixture, coding-model-guards, model-stabilization and separate routing checks. Its Node test command additionally requires `source/agent-cancel-check.mjs`, `source/agent-stream-check.mjs`, and `source/agent-usage-check.mjs`. TAP counts remain actual dynamic execution counts.
+- Model suite retains local-models, coding-model, byte-identical retained model-picker browser fixture (no obsolete context/asset rewrites), coding-model-guards, model-stabilization and separate routing checks. Its Node test command additionally requires `source/agent-cancel-check.mjs`, `source/agent-stream-check.mjs`, and `source/agent-usage-check.mjs`. TAP counts remain actual dynamic execution counts.
 - Presentation retains presentation/workbench, coding-result-state and coding-parity. It additionally runs `source/coding-ui-check.mjs` without subset flags, covering full Tasks lifecycle, worktrees, scheduling, reviewed Git, history/drafts, terminal and Stop fences. Exit zero and exactly one unchanged full `PASS coding UI:` completion marker are mandatory. This contributes **one completed full-suite scenario**, not an invented assertion count.
 - Existing execution budgets remain 900 seconds per command and 1200 seconds per aggregate suite. The full Coding UI run is expected to take approximately four minutes.
-- All other required suites and prior fixture assertions remain unchanged. The release-input suite now runs 50 synthetic tests, including exact predecessor pins, unchanged guards, script inventory, and full-UI marker failures. These tests do not run any release phase or access live stores.
+- All other required suites and prior fixture assertions remain unchanged. The release-input suite now runs 51 synthetic tests, including exact predecessor pins, unchanged guards, script inventory, and full-UI marker failures. These tests do not run any release phase or access live stores.
 
 ## Next coordinated release steps
 

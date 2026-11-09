@@ -407,26 +407,20 @@ class Suite:
     def model_fixture(self):
         original = self.source / "model-picker-ui-check.mjs"
         raw = read_regular(original).decode()
-        adaptations = [
-            ("label: id, loaded: true", "label: id, contextLength: 65536, loaded: true",
-             "Provide the actual loaded context field required by the current request budget guard."),
-            ("new Set(['model-policy.js'", "new Set(['context-compaction.js','model-policy.js'",
-             "Serve the real compaction helper now required by the unchanged shipped Chat page.")
-        ]
-        generated = raw
-        for old, new, reason in adaptations:
-            require(generated.count(old) == 1, "Model fixture adaptation anchor changed: " + old)
-            generated = generated.replace(old, new)
+        # Build178 source already contains the context budget and compaction
+        # assets. Retain the exact committed fixture; never rewrite assertions
+        # or silently restore older harness assumptions.
         path = self.cache / original.name
-        path.write_text(generated)
+        path.write_bytes(raw.encode())
         path.chmod(0o600)
         (self.cache / "node_modules").symlink_to(self.source / "node_modules", target_is_directory=True)
         self.fixture = {
             "originalSource": "source/" + original.name,
             "originalSHA256": digest(raw.encode()),
             "generated": self.retain(path),
-            "changes": [reason for _, _, reason in adaptations],
-            "assertionsChanged": False
+            "changes": [],
+            "assertionsChanged": False,
+            "byteIdentical": True
         }
         return path
 

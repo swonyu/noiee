@@ -486,6 +486,31 @@ class SuccessorContract(unittest.TestCase):
         self.assertIs(calls[-1][2], qualify.coding_ui_result)
 
 
+
+    def test_model_fixture_retains_current_source_verbatim_without_legacy_rewrites(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            suite = qualify.Suite.__new__(qualify.Suite)
+            suite.source = root / "source"
+            suite.cache = root / "cache"
+            suite.source.mkdir()
+            suite.cache.mkdir()
+            suite.retain = lambda path: qualify.ref(path)
+            # Approved Build178 picker syntax that broke historical adaptation.
+            raw = ("label: id, contextLength: 131072, loaded: true\n"
+                   "new Set(['context-compaction.js','model-policy.js'])\n").encode()
+            original = suite.source / "model-picker-ui-check.mjs"
+            original.write_bytes(raw)
+            path = suite.model_fixture()
+            self.assertEqual(path.read_bytes(), raw)
+            self.assertEqual(suite.fixture["originalSHA256"], qualify.digest(raw))
+            self.assertEqual(suite.fixture["generated"]["sha256"], qualify.digest(raw))
+            self.assertEqual(suite.fixture["changes"], [])
+            self.assertIs(suite.fixture["assertionsChanged"], False)
+            self.assertIs(suite.fixture["byteIdentical"], True)
+            self.assertEqual(os.readlink(suite.cache / "node_modules"), str(suite.source / "node_modules"))
+
+
     def test_exact_installed_predecessor_is_selected(self):
         self.assertEqual(release.OLD.name, "Noiee177-52c865rb")
         self.assertEqual(release.OLD_PINS, {
