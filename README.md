@@ -1,6 +1,6 @@
 # Noiee
 
-Noiee is the native macOS local AI workspace formerly named Saleh Uncensored. This checkout is the versioned development source for Build 176. The accepted Build 175 predecessor is retained at tag `noiee-build175`; the original Build 171 source and its `noiee-build171-source` baseline remain separate and unchanged.
+Noiee is the native macOS local AI workspace formerly named Saleh Uncensored. This checkout contains development work proposed for Build 182. The installed predecessor is Build 181; proposed source, isolated fixture results, signed installation and native acceptance are separate milestones. Historical releases and the original Build 171 source baseline remain unchanged.
 
 ## Layout
 
@@ -16,7 +16,7 @@ The `source/node_modules` link points to the verified owned dependency snapshot 
 
 ## Workflow improvements
 
-Build176 improves saved Tasks discovery and Goal review. Read-only history families can be verified in bounded parallel batches within an already admitted history reader; owner acquisition, persistence, conflict checks and reader closure remain guarded. The page shows checked-history progress and verified list pages while remaining pages load. This does not promise a measured cold-start speedup on every project.
+The existing workspace includes saved Tasks discovery and Goal review. Read-only history families can be verified in bounded parallel batches within an already admitted history reader; owner acquisition, persistence, conflict checks and reader closure remain guarded. The page shows checked-history progress and verified list pages while remaining pages load. This does not promise a measured cold-start speedup on every project.
 
 Goal review uses a side inspector on wide workspaces and a bounded nonmodal panel on narrower windows. View result reveals the last rendered assistant answer in the exact acknowledged continuation turn without dispatching work. When that turn has no answer, it focuses the execution outcome instead of a proposed plan or the continuation prompt; missing or truncated history stays explicit. The inspector keeps editor drafts, focus and intentional history expansion. Completed Goals explain their read-only state. Chat archive confirmations clear on switching chats while workspace errors remain visible.
 
@@ -30,6 +30,14 @@ Ordinary Chat/Agent receipts now retain a bounded, versioned observation of Ente
 
 [CODEX_PARITY.md](CODEX_PARITY.md) records the scoped parity target, existing capabilities, and remaining gaps. Source implementation, generated qualification and installed native acceptance are separate evidence.
 
+## Proposed account and external-tool support
+
+The proposed Build182 batch adds native read-only Gmail, GitHub and app-selected Google Drive access with explicit account identity, scope, local model destination, per-read consent, disconnect and Stop boundaries. Unknown-source MCP artifacts have separate review, inert download, install and connect/launch controls. Full Access does not bypass the mandatory unknown-source approval boundary.
+
+Google requires a registered Desktop OAuth client and the relevant Gmail/Drive APIs. Drive selection additionally requires the Google Picker API and its configured project/key; authorization is limited to app-selected files (`drive.file`). GitHub requires a configured GitHub App with device flow enabled. No provider client, granted OAuth access, saved credential or live account is supplied by this checkout. See [Build182 release instructions](tooling/RELEASE182.md) for verification boundaries.
+
+The offline suites use injected transports, consent and stores. Live OAuth, real Keychain persistence, real downloads, unknown-code execution and native account/UI acceptance have not been established by those suites.
+
 ## Runtime contracts
 
 The native app checks the exact qualified Node executable declared in `source/runtime-contract.json`. Tasks separately checks the installed Codex binary and initialization protocol against `source/coding-runtime-contract.json`. These runtimes are externally installed. A future binary change requires compatibility qualification and an updated contract.
@@ -40,15 +48,16 @@ Tasks derives its execution context and automatic-compaction threshold from the 
 
 ## Development and verification
 
-Use a clean committed checkout for a release build:
+After independently reviewed feature and tooling integration, use a clean committed checkout for qualification. These commands do not install the app:
 
 ```sh
-python3 -B tooling/build_native.py --build 176
+python3 -B tooling/qualify182.py
+python3 -B tooling/build_native.py --build 182
 ```
 
 This compiles all native sources and runs the built-in native checks without opening the installed app. Each run creates an exclusive receipt containing source, compiler, SDK, command, binary and log hashes. A `--development` build is explicitly ineligible for release.
 
-See [tooling/README.md](tooling/README.md) for startup checks and backup coverage inspection. See [tooling/RELEASE.md](tooling/RELEASE.md) for the complete Build 175 to Build 176 qualification, capture, signing and guarded installation process. Do not run a historic release recipe or rewrite a prior receipt.
+See [tooling/README.md](tooling/README.md) for startup checks and backup coverage inspection. See [tooling/RELEASE182.md](tooling/RELEASE182.md) for the proposed Build181 to Build182 qualification and guarded release prerequisites. The historical [tooling/RELEASE.md](tooling/RELEASE.md) describes an older release and is not the current recipe. Do not run a historic release recipe or rewrite a prior receipt.
 
 `tooling/check_live_profile.mjs` is an explicitly invoked real-model qualification harness. It uses a generated project and isolated native engine home; its result is separate from installed native UI acceptance. Live tests must run serially under the release owner. Never label generated fixtures or a compiler check as a completed user task.
 
