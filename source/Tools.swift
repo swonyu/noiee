@@ -531,6 +531,24 @@ enum CodingWorktreePolicy {
         }
         return action
     }
+    static func restoreEffect(_ plan:[String:Any]) -> String? {
+        let attachment:String
+        if let ref=plan["headRef"] as? String {
+            guard plan["warning"] is NSNull,ref.hasPrefix("refs/heads/"),ref.utf16.count<=8000,
+                  !ref.hasSuffix("."),!ref.contains(".."),!ref.contains("@{"),
+                  ref.range(of:"[\\x00-\\x20\\x7f~^:?*\\[\\\\]",options:.regularExpression)==nil,
+                  ref.split(separator:"/",omittingEmptySubsequences:false).allSatisfy({!$0.isEmpty && !$0.hasPrefix(".") && !$0.hasSuffix(".lock")}) else {return nil}
+            attachment="The checkout will be attached to its saved branch \(ref). Restoring does not change the branch tip; later commits will advance that branch. Restore is refused if the branch moved, is missing or is checked out elsewhere."
+        } else {
+            guard plan["headRef"] is NSNull else {return nil}
+            if plan["warning"] is NSNull {
+                attachment="The checkout will remain detached; existing branch tips stay unchanged."
+            } else if plan["warning"] as? String=="Legacy archive did not record branch attachment; it will restore detached." {
+                attachment="This legacy archive did not record branch attachment, so its original branch attachment cannot be reconstructed. The checkout will restore detached; existing branch tips stay unchanged."
+            } else {return nil}
+        }
+        return "Returns the saved files to their original path and restores the exact committed HEAD and staging. "+attachment+" The original path must be absent. Existing chats remain available and project access is reviewed again before execution. The recovery bundle is retained."
+    }
     private static func text(_ value:Any?,_ limit:Int) -> String? {
         guard let value=value as? String,!value.isEmpty,value.utf8.count<=limit,!value.contains("\0") else {return nil};return value
     }
@@ -1682,7 +1700,8 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
                     effect="Moves this checkout into private local recovery storage and removes its active Git registration. Committed history, staging, working edits, ignored files and native file metadata are retained. This keeps recovery files on disk; it does not promise reclaimed space. Chats and drafts stay available, but this checkout cannot run tasks until restored. Close other editors or commands using it before continuing."
                 } else {
                     title="Restore this checkout?";button="Restore checkout"
-                    effect="Returns the saved files to their original path and restores the exact committed HEAD and staging. The checkout is detached; existing branches stay unchanged. The original path must be absent. Existing chats remain available and project access is reviewed again before execution. The recovery bundle is retained."
+                    guard let restoreEffect=CodingWorktreePolicy.restoreEffect(plan) else {throw ComputerError.message("The restored checkout branch state could not be verified.")}
+                    effect=restoreEffect
                 }
                 effect += " No prompt is sent. Stop cannot undo an operation already sent; an interrupted result is retained for inspection and is never retried automatically."
             }

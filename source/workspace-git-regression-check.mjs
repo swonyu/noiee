@@ -25,14 +25,14 @@ async function fixture(name,branch=null){
   const source=await init(name),manager=new ManagedWorktrees({dataDir:join(root,name+'-data')});
   const plan=(await manager.handle({action:'prepare',cwd:source,ref:'HEAD'})).plan;
   const record=(await manager.handle({action:'create',planId:plan.id})).worktree;assert.equal(record.state,'ready',record.message);
-  if(branch)await raw(record.cwd,['switch','-c',branch]);
+  if(branch){await raw(record.cwd,['update-ref','refs/heads/'+branch,'HEAD']);await raw(record.cwd,['symbolic-ref','HEAD','refs/heads/'+branch]);}
   const archive=async()=>{const plan=(await manager.handle({action:'prepareArchive',id:record.id})).plan;const out=(await manager.handle({action:'archive',planId:plan.id})).worktree;assert.equal(out.state,'archived',out.message);return manager.recoveryPaths(manager.records[0]);};
   const prepare=async()=>(await manager.handle({action:'prepareRestore',id:record.id})).plan;
   const restore=async(plan=undefined)=>{plan??=await prepare();return (await manager.handle({action:'restore',planId:plan.id})).worktree;};
   return {source,manager,record,archive,prepare,restore};
 }
-for(const branch of [null,'work/مرحبا'])await check('archive preserves '+(branch?'attached branch':'detached HEAD'),async()=>{
-  const f=await fixture(branch?'attached':'detached',branch);
+for(const branch of [null,'work/مرحبا','--force','HEAD'])await check('archive preserves '+(branch?'attached branch '+branch:'detached HEAD'),async()=>{
+  const f=await fixture(branch?'attached-'+hash(branch).slice(0,12):'detached',branch);
   try{
     const admin=await raw(f.record.cwd,['rev-parse','--absolute-git-dir']),head=await readFile(join(admin,'HEAD')),sourceIndex=await readFile(join(f.source,'.git/index'));
     await writeFile(join(f.record.cwd,'a'),'STAGED\n');await raw(f.record.cwd,['add','a']);await writeFile(join(f.record.cwd,'a'),'WORKING\n');
@@ -41,7 +41,7 @@ for(const branch of [null,'work/مرحبا'])await check('archive preserves '+(b
     const p=await f.prepare();assert.equal(p.headRef,manifest.headRef);assert.equal(p.warning,null);
     const restored=await f.restore(p);assert.equal(restored.state,'ready',restored.message);assert.deepEqual(await readFile(join(admin,'HEAD')),head);
     assert.deepEqual(await readFile(join(admin,'index')),index);assert.equal((await lstat(f.record.cwd)).ino,inode);assert.equal(await readFile(join(f.record.cwd,'a'),'utf8'),'WORKING\n');assert.deepEqual(await readFile(join(f.source,'.git/index')),sourceIndex);
-    if(branch){const before=await raw(f.record.cwd,['rev-parse',branch]);await raw(f.record.cwd,['-c','user.name=Fixture','-c','user.email=fixture@example.invalid','commit','-m','restored branch']);assert.notEqual(await raw(f.record.cwd,['rev-parse',branch]),before);assert.equal(await raw(f.record.cwd,['rev-parse',branch]),await raw(f.record.cwd,['rev-parse','HEAD']));}
+    if(branch){const before=await raw(f.record.cwd,['rev-parse','--verify','--end-of-options','refs/heads/'+branch]);await raw(f.record.cwd,['-c','user.name=Fixture','-c','user.email=fixture@example.invalid','commit','-m','restored branch']);assert.notEqual(await raw(f.record.cwd,['rev-parse','--verify','--end-of-options','refs/heads/'+branch]),before);assert.equal(await raw(f.record.cwd,['rev-parse','--verify','--end-of-options','refs/heads/'+branch]),await raw(f.record.cwd,['rev-parse','HEAD']));}
   }finally{await f.manager.close();}
 });
 for(const fault of ['moved','deleted','occupied','symbolic','late-move'])await check('restore refuses '+fault+' branch without changing archived bytes',async()=>{
