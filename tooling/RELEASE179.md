@@ -28,12 +28,12 @@ All eleven runner suites and ten host-required suites are retained, including th
 
 The model suite additionally requires:
 
-- `source/model-response-cleanup-check.mjs` and `source/model-cleanup-routes-check.mjs` in the existing Node TAP command. Counts come from actual execution, not invented assertion totals.
+- `source/model-response-cleanup-check.mjs` and `source/model-cleanup-routes-check.mjs` in a separate Node TAP command requiring exactly 18 completed, passing tests with no skips, cancellations or todos. Counts come from actual execution, not invented assertion totals. All model-suite scripts are validated as canonical, owned, single-link regular files before any model command starts; missing arguments cannot silently reduce coverage.
 - The repaired `source/model-endpoint-check.mjs` as a separate command. Exit zero and exactly one unchanged full six-check completion marker are mandatory. These are six completed endpoint binding checks, not a count of internal assertions.
 
 The endpoint fixture must include the independently reviewed shutdown correction. Integrate the app/fixture batch through `8c08da9` (including `095fefb`, `ca70fc3`, `a703088`) before full qualification. This tooling-only worktree intentionally does not contain those app changes and cannot substitute for final integrated qualification.
 
-The successor synthetic release-input suite executes 52 tests, including predecessor pins, unchanged guard function ASTs, complete model command inventory, preserved Coding UI dispatch, and missing/partial/duplicate completion rejection. No tests in this suite execute a release phase or read original stores.
+The successor synthetic release-input suite executes 55 tests, including predecessor pins, unchanged guard function ASTs, complete model command inventory, preserved Coding UI dispatch, missing/partial/duplicate completion rejection, absent cleanup-file refusal before command execution, exact cleanup counts, and directory/symlink refusal. No tests in this suite execute a release phase or read original stores.
 
 ## Coordinated release sequence
 

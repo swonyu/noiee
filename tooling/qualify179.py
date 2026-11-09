@@ -234,6 +234,17 @@ def tap_counts(text):
             "TAP must complete every test with zero failures, cancellations or skips")
     return values["pass"]
 
+def cleanup_result(text):
+    passed = tap_counts(text)
+    require(passed == 18, "Cleanup regression must complete exactly 18 tests")
+    return passed, {"countUnit": "completed Node tests"}
+
+
+def require_scripts(paths):
+    for path in paths:
+        read_regular(path)
+
+
 def unittest_counts(text):
     matches = re.findall(r"^Ran (\d+) tests? in [^\n]+$", text, re.M)
     require(len(matches) == 1 and int(matches[0]) > 0
@@ -445,14 +456,19 @@ class Suite:
                        self.source / "model-stabilization-check.mjs",
                        self.source / "agent-cancel-check.mjs",
                        self.source / "agent-stream-check.mjs",
-                       self.source / "agent-usage-check.mjs",
-                       self.source / "model-response-cleanup-check.mjs",
-                       self.source / "model-cleanup-routes-check.mjs"]
+                       self.source / "agent-usage-check.mjs"]
+            cleanup_scripts = [self.source / "model-response-cleanup-check.mjs",
+                               self.source / "model-cleanup-routes-check.mjs"]
+            require_scripts([*scripts, *cleanup_scripts,
+                             self.source / "model-routing-check.mjs",
+                             self.source / "model-endpoint-check.mjs"])
             env = {**self.env, "MODEL_PICKER_BROWSER": "1", "MODEL_PICKER_SOURCE": str(self.source)}
             command = [self.node, "--preserve-symlinks", "--test", "--test-reporter=tap", *map(str, scripts)]
             self.case("model-focused-and-browser", command, lambda text: (
                 tap_counts(text), {"environment": {"MODEL_PICKER_BROWSER": "1",
                                                   "MODEL_PICKER_SOURCE": str(self.source)}}), env)
+            self.case("model-cleanup", [self.node, "--preserve-symlinks", "--test",
+                      "--test-reporter=tap", *map(str, cleanup_scripts)], cleanup_result)
             def routing(text):
                 counts = re.findall(r"^PASS (\d+) in-memory model-routing checks; no sockets or real inference\.$", text, re.M)
                 require(len(counts) == 1 and int(counts[0]) == 20, "Routing did not complete all 20 cases")

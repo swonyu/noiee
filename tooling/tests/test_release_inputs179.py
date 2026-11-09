@@ -536,8 +536,9 @@ class SuccessorContract(unittest.TestCase):
         suite.model_fixture = lambda: fixture
         calls = []
         suite.case = lambda *args: calls.append(args)
-        suite.run()
-        self.assertEqual(len(calls), 3)
+        with patch.object(qualify, "require_scripts") as checked:
+            suite.run()
+        self.assertEqual(len(calls), 4)
         self.assertEqual(calls[0][1], [suite.node, "--preserve-symlinks", "--test",
             "--test-reporter=tap", *map(str, [
                 suite.source / "local-models-check.mjs",
@@ -546,13 +547,61 @@ class SuccessorContract(unittest.TestCase):
                 suite.source / "model-stabilization-check.mjs",
                 suite.source / "agent-cancel-check.mjs",
                 suite.source / "agent-stream-check.mjs",
-                suite.source / "agent-usage-check.mjs",
-                suite.source / "model-response-cleanup-check.mjs",
-                suite.source / "model-cleanup-routes-check.mjs"])])
-        self.assertEqual(calls[1][0], "model-routing")
-        self.assertEqual(calls[2][1], [suite.node, "--preserve-symlinks",
+                suite.source / "agent-usage-check.mjs"])])
+        self.assertEqual(calls[1][1], [suite.node, "--preserve-symlinks", "--test",
+            "--test-reporter=tap", str(suite.source / "model-response-cleanup-check.mjs"),
+            str(suite.source / "model-cleanup-routes-check.mjs")])
+        self.assertIs(calls[1][2], qualify.cleanup_result)
+        checked.assert_called_once_with([*map(Path, calls[0][1][4:]),
+            *map(Path, calls[1][1][4:]), suite.source / "model-routing-check.mjs",
+            suite.source / "model-endpoint-check.mjs"])
+        self.assertEqual(calls[2][0], "model-routing")
+        self.assertEqual(calls[3][1], [suite.node, "--preserve-symlinks",
                                      str(suite.source / "model-endpoint-check.mjs")])
-        self.assertIs(calls[2][2], qualify.endpoint_result)
+        self.assertIs(calls[3][2], qualify.endpoint_result)
+
+    def test_cleanup_completion_requires_exactly_eighteen_tests(self):
+        def tap(count):
+            return f"# tests {count}\n# pass {count}\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n"
+        self.assertEqual(qualify.cleanup_result(tap(18))[0], 18)
+        for text in ("", tap(0), tap(6), tap(12), tap(17), tap(19), tap(18) + tap(18),
+                     tap(18).replace("# skipped 0", "# skipped 1")):
+            with self.subTest(text=text), self.assertRaises(RuntimeError):
+                qualify.cleanup_result(text)
+
+    def test_missing_cleanup_script_refuses_before_any_command(self):
+        from types import SimpleNamespace
+        for missing in ("model-response-cleanup-check.mjs", "model-cleanup-routes-check.mjs"):
+            with self.subTest(missing=missing), tempfile.TemporaryDirectory() as directory:
+                suite = qualify.Suite.__new__(qualify.Suite)
+                suite.args = SimpleNamespace(suite="model-stabilization")
+                suite.project = Path(directory).resolve()
+                suite.source = suite.project / "source"
+                suite.source.mkdir()
+                suite.node = "/synthetic/node"
+                suite.env = {}
+                for name in ("local-models", "coding-model", "model-picker-ui", "coding-model-guards",
+                             "model-stabilization", "agent-cancel", "agent-stream", "agent-usage",
+                             "model-response-cleanup", "model-cleanup-routes", "model-routing", "model-endpoint"):
+                    path = suite.source / (name + "-check.mjs")
+                    if path.name != missing:
+                        path.write_text("// synthetic fixture, never run\n")
+                suite.model_fixture = lambda: suite.source / "model-picker-ui-check.mjs"
+                with patch.object(suite, "case") as invoke, self.assertRaises(FileNotFoundError):
+                    suite.run()
+                invoke.assert_not_called()
+
+    def test_required_script_rejects_directory_and_symlink(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            path = root / "fixture.mjs"
+            path.write_text("// synthetic\n")
+            qualify.require_scripts([path])
+            link = root / "link.mjs"
+            link.symlink_to(path)
+            for invalid in (root, link):
+                with self.subTest(path=invalid), self.assertRaises(RuntimeError):
+                    qualify.require_scripts([invalid])
 
     def test_endpoint_completion_rejects_missing_duplicate_or_partial_marker(self):
         marker = "PASS 6 endpoint binding checks using actual engine composition and request handlers, synthetic inventory/inference only."
