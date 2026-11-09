@@ -1,0 +1,49 @@
+# Proposed model-free synthetic Docling experiment
+
+2026-11-09, base `82e757c`. **Not installed or run. Await independent review before installation.** LM Studio remains off; no model-server endpoints, accounts, credentials or user documents are involved.
+
+## Concrete package plan
+
+A binary-only official-PyPI dry-run for the existing Python 3.14.8 arm64 interpreter succeeded with:
+
+`docling-slim[convert-core,format-pdf-docling,format-docx,format-pptx,format-xlsx]==2.149.0`
+
+It selected **51 wheels totaling 70,944,225 bytes (67.66 MiB)**. `minimal-wheel-plan.json` contains each exact name, version, wheel URL, SHA-256 and registry-reported size. Every wheel hash is identical to one of the previously inspected 103-wheel standard environment's artifacts. `requirements-native.lock` pins those exact versions and hashes. `minimal-pip-report.json.gz` preserves the raw resolver output; `minimal-resolve-observation.json` and the raw log record the actual command/outcome. Package/wheel hashes remain registry declarations until staging verifies downloaded bytes. No sdists, builds, code imports or installs were used to resolve this set.
+
+This removes torch, torchvision, RapidOCR, ONNX Runtime, EasyOCR, ocrmac, transformers and model weights. Docling's [NativePdfPipeline](https://github.com/docling-project/docling/blob/v2.149.0/docling/pipeline/native_pdf_pipeline.py) explicitly extracts native PDF text cells and provenance boxes without layout, table or OCR models. It does not establish reading order, headings or tables. Office backends use [SimplePipeline](https://github.com/docling-project/docling/blob/v2.149.0/docling/pipeline/simple_pipeline.py). The [converter](https://github.com/docling-project/docling/blob/v2.149.0/docling/document_converter.py) imports multiple backend/pipeline modules, so the first actual runtime gate must verify that this minimal environment imports successfully. A missing optional dependency is a result, not authorization to add packages automatically.
+
+The private experiment does not distribute this environment. Previously identified native-library notices still apply; shrinking the environment is not blanket licence clearance. The exact hash match links every selected artifact to the existing notice evidence. The prior Shapely/GEOS and setuptools dependencies are absent here, but NumPy/SciPy runtime notices and rtree/native library terms still need preservation if anything later ships.
+
+## Installation and conversion stages, after review only
+
+1. Create one exclusively owned scratch directory and a separate venv using the exact existing Python3.14.8 executable. Do not modify Fetch's environment, global site packages, shell settings or application configuration. Use isolated pip, no caches, no inherited index configuration. Download only the 51 listed official wheel URLs, at most **80 MiB cumulative response bytes**, with a 120-second overall staging deadline. Verify each declared size/hash before installation. Reject unexpected redirects/sources, sdists, substitutions or extra dependencies.
+2. Install from the verified local wheelhouse with `--no-index --no-deps --require-hashes --only-binary=:all:` and the lock. No package installation until review clears this plan. Monitor total scratch footprint at **1 GiB**; stop before additional work if reached. This is a monitored budget, not a filesystem quota. An installation failure does not authorize global repair or model downloads.
+3. First run a bounded import smoke under a network-denied subprocess and isolated HOME/cache/tmp paths. Then configure **NativePdfPipeline**, disable all enrichment, external plugins and remote services, and supply explicit allowed formats PDF/DOCX/PPTX/XLSX. No default PDF pipeline, OCR or table model. Conversion accepts only known authored synthetic fixture paths from the job directory, never arbitrary arguments from documents or a model.
+4. Convert one fixture at a time: **at most 1 MiB per input and 5 PDF pages**, one job, two CPU threads, **60 seconds wall time**, **1 MiB combined stdout/stderr**, **2 GiB sampled process-group RSS**. `research/bounded_process.py` implements the process deadline/output/cancellation/RSS supervision. The RSS and deadline observations are sampled, not kernel-enforced memory/CPU limits. Document the measured result and stop on any guard failure.
+5. Retain source hashes, selected parser/options, status, exact extracted text/cells and locators, wall time, sampled peak RSS, package manifest and errors. Label empty/partial output explicitly. Compare against the separately authored native PDFKit baseline fixtures and exact expected tokens/cells. Do not label parser-order output as correct reading order or native text as OCR. Scanned/image-only input should expose the lack of OCR.
+6. On cancellation or a bound, terminate the isolated process group, reap the main child and discard its conversion result. Delete only generated job-owned temporary data after review; do not touch user stores or the app. No release/app integration follows automatically.
+
+## Network and file isolation
+
+`/usr/bin/sandbox-exec -p '(version 1)(allow default)(deny network*)' /usr/bin/true` succeeded as a local smoke. That proves the sandbox command is callable, **not** that a real converter ran offline or that networking was adversarially tested. The profile denies network but allows filesystem reads by default; it is not a private-file read sandbox. Restrict the future conversion script to authored fixture paths and use a private HOME. A stronger file-read allowlist can be separately qualified, but is not claimed here. No real input documents, saved user state or credentials may be passed to the process. Keep all staging network activity separate from conversion. Offline environment variables are extra safeguards, not the network boundary.
+
+## RapidOCR torch and dictionary provenance resolved further
+
+The earlier ONNX-only wheel notice was insufficient by itself. The actual [RapidAI/RapidOCR model-hosting repository README at immutable revision 7d078161](https://www.modelscope.cn/api/v1/models/RapidAI/RapidOCR/repo?Revision=7d0781614ca1a83d5ad9603f713acb2e74855d72&FilePath=README.md) explicitly declares **Apache License 2.0** and describes the repository as hosting RapidOCR's models. That repository-level declaration is affirmative permission evidence for its torch artifacts and dictionary, despite the narrower wheel notice. There is no separate LICENSE file at the inspected tag. Do not reinterpret that absence as an absent licence grant, nor interpret the declaration as proof of the maintainer's ownership or reproducible weight conversion.
+
+`rapidocr-provenance.json` records the three torch filenames, exact file revisions, sizes, registry/listing hashes, pinned URLs, README declaration and source observations:
+
+- Small detection: 10,248,727 bytes; SHA-256 `fbdc74c97ea7b770ab22cbdc1bba01a52bdf1975efcf3442057356d622b05d54`.
+- Small recognition: 21,326,017 bytes; SHA-256 `0107b2ad694ccc9b1db7cf9ed3ffbc93d1795d9e08d9cf823127243a87bce516`.
+- Mobile orientation/classification: 588,638 bytes; SHA-256 `bfe13860824b3365c0c7f7ccfcddc8ff11645c60051739ff18bc9913f60c98e1`.
+- Dictionary: 74,947 bytes; SHA-256 `b5f2bfe2bdd9448429e3e82b51c789775d9b42f2403d082b00662eb77e401c5d`.
+
+The first three hashes independently agree with the previously inspected RapidOCR registry; **weight bytes were not downloaded or verified**. The small dictionary text was fetched for provenance comparison, not installed or used for OCR. Its bytes are identical to the [upstream PaddleOCR dictionary at b03f4642](https://github.com/PaddlePaddle/PaddleOCR/blob/b03f46425e8ff4442b268ce449e3eef758146cd4/ppocr/utils/dict/ppocrv6_dict.txt). The [same upstream revision's LICENSE](https://github.com/PaddlePaddle/PaddleOCR/blob/b03f46425e8ff4442b268ce449e3eef758146cd4/LICENSE) is Apache-2.0. This resolves both the previously missing dictionary hash and its upstream licence/provenance linkage. The official Paddle recognition model metadata also declares Apache-2.0.
+
+The [pinned torch loader](https://github.com/RapidAI/RapidOCR/blob/bd941dae09da793e76c6ba15c7aaf40f8424232a/python/rapidocr/inference_engine/pytorch/networks/main.py) uses `torch.load(..., weights_only=True)` and raises rather than falling back when that option is unsupported. This is source evidence, not an executed safety test. Hash verification, upstream attribution, Apache text and applicable conversion/NOTICE material remain necessary before any later model distribution. A byte-for-byte upstream-to-torch conversion recipe was not established. None of these OCR assets is required or included in this model-free experiment.
+
+## Executed checks and limitations
+
+- 38 offline tests pass on Python3.15.2 and the exact Python3.14.8 interpreter. Four new tests verify the51-wheel/hash-lock plan and dictionary/licence evidence; eight new supervisor tests launch only self-authored Python snippets for success, failure, bounded output, timeout and cancellation. RSS-limit/error paths use explicitly injected measurements; no2GiB allocation was attempted.
+- An initial supervisor test exposed a macOS process-group teardown race returning EPERM after the process had exited. The supervisor now checks that the child/group has ended before treating that race as settled; the final suites pass. No live leftover test process was observed. Future real converter descendant/termination behavior still needs qualification.
+- The supervisor is development-only, accepts trusted argv, and does not implement network denial or fixture selection itself. The future runner must supply the sandbox wrapper and fixture allowlist. Real Docling import/conversion, wheel staging/installation, cold-cache network behavior, document accuracy and measured resource use remain **not executed**.

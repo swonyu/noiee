@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8_2/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+    "-m",
+    "pip",
+    "--isolated",
+    "--disable-pip-version-check",
+    "install",
+    "--dry-run",
+    "--ignore-installed",
+    "--only-binary=:all:",
+    "--no-cache-dir",
+    "--index-url",
+    "https://pypi.org/simple",
+    "--report",
+    "tooling/document_reading/runtime_plan/minimal-pip-report.json",
+    "docling-slim[convert-core,format-pdf-docling,format-docx,format-pptx,format-xlsx]==2.149.0"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 12.4,
+  "stop_reason": null,
+  "note": "Binary-only metadata dry-run, no install/import/build hooks; 180s deadline and monitored50MiB temporary-storage cap, not total network quota."
+}

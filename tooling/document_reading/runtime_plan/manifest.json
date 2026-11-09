@@ -1,0 +1,54 @@
+{
+  "files": [
+    {
+      "path": "research/bounded_process.py",
+      "bytes": 4006,
+      "sha256": "7e58c26e25943846e2a4e2a2fbc3f52adedef447f654575c51e5dffd1664df43"
+    },
+    {
+      "path": "runtime_plan/PLAN.md",
+      "bytes": 9839,
+      "sha256": "cb75b881085cb115e4f5d45efbc5ebc7b88d77691672c5b9bdcc65380489ad13"
+    },
+    {
+      "path": "runtime_plan/minimal-pip-report.json.gz",
+      "bytes": 204266,
+      "sha256": "9d5f88f1852b4bd547cee8a801a4552ffb4723d73f553e7e3e6ffe822e9e7683"
+    },
+    {
+      "path": "runtime_plan/minimal-resolve-observation.json",
+      "bytes": 765,
+      "sha256": "713a98bd900dd2a464d6ac4fa0de4bcb07f86f788edb51c18ddb198846a03140"
+    },
+    {
+      "path": "runtime_plan/minimal-resolve.log",
+      "bytes": 13346,
+      "sha256": "9b0183a90e8002ae3f308b59b103d0b7b91c4118b9aeda8bb8b817b25d641c49"
+    },
+    {
+      "path": "runtime_plan/minimal-wheel-plan.json",
+      "bytes": 26571,
+      "sha256": "b8293a29685b5cbd4d728cc2f6f59ea145c48e0ec6e6de5c00b633de32f47a65"
+    },
+    {
+      "path": "runtime_plan/rapidocr-provenance.json",
+      "bytes": 9105,
+      "sha256": "b9e2604faa728279478fdf44a78e6fb576ae9365aaca478fccae7cbab2234a73"
+    },
+    {
+      "path": "runtime_plan/requirements-native.lock",
+      "bytes": 5095,
+      "sha256": "125d32e344e05bf190fb9d9a2126228eafc209f374cba83636896a7de1526d9c"
+    },
+    {
+      "path": "test_bounded_process.py",
+      "bytes": 2759,
+      "sha256": "016914b621ebd8126e9f5d5fa5d1731304e7059eb70e0c1b0a14c039fd0e31bf"
+    },
+    {
+      "path": "test_runtime_plan.py",
+      "bytes": 3514,
+      "sha256": "06865746deb049fe731d2454a3fc3e292db5f4b99e8548c2ad0b9a154709ebb1"
+    }
+  ]
+}

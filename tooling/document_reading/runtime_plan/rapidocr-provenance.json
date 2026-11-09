@@ -1,0 +1,145 @@
+{
+  "observed_date": "2026-11-09",
+  "model_repository": "RapidAI/RapidOCR",
+  "registry_version": "RapidOCR3.10.0",
+  "registry_git_revision": "bd941dae09da793e76c6ba15c7aaf40f8424232a",
+  "repository_license_declaration": "Apache License 2.0",
+  "license_evidence": {
+    "url": "https://www.modelscope.cn/api/v1/models/RapidAI/RapidOCR/repo?Revision=7d0781614ca1a83d5ad9603f713acb2e74855d72&FilePath=README.md",
+    "sha256": "3dc91bb3cb667df783178917d69b38bfabb8c935596f34243a1c9f0d36916b6e",
+    "text": "---\nframeworks:\n- Pytorch\nlicense: Apache License 2.0\ntasks:\n- ocr-detection\n\n#model-type:\n##如 gpt、phi、llama、chatglm、baichuan 等\n#- gpt\n\n#domain:\n##如 nlp、cv、audio、multi-modal\n#- nlp\n\n#language:\n##语言代码列表 https://help.aliyun.com/document_detail/215387.html?spm=a2c4g.11186623.0.0.9f8d7467kni6Aa\n#- cn\n\n#metrics:\n##如 CIDEr、Blue、ROUGE 等\n#- CIDEr\n\n#tags:\n##各种自定义，包括 pretrained、fine-tuned、instruction-tuned、RL-tuned 等训练方法和其他\n#- pretrained\n\n#tools:\n##如 vllm、fastchat、llamacpp、AdaSeq 等\n#- vllm\n- ocr-recognition\nlanguage:\n  - zh\ntags:\n  - ocr\n  - dbnet\n  - paddleocr\n  - rapidocr\n---\n\n### RapidOCR模型托管仓库\n\n本仓库用来托管[RapidOCR](https://github.com/RapidAI/RapidOCR)项目中个各个模型文件。\n\n大家可以根据自己需要单独下载使用。\n\n\n#### SDK下载\n```bash\n#安装ModelScope\npip install modelscope\n```\n```python\n#SDK模型下载\nfrom modelscope import snapshot_download\nmodel_dir = snapshot_download('RapidAI/RapidOCR')\n```\n#### Git下载\n```\n#Git模型下载\ngit clone https://www.modelscope.cn/RapidAI/RapidOCR.git\n```\n"
+  },
+  "artifacts": [
+    {
+      "role": "detection",
+      "path": "torch/PP-OCRv6/det/PP-OCRv6_det_small.pth",
+      "bytes": 10248727,
+      "declared_sha256": "fbdc74c97ea7b770ab22cbdc1bba01a52bdf1975efcf3442057356d622b05d54",
+      "file_last_changed_revision": "15ae007f1949403a72ec0f13eee3ecfefddb6412",
+      "source_listing_url": "https://www.modelscope.cn/api/v1/models/RapidAI/RapidOCR/repo/files?Revision=v3.10.0&Root=torch%2FPP-OCRv6%2Fdet",
+      "listing_response_sha256": "2d72b9fd0592229a1b07d6da2667e77fb7b93c4e40d5362c543639b7efb7d25d",
+      "pinned_repository_revision": "7d0781614ca1a83d5ad9603f713acb2e74855d72",
+      "pinned_download_url": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/7d0781614ca1a83d5ad9603f713acb2e74855d72/torch/PP-OCRv6/det/PP-OCRv6_det_small.pth",
+      "downloaded_for_this_research": false,
+      "byte_hash_verified": false
+    },
+    {
+      "role": "recognition",
+      "path": "torch/PP-OCRv6/rec/PP-OCRv6_rec_small.pth",
+      "bytes": 21326017,
+      "declared_sha256": "0107b2ad694ccc9b1db7cf9ed3ffbc93d1795d9e08d9cf823127243a87bce516",
+      "file_last_changed_revision": "17c1d38c4aaeda34014aac1ce06d05e2f229b7e4",
+      "source_listing_url": "https://www.modelscope.cn/api/v1/models/RapidAI/RapidOCR/repo/files?Revision=v3.10.0&Root=torch%2FPP-OCRv6%2Frec",
+      "listing_response_sha256": "8d56ad9b769a61a5494a4bf04a500aa3f91bd4a4892a924e45363b0f54a9513c",
+      "pinned_repository_revision": "7d0781614ca1a83d5ad9603f713acb2e74855d72",
+      "pinned_download_url": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/7d0781614ca1a83d5ad9603f713acb2e74855d72/torch/PP-OCRv6/rec/PP-OCRv6_rec_small.pth",
+      "downloaded_for_this_research": false,
+      "byte_hash_verified": false
+    },
+    {
+      "role": "classification",
+      "path": "torch/PP-OCRv4/cls/ch_ppocr_mobile_v2.0_cls_mobile.pth",
+      "bytes": 588638,
+      "declared_sha256": "bfe13860824b3365c0c7f7ccfcddc8ff11645c60051739ff18bc9913f60c98e1",
+      "file_last_changed_revision": "7d0781614ca1a83d5ad9603f713acb2e74855d72",
+      "source_listing_url": "https://www.modelscope.cn/api/v1/models/RapidAI/RapidOCR/repo/files?Revision=v3.10.0&Root=torch%2FPP-OCRv4%2Fcls",
+      "listing_response_sha256": "4f56c04375d59a7eca1920516302501badecd871cd5af3f7ff8deb4040dfbeb3",
+      "pinned_repository_revision": "7d0781614ca1a83d5ad9603f713acb2e74855d72",
+      "pinned_download_url": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/7d0781614ca1a83d5ad9603f713acb2e74855d72/torch/PP-OCRv4/cls/ch_ppocr_mobile_v2.0_cls_mobile.pth",
+      "downloaded_for_this_research": false,
+      "byte_hash_verified": false
+    },
+    {
+      "role": "dictionary",
+      "path": "paddle/PP-OCRv6/rec/PP-OCRv6_rec_small/ppocrv6_dict.txt",
+      "bytes": 74947,
+      "declared_sha256": "b5f2bfe2bdd9448429e3e82b51c789775d9b42f2403d082b00662eb77e401c5d",
+      "file_last_changed_revision": "647b3be2dc5cf443af607d68e33ad739a740c34c",
+      "source_listing_url": "https://www.modelscope.cn/api/v1/models/RapidAI/RapidOCR/repo/files?Revision=v3.10.0&Root=paddle%2FPP-OCRv6%2Frec%2FPP-OCRv6_rec_small",
+      "listing_response_sha256": "1083b79ac912b895f7194749d4c176a07438ad98e037797657bb0eb6cb0f440a",
+      "pinned_repository_revision": "7d0781614ca1a83d5ad9603f713acb2e74855d72",
+      "pinned_download_url": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/7d0781614ca1a83d5ad9603f713acb2e74855d72/paddle/PP-OCRv6/rec/PP-OCRv6_rec_small/ppocrv6_dict.txt",
+      "downloaded_for_this_research": true,
+      "byte_hash_verified": true
+    }
+  ],
+  "dictionary_upstream": {
+    "commit": "b03f46425e8ff4442b268ce449e3eef758146cd4",
+    "sources": [
+      {
+        "key": "paddle_pinned_dictionary",
+        "url": "https://raw.githubusercontent.com/PaddlePaddle/PaddleOCR/b03f46425e8ff4442b268ce449e3eef758146cd4/ppocr/utils/dict/ppocrv6_dict.txt",
+        "bytes": 74947,
+        "sha256": "b5f2bfe2bdd9448429e3e82b51c789775d9b42f2403d082b00662eb77e401c5d"
+      },
+      {
+        "key": "paddle_pinned_license",
+        "url": "https://raw.githubusercontent.com/PaddlePaddle/PaddleOCR/b03f46425e8ff4442b268ce449e3eef758146cd4/LICENSE",
+        "bytes": 11376,
+        "sha256": "3840c5c0c61c294264d2dd77b8777be6ddd90121ef4e0e64abcd22edea581d6e"
+      }
+    ]
+  },
+  "dictionary_byte_identity_verified": true,
+  "source_observations": [
+    {
+      "key": "pinned_card",
+      "url": "https://www.modelscope.cn/api/v1/models/RapidAI/RapidOCR/repo?Revision=7d0781614ca1a83d5ad9603f713acb2e74855d72&FilePath=README.md",
+      "bytes": 1140,
+      "sha256": "3dc91bb3cb667df783178917d69b38bfabb8c935596f34243a1c9f0d36916b6e"
+    },
+    {
+      "key": "pinned_dictionary",
+      "url": "https://www.modelscope.cn/api/v1/models/RapidAI/RapidOCR/repo?Revision=7d0781614ca1a83d5ad9603f713acb2e74855d72&FilePath=paddle%2FPP-OCRv6%2Frec%2FPP-OCRv6_rec_small%2Fppocrv6_dict.txt",
+      "bytes": 74947,
+      "sha256": "b5f2bfe2bdd9448429e3e82b51c789775d9b42f2403d082b00662eb77e401c5d"
+    },
+    {
+      "key": "paddle_dictionary",
+      "url": "https://raw.githubusercontent.com/PaddlePaddle/PaddleOCR/main/ppocr/utils/dict/ppocrv6_dict.txt",
+      "bytes": 74947,
+      "sha256": "b5f2bfe2bdd9448429e3e82b51c789775d9b42f2403d082b00662eb77e401c5d"
+    },
+    {
+      "key": "paddle_license",
+      "url": "https://raw.githubusercontent.com/PaddlePaddle/PaddleOCR/main/LICENSE",
+      "bytes": 11376,
+      "sha256": "3840c5c0c61c294264d2dd77b8777be6ddd90121ef4e0e64abcd22edea581d6e"
+    },
+    {
+      "key": "paddle_model",
+      "url": "https://huggingface.co/api/models/PaddlePaddle/PP-OCRv6_small_rec",
+      "bytes": 955,
+      "sha256": "a1fe4f203fbe33f9ad41c975c987a967a3a48fb5a7447f99e5f45398d6c87fc0"
+    },
+    {
+      "key": "rapid_torch_loader",
+      "url": "https://raw.githubusercontent.com/RapidAI/RapidOCR/bd941dae09da793e76c6ba15c7aaf40f8424232a/python/rapidocr/inference_engine/pytorch/main.py",
+      "bytes": 1149,
+      "sha256": "0e1763220d8e4d7c0d218da4d35eca00a43eda8793ef6e86d410768b3989be7c"
+    },
+    {
+      "key": "picture_classifier",
+      "url": "https://raw.githubusercontent.com/docling-project/docling/v2.149.0/docling/models/stages/picture_classifier/document_picture_classifier.py",
+      "bytes": 7848,
+      "sha256": "15cd845ee5f6cd3c68371a07da8b50017c2b46791c98434e297505818fe077c2"
+    },
+    {
+      "key": "paddle_pinned_dictionary",
+      "url": "https://raw.githubusercontent.com/PaddlePaddle/PaddleOCR/b03f46425e8ff4442b268ce449e3eef758146cd4/ppocr/utils/dict/ppocrv6_dict.txt",
+      "bytes": 74947,
+      "sha256": "b5f2bfe2bdd9448429e3e82b51c789775d9b42f2403d082b00662eb77e401c5d"
+    },
+    {
+      "key": "paddle_pinned_license",
+      "url": "https://raw.githubusercontent.com/PaddlePaddle/PaddleOCR/b03f46425e8ff4442b268ce449e3eef758146cd4/LICENSE",
+      "bytes": 11376,
+      "sha256": "3840c5c0c61c294264d2dd77b8777be6ddd90121ef4e0e64abcd22edea581d6e"
+    }
+  ],
+  "qualification_limits": [
+    "Weight files were not downloaded or executed; their hashes are declarations from independent registry/file-listing sources.",
+    "Repository Apache declaration is permission evidence, not proof of a reproducible conversion from upstream weights.",
+    "Preserve PaddleOCR/Baidu and RapidOCR attribution, Apache text and applicable modification/NOTICE information when distributing."
+  ]
+}
