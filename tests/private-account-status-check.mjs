@@ -13,7 +13,7 @@ assert.deepEqual(tool.parameters.properties.action.enum,['status','github_reposi
 assert.deepEqual(Object.keys(tool.parameters.properties),['action','repository','page','query','pageToken','id']);
 assert.equal(tool.parameters.additionalProperties,false);
 assert.match(tool.description,/Drive is unavailable/);
-assert.match(native,/if name=="private_accounts" \{try await beforeEffect\?\(\);try require\(expected\);let result=try await performPrivateAccounts\(arguments\);try require\(expected\);return result\}/);
+assert.match(native,/if name=="private_accounts" \{try await beforeEffect\?\(\);try require\(expected\);let result=try await performPrivateAccounts\(arguments,expected:expected\);try require\(expected\);return result\}/);
 assert.match(app,/@objc private func showPrivateAccounts\(\) \{tools\.showPrivateAccounts\(\)\}/);
 assert.match(app,/appMenu\.addItem\(withTitle:"Private Accounts…",action:#selector\(showPrivateAccounts\)/);
 assert.match(native,/privateAccountsUI\.cancel\(\)/);
@@ -30,7 +30,9 @@ assert.match(gmailUI,/This grant does not authorize any cloud model\/provider or
 assert.match(gmailUI,/Revoke this Google project's access\?/);
 assert.match(gmailUI,/all its OAuth clients/);
 assert.match(gmail,/destination=="local-agent-conversation-v1"/);
-assert.match(native,/providers\[0\]=try await gmailAccount\.perform\(input\)/);
+assert.match(native,/PrivateAccountsDispatch\.collect\(/);
+assert.match(native,/check:\{try self\.require\(expected\)\}/);
+assert.match(native,/try await self\.gmailAccount\.perform\(input\)/);
 assert.match(ui,/gmailUI\.cancel\(\)/);
 assert.doesNotMatch(native,/case "(?:gmailConnect|gmailRevoke|gmailConfigure)"/);
 console.log('PASS: Gmail/GitHub read-only schema, native-only account controls, local destination, Stop wiring and no Full Access consent bypass. Static integration test only.');

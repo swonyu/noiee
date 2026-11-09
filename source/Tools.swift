@@ -969,11 +969,16 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
         guard !recoveryStartup else {return}
         privateAccountsUI.show()
     }
-    private func performPrivateAccounts(_ input:[String:Any])async throws->[String:Any] {
+    private func performPrivateAccounts(_ input:[String:Any],expected:UUID)async throws->[String:Any] {
+        try require(expected)
         if input["action"] as? String=="status" {
-            var status=try await privateAccounts.perform(input)
+            var status=try PrivateAccountsAvailability.status(input)
+            let values=try await PrivateAccountsDispatch.collect([
+                {let value=try await self.privateAccounts.perform(input);return (value["providers"] as! [[String:Any]])[2]},
+                {try await self.gmailAccount.perform(input)}
+            ],check:{try self.require(expected)})
             var providers=status["providers"] as! [[String:Any]]
-            providers[0]=try await gmailAccount.perform(input);status["providers"]=providers
+            providers[2]=values[0];providers[0]=values[1];status["providers"]=providers
             status["message"]="Gmail and GitHub require separate native grants for local Agent reads and saved conversation. Drive is unavailable. Full Access never grants account access."
             return status
         }
@@ -1383,7 +1388,7 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
         if name=="project_skills" {return try await performProjectSkills(arguments,expected:expected,beforeEffect:beforeEffect,agentClaim:agentClaim)}
         if name=="external_tool_artifact" {return try await performExternalArtifact(arguments,expected:expected,beforeEffect:beforeEffect,agentClaim:agentClaim)}
         if name=="fetch_plugin" {return try await performFetchPlugin(arguments,expected:expected,beforeEffect:beforeEffect,agentClaim:agentClaim)}
-        if name=="private_accounts" {try await beforeEffect?();try require(expected);let result=try await performPrivateAccounts(arguments);try require(expected);return result}
+        if name=="private_accounts" {try await beforeEffect?();try require(expected);let result=try await performPrivateAccounts(arguments,expected:expected);try require(expected);return result}
         if name=="call_contact" {guard Set(arguments.keys)==["name"],let contact=arguments["name"] as? String else{throw ComputerError.message("A contact name is required.")};return try await call(contact,expected:expected,beforeEffect:beforeEffect)}
         if name=="connect_tool_server" {guard Set(arguments.keys)==["server"],let id=arguments["server"] as? String else{throw ComputerError.message("Invalid server request.")};return try await connect(id,expected:expected,beforeEffect:beforeEffect,agentClaim:agentClaim)}
         if name=="list_tools" {guard arguments.isEmpty else{throw ComputerError.message("Invalid catalog request.")};try await beforeEffect?();try require(expected);return try await dispatch("catalog",[:])}
