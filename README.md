@@ -46,6 +46,14 @@ Local model identity is exact. Existing saved selections remain pinned. Fresh pr
 
 Tasks derives its execution context and automatic-compaction threshold from the actual loaded model window. A changed window stops admission and relay dispatch until the app restarts. Retained app-owned configuration bytes and model identities are preserved. Concise and Detailed styles change response instructions while retaining the existing uncapped generation policy; context capacity and Stop still apply.
 
+## Evaluation and document experiments
+
+- [Agent evaluation](tooling/model_lab/bench/AGENT_EVALUATION.md): a separately versioned 15-case development suite for tool selection, arguments, grounding, memory and cancellation reasoning, alongside source-bound offline integration checks. Model scores require an explicitly executed model run; passing scripted tests is not a model-quality score.
+- [Local retrieval measurements](tooling/retrieval_lab/README.md): reproducible lexical-overlap and SQLite FTS5 BM25 comparisons on authored fixtures, including known synonym and no-answer failures, exact quotation provenance and measured limits. No embedding model or sqlite-vec dependency is added.
+- [Document-reading feasibility](tooling/document_reading/README.md) and [exact dependency/licence follow-up](tooling/document_reading/FOLLOWUP.md): optional Docling assessment, offline diagnostics and retained public-source evidence. Actual conversion, OCR quality and resource/cancellation behavior still require separate qualification.
+
+These are development tools and research artifacts. They do not add a production document importer, persistent index or automatic account/model access to the installed app.
+
 ## Development and verification
 
 After independently reviewed feature and tooling integration, use a clean committed checkout for qualification. These commands do not install the app:
