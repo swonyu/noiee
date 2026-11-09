@@ -96,6 +96,11 @@ export async function readCompletion(response,{signal,onReasoning=()=>{},onConte
     const message={role:'assistant',content:content||null,...(thought?{reasoning_content:thought}:{}),...(ordered.length?{tool_calls:ordered.map(([,call])=>call)}:{})};
     validateMessage(message,finish_reason);signal?.throwIfAborted();return {choices:[{message,finish_reason}],...(usage?{usage}:{})};
   }finally{
-    signal?.removeEventListener('abort',abort);if(!ended)await (cancelled??reader.cancel().catch(()=>{}));reader.releaseLock();
+    signal?.removeEventListener('abort',abort);
+    // Cancellation requests close the reader synchronously, but an underlying
+    // source's cleanup promise can remain pending. Never let cleanup hold Stop
+    // or a parsing failure hostage; no successful tool result escapes this path.
+    if(!ended)void (cancelled??reader.cancel().catch(()=>{}));
+    reader.releaseLock();
   }
 }
