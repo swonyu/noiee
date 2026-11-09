@@ -15,6 +15,7 @@ import Foundation
     }
 }
 @MainActor final class GitHubFixtureHTTP:GitHubAccountHTTP {
+    var initialRefresh=GitHubFixtureHTTP.refresh,readEcho:String?
     var requests:[URLRequest]=[],polls=0,refreshes=0,userID=10,repoID=21,repoName="owner/one",appID=7,selection="selected",scope="",tokenType="bearer",suspended=false
     var userLogin="fixtureuser",ownerLogin="owner",ownerID=12,installationID=11,appSlug="fixture-app"
     var repositoryRows:[GitHubAccountRepository]?,partialRepositories=false,repoFailurePage:Int?,afterRead:(()->Void)?
@@ -35,7 +36,7 @@ import Foundation
         case "/login/oauth/access_token":
             let body=String(data:request.httpBody!,encoding:.utf8)!
             if body.contains("grant_type=refresh_token") {refreshes+=1;object=pair(newSecret,newRefresh)}
-            else {polls+=1;if !pollErrors.isEmpty {object=["error":pollErrors.removeFirst(),"error_description":Self.access]} else {object=pair(Self.access,Self.refresh)}}
+            else {polls+=1;if !pollErrors.isEmpty {object=["error":pollErrors.removeFirst(),"error_description":Self.access]} else {object=pair(Self.access,initialRefresh)}}
         case "/user":object=["id":userID,"login":userLogin,"secret":Self.access]
         case "/user/installations":object=["total_count":partial ? 2:1,"installations":[["id":installationID,"app_id":appID,"app_slug":appSlug,"repository_selection":selection,"permissions":permissions,"suspended_at":suspended ? "2026":NSNull(),"account":["id":ownerID,"login":ownerLogin]]]]
         case let path where path=="/user/installations/\(installationID)/repositories":
@@ -47,8 +48,8 @@ import Foundation
         case let path where path.hasPrefix("/repos/"):
             let issues=path.hasSuffix("/issues"),name=String(path.dropFirst(7).dropLast(path.hasSuffix("/issues") ? 7:0))
             guard let repository=(repositoryRows ?? [.init(id:repoID,name:repoName)]).first(where:{$0.name==name}) else {return .init(status:404,data:Data())}
-            if issues {object=[["number":1,"state":"open","title":"Issue","body":"Untrusted text "+Self.access]]}
-            else {object=["id":repository.id,"full_name":repository.name,"description":"Repository "+Self.access]}
+            if issues {object=[["number":1,"state":"open","title":"Issue","body":readEcho ?? ("Untrusted text "+Self.access)]]}
+            else {object=["id":repository.id,"full_name":repository.name,"description":readEcho ?? ("Repository "+Self.access)]}
             afterRead?()
         default:throw GitHubAccountError.invalid
         }
@@ -268,6 +269,15 @@ import Foundation
         let pruneRequests=pruneHTTP.requests.count
         await rejects("failed removal cannot revive prior scope",.unavailable) {_ = try await pruneRestart.perform(["action":"github_repository","repository":"owner/one"])}
         expect(pruneHTTP.requests.count==pruneRequests,"failed removal never restores revoked ID on restart")
+        for secret in ["ghr_fixture/slash/refresh","ghr_fixture_\"quoted\"_refresh","ghr_fixture_\\backslash_refresh"] {
+            let (escaped,escapedStore,escapedHTTP,_)=fixture();escapedHTTP.initialRefresh=secret;try await connect(escaped);escapedHTTP.readEcho=secret
+            await rejects("escaped refresh in repository",.invalid) {_ = try await escaped.perform(["action":"github_repository","repository":"owner/one"])}
+            await rejects("escaped refresh in issue",.invalid) {_ = try await escaped.perform(["action":"github_issues","repository":"owner/one","page":1])}
+            let tokens=escapedStore.record!.tokens!
+            expect(GitHubAccountJSON.containsCredential(["nested":[["body":secret]]],tokens:tokens),"recursive refresh string detection")
+            expect(GitHubAccountJSON.containsCredential([secret:"value"],tokens:tokens),"recursive secret-key detection")
+            expect(GitHubAccountJSON.containsCredential(["nested":[GitHubFixtureHTTP.access]],tokens:tokens),"recursive access detection")
+        }
         print("PASS: \(count) offline GitHub device/identity/consent/refresh/read/disconnect assertions. No browser, network, Keychain, app UI or real account used.")
     }
 }

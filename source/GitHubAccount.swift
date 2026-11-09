@@ -122,6 +122,12 @@ struct GitHubAccountRecord:Codable,CustomStringConvertible,CustomDebugStringConv
 }
 
 enum GitHubAccountJSON {
+    static func containsCredential(_ value:Any,tokens:GitHubAccountTokens)->Bool {
+        if let text=value as? String {return text.contains(tokens.access.value) || text.contains(tokens.refresh.value)}
+        if let array=value as? [Any] {return array.contains {containsCredential($0,tokens:tokens)}}
+        if let object=value as? [String:Any] {return object.contains {containsCredential($0.key,tokens:tokens) || containsCredential($0.value,tokens:tokens)}}
+        return false
+    }
     static func login(_ s:String)->Bool {!s.isEmpty && s.utf8.count<=39 && s.utf8.allSatisfy {($0>=65 && $0<=90)||($0>=97 && $0<=122)||($0>=48 && $0<=57)||$0==45}}
     static func object(_ bytes:Data,limit:Int=262144)throws->[String:Any] {
         guard bytes.count<=limit,let value=try? JSONSerialization.jsonObject(with:bytes),let object=value as? [String:Any] else {throw GitHubAccountError.invalid};return object
@@ -436,8 +442,7 @@ private final class GitHubAccountRedirect:NSObject,URLSessionTaskDelegate,@unche
                     _ = try self.reconcile(saved,selection:verified,expected)
                     guard responseIdentityMatches,verified.repositories.contains(where:{$0.id==repository.id && $0.name==name}) else {throw GitHubAccountError.selectionChanged}
                     try self.check(expected)
-                    let text=String(data:try JSONSerialization.data(withJSONObject:result),encoding:.utf8)!
-                    guard !text.contains(tokens.refresh.value) else {throw GitHubAccountError.invalid}
+                    guard !GitHubAccountJSON.containsCredential(result,tokens:tokens) else {throw GitHubAccountError.invalid}
                     return result
                 }
                 return self.status(state:"connected",selection:selection)
