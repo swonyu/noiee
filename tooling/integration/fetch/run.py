@@ -19,9 +19,11 @@ old_checks="/Users/saleh/Documents/Noiee/checks/fetch/current-runtime"
 old_source="/Users/saleh/Documents/Noiee/source"
 for item in manifest["files"]:
  template=HERE/"templates"/item["template"];assert sha(template)==item["sha256"]
+ if "predecessorTemplate" in item:
+  assert sha(HERE/"templates"/item["predecessorTemplate"])==item["predecessorSHA256"]
  text=template.read_text().replace(old_root,str(CACHE)).replace(old_checks,str(CHECKS)).replace(old_source,str(SOURCE))
- target=CHECKS/item["template"].removesuffix(".in");target.write_text(text);target.chmod(0o600)
- adapted.append({"template":ref(template),"generatedPath":str(target),"routingOnly":True})
+ target=CHECKS/item.get("generatedName",item["template"].removesuffix(".in"));target.write_text(text);target.chmod(0o600)
+ adapted.append({"template":ref(template),"generatedPath":str(target),"routingOnly":"adaptation" not in item,**({"adaptation":item["adaptation"],"predecessorTemplate":ref(HERE/"templates"/item["predecessorTemplate"])} if "adaptation" in item else {})})
 env={key:os.environ[key] for key in ["HOME","USER","LOGNAME"] if key in os.environ}
 env.update(PATH="/opt/homebrew/bin:/usr/bin:/bin",LANG="C",TMPDIR=str(CACHE/"tmp")+"/",PYTHONDONTWRITEBYTECODE="1")
 rows=[]
@@ -43,7 +45,7 @@ try:
  files=["FetchPlugin.swift","fetch-plugin-runtime.py","fetch-runtime-v20261024-manifest.json","managed-fetch.mjs","mcp.mjs","mcp-recovery.mjs","mcp-transport.mjs","agent.mjs","server.mjs","chat-runs.mjs","tools.js","index.html"]
  details={name:{"absolutePath":str(SOURCE/name),"sha256":sha(SOURCE/name),"bytes":(SOURCE/name).stat().st_size} for name in files}
  save(CHECKS/"SOURCE-BEFORE.json",details)
- save(CHECKS/"ADAPTATION.json",{"root":str(CACHE),"checks":str(CHECKS),"source":str(SOURCE),"crossRoot":str(CROSS),"sequence":result["sequence"][:4],"sourcePins":details,"fixturePins":{p.name:ref(p) for p in CHECKS.iterdir() if p.is_file()},"changes":"Only exact source/check/output namespace routing and freshly compiled fixture pins; all behavioral assertions and runtime/environment/socket guards retained."})
+ save(CHECKS/"ADAPTATION.json",{"root":str(CACHE),"checks":str(CHECKS),"source":str(SOURCE),"crossRoot":str(CROSS),"sequence":result["sequence"][:4],"sourcePins":details,"fixturePins":{p.name:ref(p) for p in CHECKS.iterdir() if p.is_file()},"changes":"Exact source/check/output namespace routing, freshly compiled fixture pins, and the provenance-recorded Build177 grouped-action UI fixture successor; all behavioral assertions and runtime/environment/socket guards retained."})
  save(CROSS/"SOURCE-BEFORE.json",{"files":details,"dependencyRealpath":str((SOURCE/"node_modules").resolve())})
  shutil.copyfile(CHECKS/"fake-endpoints.mjs",CROSS/"fake-endpoints.mjs")
  run("sequential-fetch-qualification",[str(PYTHON),"-I","-B",str(CHECKS/"run-qualification.py")],600)

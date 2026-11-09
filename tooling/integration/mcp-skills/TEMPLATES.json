@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "assertionsChanged": false,
+  "assertionsChanged": true,
   "files": [
     {
       "template": "fake-mcp.mjs.in",
@@ -45,10 +45,17 @@
       "originSHA256": "6e77e80686e94d7470dd6062191896e89d14a01aa46a3ceaf603c9a8f47ad2d1"
     },
     {
-      "template": "project-skills-ui-check.mjs.in",
-      "sha256": "7c7803598a69cf6f9422ab669e73aadaad0229f4607923dcbfd1b32bc978cbdc",
+      "template": "project-skills-ui-grouped-check.mjs.in",
+      "sha256": "c78dfafec24c84d2941797fc4b007a2ee530003a103d6baf9c7a37cdc01704ee",
       "origin": "/Users/saleh/Documents/Noiee/checks/tools/project-skills-ui-check.mjs",
-      "originSHA256": "7c7803598a69cf6f9422ab669e73aadaad0229f4607923dcbfd1b32bc978cbdc"
+      "originSHA256": "7c7803598a69cf6f9422ab669e73aadaad0229f4607923dcbfd1b32bc978cbdc",
+      "generatedName": "project-skills-ui-check.mjs",
+      "predecessorTemplate": "project-skills-ui-check.mjs.in",
+      "predecessorSHA256": "7c7803598a69cf6f9422ab669e73aadaad0229f4607923dcbfd1b32bc978cbdc",
+      "adaptation": "DOM mock supports setAttribute; Install/Read lookup validates the accessible action group. All four behavioral tests and request/preservation assertions retained."
     }
-  ]
+  ],
+  "adaptationPolicy": "Historical templates remain unchanged. The Build177 UI successor retains behavioral assertions and adapts the DOM mock and action lookup to accessible grouped controls.",
+  "existingBehavioralAssertionsPreserved": true,
+  "additionalAssertions": "Successor UI fixture additionally checks the labeled action group, exact two controls, and independent handlers."
 }

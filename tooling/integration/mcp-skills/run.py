@@ -15,9 +15,11 @@ def pins():return {p.name:sha(p) for p in sorted(SOURCE.iterdir()) if p.is_file(
 before=pins();manifest=json.loads((HERE/"TEMPLATES.json").read_text());adapted=[]
 for item in manifest["files"]:
  template=HERE/"templates"/item["template"];assert sha(template)==item["sha256"]
+ if "predecessorTemplate" in item:
+  assert sha(HERE/"templates"/item["predecessorTemplate"])==item["predecessorSHA256"]
  text=template.read_text().replace("../../source/",str(SOURCE)+"/")
- target=CHECKS/item["template"].removesuffix(".in");target.write_text(text);target.chmod(0o600)
- adapted.append({"template":ref(template),"generated":ref(target),"routingOnly":True})
+ target=CHECKS/item.get("generatedName",item["template"].removesuffix(".in"));target.write_text(text);target.chmod(0o600)
+ adapted.append({"template":ref(template),"generated":ref(target),"routingOnly":"adaptation" not in item,**({"adaptation":item["adaptation"],"predecessorTemplate":ref(HERE/"templates"/item["predecessorTemplate"])} if "adaptation" in item else {})})
 env={key:os.environ[key] for key in ["HOME","USER","LOGNAME"] if key in os.environ}
 env.update(PATH="/opt/homebrew/bin:/usr/bin:/bin",LANG="C",TMPDIR=str(CACHE/"tmp")+"/",PYTHONDONTWRITEBYTECODE="1",NOIEE_TOOLS_FIXTURE_ROOT=str(CACHE),SALEH_SKILLS_FIXTURE_ROOT=str(CACHE/"skills"))
 rows=[]

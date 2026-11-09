@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "assertionsChanged": false,
+  "assertionsChanged": true,
   "files": [
     {
       "template": "FetchPluginCheck.swift.in",
@@ -51,10 +51,14 @@
       "originSHA256": "c2fcea106334ca88891b45d83f51dc9c1b694f192774dccbfb80a98d88692842"
     },
     {
-      "template": "fetch-ui-check.mjs.in",
-      "sha256": "054f498bac6bc60b9ec5bd6b58d766e3e26813023ad8bb83c6eb0506cb176af9",
+      "template": "fetch-ui-grouped-check.mjs.in",
+      "sha256": "925b6700d04810dd6e7b46e1baaf723c1df01ea6cbb6a7c25b4520c6b2ce5297",
       "origin": "/Users/saleh/Documents/Noiee/checks/fetch/current-runtime/fetch-ui-check.mjs",
-      "originSHA256": "054f498bac6bc60b9ec5bd6b58d766e3e26813023ad8bb83c6eb0506cb176af9"
+      "originSHA256": "054f498bac6bc60b9ec5bd6b58d766e3e26813023ad8bb83c6eb0506cb176af9",
+      "generatedName": "fetch-ui-check.mjs",
+      "predecessorTemplate": "fetch-ui-check.mjs.in",
+      "predecessorSHA256": "054f498bac6bc60b9ec5bd6b58d766e3e26813023ad8bb83c6eb0506cb176af9",
+      "adaptation": "DOM mock supports setAttribute; action lookup validates the accessible Fetch action group. All six state/dispatch/Stop checks retained."
     },
     {
       "template": "model-http171-stdio-guard.mjs.in",
@@ -74,5 +78,8 @@
       "origin": "/Users/saleh/Documents/Noiee/checks/fetch/current-runtime/test-fetch-plugin.py",
       "originSHA256": "f2cc29fb477b6159aec135828bac99c91e423f0cb5c9c789a303f1917f17f865"
     }
-  ]
+  ],
+  "adaptationPolicy": "Historical templates remain unchanged. The Build177 UI successor retains behavioral assertions and adapts the DOM mock and action lookup to accessible grouped controls.",
+  "existingBehavioralAssertionsPreserved": true,
+  "additionalAssertions": "Successor UI fixture additionally checks the labeled action group, exact two controls, and independent handlers."
 }

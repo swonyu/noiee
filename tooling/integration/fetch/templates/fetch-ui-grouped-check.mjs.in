@@ -1,0 +1,51 @@
+import assert from 'node:assert/strict';
+import {readFile,writeFile} from 'node:fs/promises';
+import vm from 'node:vm';
+import {dirname,join} from 'node:path';
+import {fileURLToPath} from 'node:url';
+const root="/Users/saleh/Library/Caches/NoieeFetchQualification-current-ds23jv0w",SOURCE="/Users/saleh/Documents/Noiee/source",CHECKS="/Users/saleh/Documents/Noiee/checks/fetch/current-runtime",calls=[],events=new Map(),elements=new Map();
+class Element{
+ constructor(){this.attributes={};this.children=[];this.disabled=false;this.textContent='';this.value='';}
+ setAttribute(name,value){this.attributes[name]=String(value);}
+ append(...children){this.children.push(...children);}
+ replaceChildren(...children){this.children=[...children];}
+ addEventListener(){}
+ async click(){if(!this.disabled)return this.onclick?.();}
+}
+// Require the accessible group and both independent Fetch actions.
+function actions(row){
+ const groups=row.children.filter(child=>child.className==='tool-server-actions');
+ assert.equal(groups.length,1);const group=groups[0];
+ assert.equal(group.attributes.role,'group');assert.equal(group.attributes['aria-label'],'Fetch actions');
+ assert.equal(group.children.length,2);
+ const [install,toggle]=group.children;
+ assert(['Install','Installed'].includes(install.textContent));assert(['Enable','Disable'].includes(toggle.textContent));
+ assert.equal(typeof install.onclick,'function');assert.equal(typeof toggle.onclick,'function');
+ return group.children;
+}
+const $=id=>{if(!elements.has(id))elements.set(id,new Element());return elements.get(id);};
+let installed=false,enabled=false;
+const postMessage=async body=>{
+ calls.push(JSON.parse(JSON.stringify(body)));
+ if(body.op==='fetchPlugin'){
+  if(body.input.action==='install')installed=true;
+  if(body.input.action==='set_enabled')enabled=body.input.enabled;
+  return {id:'managed-fetch',version:'2026.10.24',available:true,installed,enabled,connectionHeld:false,message:'Connect explicitly.'};
+ }
+ if(body.op==='describe')return {servers:[],builtins:[],tools:[]};
+ if(body.op==='projectSkills')return {catalog:[],scope:null};
+ return {};
+};
+const window={webkit:{messageHandlers:{tools:{postMessage}}},addEventListener:(name,fn)=>events.set(name,fn)};
+vm.runInNewContext(await readFile(join(SOURCE,'tools.js'),'utf8'),{window,document:{getElementById:$,createElement:()=>new Element()},setContext(){},console},{filename:'tools.js'});
+assert.equal(typeof $('fetch-refresh').onclick,'function','RED: fixed Fetch UI control is missing');
+await $('fetch-refresh').click();
+let row=$('fetch-catalog').children[0];assert(row);let buttons=actions(row);assert.equal(buttons[0].textContent,'Install');assert.equal(buttons[1].disabled,true);
+await buttons[0].click();assert(installed);assert(!enabled);
+row=$('fetch-catalog').children[0];buttons=actions(row);assert.equal(buttons[0].disabled,true);assert.equal(buttons[1].textContent,'Enable');await buttons[1].click();assert(enabled);
+assert(calls.every(x=>!['connect','execute','call'].includes(x.op)),'Install or enable must never connect or call');
+row=$('fetch-catalog').children[0];buttons=actions(row);assert.equal(buttons[1].textContent,'Disable');await buttons[1].click();assert(!enabled);
+events.get('agent-stopped')();assert.equal($('fetch-catalog').children.length,0);assert.match($('fetch-status').textContent,/Stopped/);
+const html=await readFile(join(SOURCE,'index.html'),'utf8');assert.match(html,/Fetch for Agent tools/);assert.match(html,/id="fetch-catalog"/);assert.match(html,/id="fetch-refresh"/);
+await writeFile(join(CHECKS,'ui-result.json'),JSON.stringify({passed:6,failed:0,checks:['catalog state','install remains disabled','explicit enable','no automatic connection/call','disable state','Stop clears stale view'],nativeBridgeFixture:true,appUIObserved:false},null,2)+'\n');
+console.log('PASS 6 fixed Fetch UI bridge/state/Stop checks; no actual UI launch');
