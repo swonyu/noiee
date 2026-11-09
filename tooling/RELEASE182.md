@@ -39,7 +39,7 @@ Qualification counts this as **one completed strict offline gate** and retains a
 
 ## Provider setup and unverified scope
 
-Google requires a registered Desktop OAuth client, consent configuration and Gmail/Drive APIs; Drive app-file selection also needs Google Picker API and project/key configuration. GitHub requires a configured GitHub App with device flow enabled. No live credentials or grants are supplied. Offline qualification does not establish live OAuth, real Keychain persistence, real downloads, unknown-source execution or native account/install/connect UX acceptance. Unknown-source approval remains separate and mandatory even in Full Access.
+Google requires a registered Desktop OAuth client, consent configuration and Gmail/Drive APIs; Drive app-file selection also needs the Google Picker API enabled in the same configured Google Cloud project and uses the public Desktop client ID; no separate API key is required. GitHub requires a configured GitHub App with device flow enabled. No live credentials or grants are supplied. Offline qualification does not establish live OAuth, real Keychain persistence, real downloads, unknown-source execution or native account/install/connect UX acceptance. Unknown-source approval remains separate and mandatory even in Full Access.
 
 ## Coordinated next steps
 
