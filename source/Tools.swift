@@ -1267,7 +1267,7 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
                     let admitted=try await request("projectSkills",["action":"catalog"]);try require(expected)
                     guard admitted["admitted"] as? Bool==true else {throw ComputerError.message(admitted["message"] as? String ?? "Project skill access is held.")}
                     let panel=NSOpenPanel();panel.canChooseFiles=false;panel.canChooseDirectories=true;panel.allowsMultipleSelection=false
-                    panel.message="Choose the project where these three fixed skills may be installed. Existing skill files are retained."
+                    panel.message="Choose the project where these fixed project skills may be installed. Existing skill files are retained."
                     guard panel.runModal() == .OK,let folder=panel.url else {result=["cancelled":true,"message":"Project choice cancelled."];break}
                     try require(expected);result=try await projectSkills.choose(folder.path);try require(expected)
                 case "codingMCP":

@@ -1,0 +1,30 @@
+
+test('full catalog IDs are shared by the Agent schema and exact request validator',()=>{
+ const expected=['patch-verify','debug-one-cause','public-research','file-work','document-writing','data-analysis'];
+ assert.deepEqual(PROJECT_SKILL_IDS,expected);assert(Object.isFrozen(PROJECT_SKILL_IDS));
+ assert.deepEqual(AGENT_TOOLS.find(x=>x.function.name==='project_skills').function.parameters.properties.id.enum,expected);
+ for(const id of expected)for(const action of ['install','read']){
+  const value={action,scopeId,id};assert.equal(validateProjectSkillRequest(value),value);
+ }
+ for(const input of [null,[],{}, {action:'read',scopeId},{action:'install',scopeId,id:null},{action:'read',scopeId,id:1},{action:'read',scopeId,id:'FILE-WORK'},{action:'catalog',scopeId},{action:'list',scopeId,id:'file-work'},{action:'install',scopeId,id:'file-work',url:'https://example.invalid'},{action:'read',scopeId:scopeId.toUpperCase(),id:'file-work'}])assert.throws(()=>validateProjectSkillRequest(input),/Invalid fixed/);
+});
+
+test('every bundled skill routes through signed admission and native install/read with exact Markdown',async t=>{
+ const f=fixture();t.after(()=>f.handler.close());
+ const native=await nativeClient(join(root,'all-catalog-project'));t.after(()=>native.close());
+ const catalog=await native.call({action:'catalog'});
+ assert.deepEqual(catalog.catalog.map(x=>x.id),PROJECT_SKILL_IDS);
+ assert.match(catalog.message,/6 fixed/);
+ for(const entry of catalog.catalog){
+  const input={action:'install',scopeId:native.scopeId,id:entry.id};
+  assert.deepEqual((await f.request(input)).body,{admitted:true});
+  const installed=await native.call(input);assert.equal(installed.installed,true);assert.equal(installed.newInstall,true);assert.equal(installed.sha256,entry.sha256);
+  const readInput={action:'read',scopeId:native.scopeId,id:entry.id};
+  assert.deepEqual((await f.request(readInput)).body,{admitted:true});
+  const loaded=await native.call(readInput),source=await readFile(join(process.env.NOIEE_CORE_SKILL_SOURCE,entry.id,'SKILL.md'));
+  assert.equal(loaded.text,source.toString());assert.equal(hash(source),entry.sha256);assert.equal(source.length,entry.bytes);
+  assert.match(loaded.contentRole,/no permissions/);
+ }
+ const listed=await native.call({action:'list',scopeId:native.scopeId});assert.equal(listed.skills.length,6);assert(listed.skills.every(x=>x.installed));
+ assert.equal(f.checks.length,6*2*2);
+});

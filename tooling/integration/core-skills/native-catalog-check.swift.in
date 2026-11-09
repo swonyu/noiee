@@ -1,0 +1,50 @@
+        // Successor assertions extend the unchanged historical session/installer cases.
+        let expectedIDs=["patch-verify","debug-one-cause","public-research","file-work","document-writing","data-analysis"]
+        try require(entries.map(\.id)==expectedIDs && Set(ProjectSkillCatalog.ids).count==6,"six exact catalog identities in order")
+        let sourceURL=URL(fileURLWithPath:CommandLine.arguments[2],isDirectory:true)
+        for item in entries {
+            try require(Data(contentsOf:sourceURL.appendingPathComponent(item.id+"/SKILL.md"))==item.data,"native payload matches reviewed source "+item.id)
+        }
+        cases.append("six native catalog payloads equal the reviewed Markdown byte for byte")
+        for item in entries {
+            for action in ["install","read"] {_ = try ProjectSkillRequest.parse(["action":action,"scopeId":renewed,"id":item.id])}
+        }
+        for invalid:[String:Any] in [[:],["action":"install","scopeId":renewed],["action":"read","scopeId":renewed,"id":NSNull()],["action":"install","scopeId":renewed,"id":1],["action":"read","scopeId":renewed,"id":"FILE-WORK"],["action":"read","scopeId":renewed,"id":"file-work/../patch-verify"],["action":"catalog","scopeId":renewed],["action":"list","scopeId":renewed,"id":"file-work"],["action":"install","scopeId":renewed,"id":"file-work","url":"https://example.invalid"],["action":"read","scopeId":NSNull(),"id":"file-work"],["action":"read","scopeId":renewed.uppercased(),"id":"file-work"]] {
+            do {_ = try ProjectSkillRequest.parse(invalid);throw Failure(message:"accepted invalid successor request")} catch let error as Failure {throw error} catch {}
+        }
+        cases.append("all catalog IDs accepted and malformed or expanded native requests refused")
+        for item in entries {
+            let allProject=try project("all-"+item.id),all=ProjectSkillsSession()
+            let allChoice=try await all.choose(allProject),allID=(allChoice["scope"] as! [String:Any])["scopeId"] as! String
+            let absent=try await all.perform(["action":"list","scopeId":allID])
+            try require((absent["skills"] as? [[String:Any]])?.count==6,"complete empty catalog list")
+            let installed=try await all.perform(["action":"install","scopeId":allID,"id":item.id])
+            try require(installed["newInstall"] as? Bool==true && installed["durable"] as? Bool==true,"new skill installed "+item.id)
+            let body=try await all.perform(["action":"read","scopeId":allID,"id":item.id])
+            try require(body["text"] as? String==String(data:item.data,encoding:.utf8),"new skill read exact source")
+            let target=URL(fileURLWithPath:allProject+"/.agents/skills/"+item.id+"/SKILL.md")
+            let evidence=target.deletingLastPathComponent().appendingPathComponent(".saleh-install.json"),evidenceBytes=try Data(contentsOf:evidence)
+            let again=try await all.perform(["action":"install","scopeId":allID,"id":item.id])
+            try require(again["newInstall"] as? Bool==false && Data(contentsOf:evidence)==evidenceBytes,"duplicate did not replace receipt")
+            let changedBytes=item.data+Data("\nUser change retained.\n".utf8)
+            try changedBytes.write(to:target)
+            for action in ["read","install"] {
+                do {_ = try await all.perform(["action":action,"scopeId":allID,"id":item.id]);throw Failure(message:"changed skill accepted")} catch let error as Failure {throw error} catch {}
+            }
+            try require(Data(contentsOf:target)==changedBytes && Data(contentsOf:evidence)==evidenceBytes,"changed content and receipt preserved")
+            // Remove only a fixture receipt to exercise exact but unmanaged bytes.
+            try item.data.write(to:target);try FileManager.default.removeItem(at:evidence)
+            for action in ["read","install"] {
+                do {_ = try await all.perform(["action":action,"scopeId":allID,"id":item.id]);throw Failure(message:"unmanaged skill accepted")} catch let error as Failure {throw error} catch {}
+            }
+            try require(Data(contentsOf:target)==item.data && !FileManager.default.fileExists(atPath:evidence.path),"unmanaged bytes retained without new receipt")
+            let stoppedProject=try project("all-stopped-"+item.id),arrived=DispatchSemaphore(value:0),resume=DispatchSemaphore(value:0)
+            let stopped=ProjectSkillsSession(phaseCheck:{if $0=="beforePublish" {arrived.signal();resume.wait()}})
+            let stoppedChoice=try await stopped.choose(stoppedProject),stoppedID=(stoppedChoice["scope"] as! [String:Any])["scopeId"] as! String
+            let pending=Task {try await stopped.perform(["action":"install","scopeId":stoppedID,"id":item.id])}
+            await waitFor(arrived);stopped.invalidate();resume.signal()
+            if case .success = await pending.result {throw Failure(message:"stopped catalog install returned success")}
+            await stopped.drain()
+            try require(!stopped.active && !FileManager.default.fileExists(atPath:stoppedProject+"/.agents/skills/"+item.id),"stopped new skill never publishes")
+            cases.append(item.id+": exact install/read, duplicate, changed/unmanaged conflicts, and actual Stop verified")
+        }

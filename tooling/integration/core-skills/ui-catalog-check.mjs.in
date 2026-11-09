@@ -1,0 +1,12 @@
+
+test('all six catalog rows dispatch their own exact install and read IDs',async()=>{
+ const f=fixture();await f.$('skills-choose').onclick();
+ const expected=['patch-verify','debug-one-cause','public-research','file-work','document-writing','data-analysis'];
+ assert.deepEqual(f.$('skills-catalog').children.map(row=>row.children[0].textContent),expected);
+ for(let index=0;index<expected.length;index++){
+  await actions(f.$('skills-catalog').children[index]).install.onclick();
+  await actions(f.$('skills-catalog').children[index]).read.onclick();
+ }
+ assert.deepEqual(f.calls.filter(x=>x.op==='projectSkills'&&['install','read'].includes(x.input.action)).map(x=>x.input),expected.flatMap(id=>[{action:'install',scopeId:f.scope().scopeId,id},{action:'read',scopeId:f.scope().scopeId,id}]));
+ assert(f.$('skills-catalog').children.every(row=>actions(row).install.disabled&&!actions(row).read.disabled));
+});
