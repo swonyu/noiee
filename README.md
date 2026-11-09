@@ -32,9 +32,9 @@ Ordinary Chat/Agent receipts now retain a bounded, versioned observation of Ente
 
 ## Proposed account and external-tool support
 
-The proposed Build182 batch adds native read-only Gmail, GitHub and app-selected Google Drive access with explicit account identity, scope, local model destination, per-read consent, disconnect and Stop boundaries. Unknown-source MCP artifacts have separate review, inert download, install and connect/launch controls. Full Access does not bypass the mandatory unknown-source approval boundary.
+The proposed Build182 batch adds native read-only Gmail, GitHub and app-selected Google Drive access with explicit account identity, scope, local model destination, native access consent, disconnect and Stop boundaries. Unknown-source MCP artifacts have separate review, inert download, install and connect/launch controls. Full Access does not bypass the mandatory unknown-source approval boundary.
 
-Google requires a registered Desktop OAuth client and the relevant Gmail/Drive APIs. Drive selection additionally requires the Google Picker API and its configured project/key; authorization is limited to app-selected files (`drive.file`). GitHub requires a configured GitHub App with device flow enabled. No provider client, granted OAuth access, saved credential or live account is supplied by this checkout. See [Build182 release instructions](tooling/RELEASE182.md) for verification boundaries.
+Google requires a registered Desktop OAuth client and the relevant Gmail/Drive APIs. Native Desktop Drive selection additionally requires Google Picker API enabled in the same Google Cloud project and the public Desktop client ID; no separate API key is required. Google’s `drive.file` grant is write-capable and can retain prior app-authorized files, while this app exposes GET-only reads of its saved selected-file IDs. GitHub requires a configured GitHub App with device flow enabled. No provider client, granted OAuth access, saved credential or live account is supplied by this checkout. See [Build182 release instructions](tooling/RELEASE182.md) for verification boundaries.
 
 The offline suites use injected transports, consent and stores. Live OAuth, real Keychain persistence, real downloads, unknown-code execution and native account/UI acceptance have not been established by those suites.
 
