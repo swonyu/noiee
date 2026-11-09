@@ -10,9 +10,9 @@ From the checkout root:
 python3 tooling/model_lab/bench/run_offline.py --output-dir .artifacts/agent-evaluation-NEW
 ```
 
-Use a new empty directory each time. Python's standard library, Git, and the already installed Node runtime are sufficient; `--node /absolute/path/to/node` selects that runtime explicitly. No install is performed. The allowlisted integration checks execute shipped JavaScript against disposable synthetic fixtures, in-memory streams and inert renderer objects. They do not start the application, invoke native/MCP work, access saved user conversations, or contact a model. Some existing checks retain generated temporary fixture directories for inspection.
+Use a new empty directory each time. Python's standard library, Git, and the reviewed installed Node runtime are sufficient. This Mac gate pins Node 26.13.0 (Darwin arm64) by binary SHA256 `7296c3dda88793e08d1089d839a782178c4bba6bb22f5c40ab2a75263fb071bd`; `--node /absolute/path/to/node` may select only that reviewed binary. A runtime upgrade or another platform requires reviewing and updating the pin, not bypassing the check. No install is performed. The allowlisted integration checks execute shipped JavaScript against disposable synthetic fixtures, in-memory streams and inert renderer objects. They do not start the application, invoke native/MCP work, access saved user conversations, or contact a model. Some existing checks retain generated temporary fixture directories for inspection.
 
-`results.json` records the checkout HEAD, source hashes (including transitive local source), exact commands, per-group exit statuses/timings, log hashes and an unchanged-source check. A group counts as passing only when its test process exits zero. Missing runtimes, exceptions and timeouts remain distinct failures. Source mutation invalidates the run. Logs are the assertion-level evidence; **7/7 groups is not 7 model tasks or a model score**. `model_evaluated` is false and `model_score` is null.
+`results.json` records the checkout HEAD, source hashes (including transitive local source), exact commands, per-group exit statuses/timings, log hashes and an unchanged-source check. An exit code alone is insufficient: the runtime must match the reviewed binary, its canonical executable must remain unchanged, and the log must contain complete exact-count test evidence. Python requires 46 successful unskipped methods; TAP suites require respectively 7, 10, 8 and 26 distinct passing tests with exact plans and zero skips/failures. Lifecycle and budget each require five exact ordered markers and their terminal synthetic receipt. Empty, partial, duplicate, zero-test, skipped and malformed evidence fails. Child processes receive an allowlisted environment without inherited NODE_OPTIONS/NODE_PATH, PYTHON*, DYLD_* or LD_* hooks; Python uses isolated/no-site mode and Node disables addons/global module search. Exact argv, input-file hashes and runtime identities/hashes are recorded. Logs, source and executable hashes are rechecked before the final result. Missing runtimes, exceptions and timeouts remain distinct failures. Source mutation invalidates the run. Logs are the assertion-level evidence; **7/7 groups is not 7 model tasks or a model score**. `model_evaluated` is false and `model_score` is null.
 
 The fixed groups are:
 
@@ -85,3 +85,15 @@ The new suite is development material once used to guide changes. Do not train o
 No DeepEval dependency, hosted judge, telemetry or extra model call is introduced. Strict deterministic graders are appropriate for the current exact tool arguments, receipt states and cancellation boundaries. A later optional development adapter could wrap these same cases and supplement them with explicitly labeled semantic evaluations. It must not replace strict boundary failures with a judge's subjective pass.
 
 Before installing or adopting a specific DeepEval version, review that version's package/dependency licences, transitive packages, default telemetry/network behavior, judge provider configuration and costs, and whether all evaluation data stays local. Pin versions and record judge identity/prompt/settings with receipts. Those checks are not performed here, so no licence, privacy or fully local operation claim is made. It is not required to begin this suite.
+
+## Receipt hardening regression controls
+
+The initial v1 receipt runner trusted exit zero without proving tests completed. Review reproduced a false pass with `--node /usr/bin/true`. Its genuine normal run passed, but v1 receipts do not enforce the stronger completion contract. Version 2 closes that gap; retain old receipts without relabeling them.
+
+Run the gate's separate adversarial controls (they are not part of the 46 benchmark-grader methods):
+
+```sh
+python3 tooling/model_lab/bench/offline_guard_tests.py
+```
+
+These ten test methods cover `/usr/bin/true`, a fake marker-printing executable rejected before execution, runtime identity/path/hash mutation, environment injection, complete positive logs, empty/partial/zero/duplicate/skipped/failed TAP evidence, Python counts, lifecycle markers, log tampering, missing groups and source/runtime changes. They use synthetic logs and mocks where explicitly named, not actual model calls. The pinned binary and reviewed source are the trust anchors; local hashes are not a signed attestation against an attacker who can modify both the verifier and its pins. The caller must start the Python verifier itself from a trusted interpreter/environment.
