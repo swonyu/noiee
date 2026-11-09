@@ -200,6 +200,7 @@ export function createServer({ upstream, model = MODEL, instanceToken = '', hub,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
+        if(controller.signal.aborted){cancelModelBody(response.body);return;}
         if(response.redirected||response.status>=300&&response.status<400){cancelModelBody(response.body);return json(502,{error:'Local model redirects are not allowed.'});}
         if (!response.ok) {
           cancelModelBody(response.body);

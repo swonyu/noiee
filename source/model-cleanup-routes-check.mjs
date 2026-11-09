@@ -36,3 +36,19 @@ test('Tasks relay rejects redirect before response bytes even with pending clean
   await bounded(handler(req,res));assert(res.finished);assert.equal(res.statusCode,502);assert.match(res.json.error.message,/redirect/);assert.equal(f.count(),1);
  }finally{f.release();http.createServer=original;await relay?.close();}
 });
+function lateFixture(){let cancellations=0,reads=0;const response=new Response(new ReadableStream({pull(c){reads++;c.enqueue(new TextEncoder().encode('LATE_MODEL_OUTPUT'));c.close();},cancel(){cancellations++;}},{highWaterMark:0}),{headers:{'content-type':'text/event-stream'}});return {response,cancellations:()=>cancellations,reads:()=>reads};}
+for(const route of ['/api/chat','/api/agent'])test(route+' cancels a late fetch response after Stop before reading or sending output',async()=>{
+ const f=lateFixture(),res=new Reply(),server=createServer({instanceToken:'fixture',localModels:models,fetchImpl:async()=>{res.emit('close');return f.response;},hub:{...inert},coding:{...inert,dataDir:'/tmp/noiee-cleanup-unused'},worktrees:{...inert},gitWorkflow:{...inert}});
+ const req=Readable.from([Buffer.from(JSON.stringify({model:'fixture',thinking:'standard',messages:[{role:'user',content:'Synthetic only'}]}))]);Object.assign(req,{url:route,method:'POST',headers:{host:'127.0.0.1:8787','content-type':'application/json','x-qwen-chat':'1'},socket:{localPort:8787}});
+ await bounded(server.listeners('request')[0](req,res));assert.equal(f.cancellations(),1);assert.equal(f.reads(),0);assert(!Buffer.concat(res.parts).toString().includes('LATE_MODEL_OUTPUT'));
+});
+test('Tasks relay cancels a late fetch response after client Stop before forwarding bytes',async()=>{
+ const f=lateFixture(),res=new Reply(),original=http.createServer;let handler,relay;
+ class MemoryServer extends EventEmitter{listen(){queueMicrotask(()=>this.emit('listening'));}address(){return {port:34567};}closeAllConnections(){}close(cb){cb();}}
+ http.createServer=callback=>{handler=callback;return new MemoryServer();};
+ try{
+  relay=await createQwenRelay({upstream:'http://127.0.0.1:1234/v1/responses',localModels:models,fetchImpl:async()=>{res.emit('close');return f.response;}});
+  const url=new URL(relay.baseURL+'/responses'),req=Readable.from([Buffer.from(JSON.stringify({model:'fixture',input:[{role:'user',content:'Synthetic only'}]}))]);Object.assign(req,{url:url.pathname,method:'POST',headers:{host:url.host,authorization:'Bearer '+relay.authToken}});
+  await bounded(handler(req,res));assert.equal(f.cancellations(),1);assert.equal(f.reads(),0);assert(!Buffer.concat(res.parts).toString().includes('LATE_MODEL_OUTPUT'));
+ }finally{http.createServer=original;await relay?.close();}
+});

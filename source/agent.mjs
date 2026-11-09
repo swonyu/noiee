@@ -415,6 +415,7 @@ export function toolRoutes({instanceToken,hub=new MCPHub(),managedFetch,upstream
         if(controller.signal.aborted||req.aborted||res.destroyed)return true;
         const payload=agentPayload(selected,messages,{finalize,stream,style:responseStyleInstructions(generation)});
         const response=await fetchImpl(`${upstream}/v1/chat/completions`,{method:'POST',redirect:'error',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        if(controller.signal.aborted){cancelModelBody(response.body);controller.signal.throwIfAborted();}
         if(response.redirected||response.status>=300&&response.status<400){cancelModelBody(response.body);throw Error('Local model redirects are not allowed.');}
         if(!response.ok){cancelModelBody(response.body);throw new Error(`LM Studio agent request failed (HTTP ${response.status}).`);}
         if(stream){res.writeHead(200,{'Content-Type':'text/event-stream; charset=utf-8','X-Accel-Buffering':'no'});res.flushHeaders();}

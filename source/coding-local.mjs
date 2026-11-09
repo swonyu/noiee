@@ -176,6 +176,7 @@ export async function createQwenRelay({upstream,localModels,fetchImpl,contextPro
       controller.signal.throwIfAborted();
       const restore=namespaceAdapter(body);
       const response=await fetchImpl(upstream,{method:'POST',redirect:'error',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:controller.signal});
+      if(controller.signal.aborted){cancelModelBody(response.body);controller.signal.throwIfAborted();}
       if(response.redirected||response.status>=300&&response.status<400){cancelModelBody(response.body);throw Error('Local model redirects are not allowed.');}
       const headers={'Content-Type':response.headers.get('content-type')||'application/json','Cache-Control':'no-store'};
       const write=async chunk=>{if(!res.headersSent)res.writeHead(response.status,headers);if(!res.write(chunk))await once(res,'drain',{signal:controller.signal});};
