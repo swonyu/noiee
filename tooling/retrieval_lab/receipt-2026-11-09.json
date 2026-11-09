@@ -1,0 +1,3994 @@
+{
+  "schema": 1,
+  "created_at_utc": "2026-11-09T11:45:35.844645+00:00",
+  "git_head": "6cda13010f5f11493c4e890ae91eecae4327af85",
+  "source_sha256": {
+    "tooling/retrieval_lab/benchmark.py": "cc2d4b8f6fd3451889afdf667079a22f7ce74754d9a773111239c03c1edd3dd1",
+    "tooling/retrieval_lab/fixtures.py": "08e035842ff3ea2f97f475187624ca99e829cfd88b53f62a42e486b711488b22",
+    "tooling/retrieval_lab/retrieval.py": "a1c3a7d7da5cff68cc0c16f343e56e734cfe87c413d02e08d93c49e08a353c1a",
+    "tooling/retrieval_lab/test_retrieval.py": "3e1a90a5ab5f67459ab6c3b08fc664a1f9cafb622a8bc1440f58153ce92f3dce",
+    "source/Tools.swift": "385490e30a60aba371962f31b8d08890888e812a0ff5116edd3da9de510a2444",
+    "source/attachments.js": "fb63ed69e2aad50eaa28a35c083b1fe1d79215e6878652166afc3d5434be926d",
+    "source/package-lock.json": "6bae892878d2c289b219d9770402f46811dc1c06982023b6d867eaf482636247"
+  },
+  "python": "3.15.2 (main, Oct 25 2026, 16:57:51) [Clang 21.0.0 (clang-2100.3.34.2)]",
+  "sqlite": "3.54.1",
+  "platform": "Darwin 27.3.0 arm64",
+  "scope": "Synthetic development-only retrieval. No app, model, private files, or network.",
+  "query_set_sha256": "624baf20ad1af469ca83dffeca3080f8497603c9be4c9084abdf0ba7dd8f8ff1",
+  "runs": [
+    {
+      "backend": "overlap",
+      "document_count": 18,
+      "corpus_utf8_bytes": 2809,
+      "corpus_sha256": "f684e8e08813b33c7efa23910ff8fdffbd7b0d553c4ed11391acb1ed2f1bc046",
+      "positive_queries": 17,
+      "negative_queries": 4,
+      "macro_recall_at_3": 0.9411764705882353,
+      "mrr_at_3": 0.8823529411764706,
+      "negative_abstention_rate": 0.75,
+      "provenance_valid": true,
+      "build_ms_with_tracemalloc": 0.539,
+      "python_build_peak_bytes": 30478,
+      "sqlite_page_bytes": 0,
+      "warm_query_samples": 630,
+      "warm_p50_ms": 0.011583,
+      "warm_p95_ms": 0.029333,
+      "queries": [
+        {
+          "id": "exact_policy",
+          "query": "Atlas telescope return policy",
+          "relevant_ids": [
+            "atlas_return"
+          ],
+          "returned_ids": [
+            "return_glossary",
+            "atlas_return",
+            "atlas_shipping"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 0.5,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "return_glossary",
+              "sha256": "aea2e2f5df19f771de4ced352275de36604bc7d2e7c54c995bf22ced57c2b8eb",
+              "start": 0,
+              "end": 320,
+              "quote": "return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return polic",
+              "score": 160.0
+            },
+            {
+              "document_id": "atlas_return",
+              "sha256": "29ca25d9b924a7ccb387a2bff78ae587a9decdd5f579c8266968c1caabcb288f",
+              "start": 0,
+              "end": 104,
+              "quote": "Atlas telescope return policy: unopened telescopes can be returned within thirty days. Receipt required.",
+              "score": 4.0
+            },
+            {
+              "document_id": "atlas_shipping",
+              "sha256": "9b766104592f45c5cffb6aa050ff179e6a120d546bf785133871a04837416bbe",
+              "start": 0,
+              "end": 99,
+              "quote": "Atlas telescope shipping policy: standard delivery takes five days. Returns are handled separately.",
+              "score": 3.0
+            }
+          ]
+        },
+        {
+          "id": "shipping",
+          "query": "Atlas shipping delivery",
+          "relevant_ids": [
+            "atlas_shipping"
+          ],
+          "returned_ids": [
+            "atlas_shipping",
+            "atlas_return"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "atlas_shipping",
+              "sha256": "9b766104592f45c5cffb6aa050ff179e6a120d546bf785133871a04837416bbe",
+              "start": 0,
+              "end": 99,
+              "quote": "Atlas telescope shipping policy: standard delivery takes five days. Returns are handled separately.",
+              "score": 3.0
+            },
+            {
+              "document_id": "atlas_return",
+              "sha256": "29ca25d9b924a7ccb387a2bff78ae587a9decdd5f579c8266968c1caabcb288f",
+              "start": 0,
+              "end": 104,
+              "quote": "Atlas telescope return policy: unopened telescopes can be returned within thirty days. Receipt required.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "other_product",
+          "query": "Beacon microscope return",
+          "relevant_ids": [
+            "beacon_return"
+          ],
+          "returned_ids": [
+            "return_glossary",
+            "beacon_return",
+            "atlas_return"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 0.5,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "return_glossary",
+              "sha256": "aea2e2f5df19f771de4ced352275de36604bc7d2e7c54c995bf22ced57c2b8eb",
+              "start": 0,
+              "end": 320,
+              "quote": "return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return polic",
+              "score": 80.0
+            },
+            {
+              "document_id": "beacon_return",
+              "sha256": "a7c11526ce9c7e91cc3b921f9f98aa7c24231f29359f25f637195381c0c438fd",
+              "start": 0,
+              "end": 109,
+              "quote": "Beacon microscope return policy: unopened microscopes can be returned within fourteen days. Receipt required.",
+              "score": 3.0
+            },
+            {
+              "document_id": "atlas_return",
+              "sha256": "29ca25d9b924a7ccb387a2bff78ae587a9decdd5f579c8266968c1caabcb288f",
+              "start": 0,
+              "end": 104,
+              "quote": "Atlas telescope return policy: unopened telescopes can be returned within thirty days. Receipt required.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "backup",
+          "query": "Maple backup snapshots nightly",
+          "relevant_ids": [
+            "maple_backup"
+          ],
+          "returned_ids": [
+            "maple_backup",
+            "cedar_backup",
+            "maple_cancel"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 4.0
+            },
+            {
+              "document_id": "cedar_backup",
+              "sha256": "49ff5825bda68901edc7258f533244e65c15ee0a3bd50e2e513c0e1cf310b033",
+              "start": 0,
+              "end": 82,
+              "quote": "Cedar service backup recovery: snapshots run weekly on Sunday. Retain four copies.",
+              "score": 2.0
+            },
+            {
+              "document_id": "maple_cancel",
+              "sha256": "8ce7e05452a7e8897dfa74953fddbd215e95a21430ce685ca69c377cd828ae48",
+              "start": 0,
+              "end": 124,
+              "quote": "Maple service cancellation: Stop interrupts current work. Pause blocks future scheduled work. Neither deletes saved history.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "cancel",
+          "query": "Maple cancellation Stop Pause",
+          "relevant_ids": [
+            "maple_cancel"
+          ],
+          "returned_ids": [
+            "maple_cancel",
+            "maple_backup",
+            "maple_security"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "maple_cancel",
+              "sha256": "8ce7e05452a7e8897dfa74953fddbd215e95a21430ce685ca69c377cd828ae48",
+              "start": 0,
+              "end": 124,
+              "quote": "Maple service cancellation: Stop interrupts current work. Pause blocks future scheduled work. Neither deletes saved history.",
+              "score": 4.0
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 1.0
+            },
+            {
+              "document_id": "maple_security",
+              "sha256": "7c0e01d7facc948267e3de32f31f622d58c56f6202739a94c865d6acfcc952d0",
+              "start": 0,
+              "end": 83,
+              "quote": "Maple service encryption keys rotate every ninety days. Never paste keys into logs.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "security",
+          "query": "Maple encryption keys rotate",
+          "relevant_ids": [
+            "maple_security"
+          ],
+          "returned_ids": [
+            "maple_security",
+            "maple_backup",
+            "maple_cancel"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "maple_security",
+              "sha256": "7c0e01d7facc948267e3de32f31f622d58c56f6202739a94c865d6acfcc952d0",
+              "start": 0,
+              "end": 83,
+              "quote": "Maple service encryption keys rotate every ninety days. Never paste keys into logs.",
+              "score": 5.0
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 1.0
+            },
+            {
+              "document_id": "maple_cancel",
+              "sha256": "8ce7e05452a7e8897dfa74953fddbd215e95a21430ce685ca69c377cd828ae48",
+              "start": 0,
+              "end": 124,
+              "quote": "Maple service cancellation: Stop interrupts current work. Pause blocks future scheduled work. Neither deletes saved history.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "other_backup",
+          "query": "Cedar backup weekly",
+          "relevant_ids": [
+            "cedar_backup"
+          ],
+          "returned_ids": [
+            "cedar_backup",
+            "maple_backup"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "cedar_backup",
+              "sha256": "49ff5825bda68901edc7258f533244e65c15ee0a3bd50e2e513c0e1cf310b033",
+              "start": 0,
+              "end": 82,
+              "quote": "Cedar service backup recovery: snapshots run weekly on Sunday. Retain four copies.",
+              "score": 3.0
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "table",
+          "query": "valve quantity north",
+          "relevant_ids": [
+            "station_table"
+          ],
+          "returned_ids": [
+            "station_table"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "station_table",
+              "sha256": "776b08f01fdbbb523aad01b68c75381de86b1146f809edd18965a9201980dd83",
+              "start": 0,
+              "end": 90,
+              "quote": "Synthetic station inventory\nItem | Quantity | Location\nvalve | 12 | north\npump | 4 | south",
+              "score": 3.0
+            }
+          ]
+        },
+        {
+          "id": "expense",
+          "query": "Orion meal reimbursement cap",
+          "relevant_ids": [
+            "orion_expense"
+          ],
+          "returned_ids": [
+            "orion_expense",
+            "orion_travel"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "orion_expense",
+              "sha256": "d1bb236a4159856fc49444c82a83ca87a1d6fdfbebf676207ae146305f221643",
+              "start": 0,
+              "end": 94,
+              "quote": "Orion expenses: meal reimbursement cap is 45 credits per day. Submit receipts within ten days.",
+              "score": 4.0
+            },
+            {
+              "document_id": "orion_travel",
+              "sha256": "9ef8e58f24a67cf82957fbfc52b1a0c5c4b8fb843287a4046a29109797d7e3b1",
+              "start": 0,
+              "end": 81,
+              "quote": "Orion travel: rail tickets need manager approval. Flights need director approval.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "travel",
+          "query": "Orion rail approval",
+          "relevant_ids": [
+            "orion_travel"
+          ],
+          "returned_ids": [
+            "orion_travel",
+            "maple_backup",
+            "orion_expense"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "orion_travel",
+              "sha256": "9ef8e58f24a67cf82957fbfc52b1a0c5c4b8fb843287a4046a29109797d7e3b1",
+              "start": 0,
+              "end": 81,
+              "quote": "Orion travel: rail tickets need manager approval. Flights need director approval.",
+              "score": 4.0
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 54,
+              "end": 123,
+              "quote": "t 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 1.0
+            },
+            {
+              "document_id": "orion_expense",
+              "sha256": "d1bb236a4159856fc49444c82a83ca87a1d6fdfbebf676207ae146305f221643",
+              "start": 0,
+              "end": 94,
+              "quote": "Orion expenses: meal reimbursement cap is 45 credits per day. Submit receipts within ten days.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "access",
+          "query": "Iris bicycle storage",
+          "relevant_ids": [
+            "iris_access"
+          ],
+          "returned_ids": [
+            "iris_access",
+            "iris_hours"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "iris_access",
+              "sha256": "ec3af3d86af89ee034fc9b992df7b0e145020627107b58a3c5e18f47e9a196d2",
+              "start": 0,
+              "end": 86,
+              "quote": "Iris building access: visitors register at reception. Bicycle storage is on floor two.",
+              "score": 3.0
+            },
+            {
+              "document_id": "iris_hours",
+              "sha256": "b5a06908e703c6f7770ad25299559833950f2f08fdd20ea8f0d0ee9ad6d6b6b6",
+              "start": 0,
+              "end": 73,
+              "quote": "Iris building opening hours: weekdays 08:00 to 18:00. Closed on weekends.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "hours",
+          "query": "Iris opening hours",
+          "relevant_ids": [
+            "iris_hours"
+          ],
+          "returned_ids": [
+            "iris_hours",
+            "iris_access"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "iris_hours",
+              "sha256": "b5a06908e703c6f7770ad25299559833950f2f08fdd20ea8f0d0ee9ad6d6b6b6",
+              "start": 0,
+              "end": 73,
+              "quote": "Iris building opening hours: weekdays 08:00 to 18:00. Closed on weekends.",
+              "score": 3.0
+            },
+            {
+              "document_id": "iris_access",
+              "sha256": "ec3af3d86af89ee034fc9b992df7b0e145020627107b58a3c5e18f47e9a196d2",
+              "start": 0,
+              "end": 86,
+              "quote": "Iris building access: visitors register at reception. Bicycle storage is on floor two.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "accent",
+          "query": "café ferme",
+          "relevant_ids": [
+            "cafe_menu"
+          ],
+          "returned_ids": [
+            "cafe_menu"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "cafe_menu",
+              "sha256": "1d6d41e11cd8a86086d9915134a076ec4f85261d926de2791352816aa337242e",
+              "start": 0,
+              "end": 76,
+              "quote": "Café menu: soupe du jour, thé, and croissants. Le café ferme à seize heures.",
+              "score": 3.0
+            }
+          ]
+        },
+        {
+          "id": "arabic",
+          "query": "مكتبة النور",
+          "relevant_ids": [
+            "arabic_hours"
+          ],
+          "returned_ids": [
+            "arabic_hours"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "arabic_hours",
+              "sha256": "f99327f1c52f90ea498f3ae2f6873908f8481cb84f3c8c46a1791bc9de363545",
+              "start": 0,
+              "end": 66,
+              "quote": "مكتبة النور تفتح الساعة التاسعة صباحاً وتغلق الساعة الخامسة مساءً.",
+              "score": 2.0
+            }
+          ]
+        },
+        {
+          "id": "multi",
+          "query": "backup recovery",
+          "relevant_ids": [
+            "maple_backup",
+            "cedar_backup"
+          ],
+          "returned_ids": [
+            "maple_backup",
+            "cedar_backup"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 2.0
+            },
+            {
+              "document_id": "cedar_backup",
+              "sha256": "49ff5825bda68901edc7258f533244e65c15ee0a3bd50e2e513c0e1cf310b033",
+              "start": 0,
+              "end": 82,
+              "quote": "Cedar service backup recovery: snapshots run weekly on Sunday. Retain four copies.",
+              "score": 2.0
+            }
+          ]
+        },
+        {
+          "id": "freshness",
+          "query": "Aurora current approved launch",
+          "relevant_ids": [
+            "launch_new"
+          ],
+          "returned_ids": [
+            "launch_new",
+            "launch_old",
+            "maple_cancel"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "launch_new",
+              "sha256": "cfa1aeaf6babe890b1ef58bf927942b1bfd4529c6152cb5c71d21678f97a29ef",
+              "start": 0,
+              "end": 81,
+              "quote": "Dated 2026: Aurora launch target is September. This is the current approved plan.",
+              "score": 4.0
+            },
+            {
+              "document_id": "launch_old",
+              "sha256": "39a40703e87158894773344fc73ea30cc800318e2e4926ad810cd55bc1fbbf3d",
+              "start": 0,
+              "end": 85,
+              "quote": "Dated 2024: Aurora launch target was June. Historical plan, superseded by launch_new.",
+              "score": 3.0
+            },
+            {
+              "document_id": "maple_cancel",
+              "sha256": "8ce7e05452a7e8897dfa74953fddbd215e95a21430ce685ca69c377cd828ae48",
+              "start": 0,
+              "end": 124,
+              "quote": "Maple service cancellation: Stop interrupts current work. Pause blocks future scheduled work. Neither deletes saved history.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "semantic_gap",
+          "query": "dining allowance ceiling",
+          "relevant_ids": [
+            "orion_expense"
+          ],
+          "returned_ids": [],
+          "recall_at_3": 0.0,
+          "reciprocal_rank_at_3": 0,
+          "abstained": true,
+          "provenance_valid": true,
+          "hits": []
+        },
+        {
+          "id": "absent",
+          "query": "quasar zeppelin",
+          "relevant_ids": [],
+          "returned_ids": [],
+          "recall_at_3": null,
+          "reciprocal_rank_at_3": null,
+          "abstained": true,
+          "provenance_valid": true,
+          "hits": []
+        },
+        {
+          "id": "absent_overlap",
+          "query": "Atlas telescope warranty lifetime",
+          "relevant_ids": [],
+          "returned_ids": [
+            "atlas_return",
+            "atlas_shipping"
+          ],
+          "recall_at_3": null,
+          "reciprocal_rank_at_3": null,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "atlas_return",
+              "sha256": "29ca25d9b924a7ccb387a2bff78ae587a9decdd5f579c8266968c1caabcb288f",
+              "start": 0,
+              "end": 104,
+              "quote": "Atlas telescope return policy: unopened telescopes can be returned within thirty days. Receipt required.",
+              "score": 2.0
+            },
+            {
+              "document_id": "atlas_shipping",
+              "sha256": "9b766104592f45c5cffb6aa050ff179e6a120d546bf785133871a04837416bbe",
+              "start": 0,
+              "end": 99,
+              "quote": "Atlas telescope shipping policy: standard delivery takes five days. Returns are handled separately.",
+              "score": 2.0
+            }
+          ]
+        },
+        {
+          "id": "empty",
+          "query": "",
+          "relevant_ids": [],
+          "returned_ids": [],
+          "recall_at_3": null,
+          "reciprocal_rank_at_3": null,
+          "abstained": true,
+          "provenance_valid": true,
+          "hits": []
+        },
+        {
+          "id": "punctuation",
+          "query": "\"*():",
+          "relevant_ids": [],
+          "returned_ids": [],
+          "recall_at_3": null,
+          "reciprocal_rank_at_3": null,
+          "abstained": true,
+          "provenance_valid": true,
+          "hits": []
+        }
+      ]
+    },
+    {
+      "backend": "fts5",
+      "document_count": 18,
+      "corpus_utf8_bytes": 2809,
+      "corpus_sha256": "f684e8e08813b33c7efa23910ff8fdffbd7b0d553c4ed11391acb1ed2f1bc046",
+      "positive_queries": 17,
+      "negative_queries": 4,
+      "macro_recall_at_3": 0.9411764705882353,
+      "mrr_at_3": 0.9411764705882353,
+      "negative_abstention_rate": 0.75,
+      "provenance_valid": true,
+      "build_ms_with_tracemalloc": 0.904166,
+      "python_build_peak_bytes": 36336,
+      "sqlite_page_bytes": 24576,
+      "warm_query_samples": 630,
+      "warm_p50_ms": 0.013958,
+      "warm_p95_ms": 0.034958,
+      "queries": [
+        {
+          "id": "exact_policy",
+          "query": "Atlas telescope return policy",
+          "relevant_ids": [
+            "atlas_return"
+          ],
+          "returned_ids": [
+            "atlas_return",
+            "atlas_shipping",
+            "return_glossary"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "atlas_return",
+              "sha256": "29ca25d9b924a7ccb387a2bff78ae587a9decdd5f579c8266968c1caabcb288f",
+              "start": 0,
+              "end": 104,
+              "quote": "Atlas telescope return policy: unopened telescopes can be returned within thirty days. Receipt required.",
+              "score": 7.568007293658195
+            },
+            {
+              "document_id": "atlas_shipping",
+              "sha256": "9b766104592f45c5cffb6aa050ff179e6a120d546bf785133871a04837416bbe",
+              "start": 0,
+              "end": 99,
+              "quote": "Atlas telescope shipping policy: standard delivery takes five days. Returns are handled separately.",
+              "score": 5.946635656876466
+            },
+            {
+              "document_id": "return_glossary",
+              "sha256": "aea2e2f5df19f771de4ced352275de36604bc7d2e7c54c995bf22ced57c2b8eb",
+              "start": 0,
+              "end": 320,
+              "quote": "return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return polic",
+              "score": 5.3713845942972105
+            }
+          ]
+        },
+        {
+          "id": "shipping",
+          "query": "Atlas shipping delivery",
+          "relevant_ids": [
+            "atlas_shipping"
+          ],
+          "returned_ids": [
+            "atlas_shipping",
+            "atlas_return"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "atlas_shipping",
+              "sha256": "9b766104592f45c5cffb6aa050ff179e6a120d546bf785133871a04837416bbe",
+              "start": 0,
+              "end": 99,
+              "quote": "Atlas telescope shipping policy: standard delivery takes five days. Returns are handled separately.",
+              "score": 8.179332239089863
+            },
+            {
+              "document_id": "atlas_return",
+              "sha256": "29ca25d9b924a7ccb387a2bff78ae587a9decdd5f579c8266968c1caabcb288f",
+              "start": 0,
+              "end": 104,
+              "quote": "Atlas telescope return policy: unopened telescopes can be returned within thirty days. Receipt required.",
+              "score": 2.220260930788433
+            }
+          ]
+        },
+        {
+          "id": "other_product",
+          "query": "Beacon microscope return",
+          "relevant_ids": [
+            "beacon_return"
+          ],
+          "returned_ids": [
+            "beacon_return",
+            "return_glossary",
+            "atlas_return"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "beacon_return",
+              "sha256": "a7c11526ce9c7e91cc3b921f9f98aa7c24231f29359f25f637195381c0c438fd",
+              "start": 0,
+              "end": 109,
+              "quote": "Beacon microscope return policy: unopened microscopes can be returned within fourteen days. Receipt required.",
+              "score": 7.5318408426485215
+            },
+            {
+              "document_id": "return_glossary",
+              "sha256": "aea2e2f5df19f771de4ced352275de36604bc7d2e7c54c995bf22ced57c2b8eb",
+              "start": 0,
+              "end": 320,
+              "quote": "return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return polic",
+              "score": 3.0069933067188885
+            },
+            {
+              "document_id": "atlas_return",
+              "sha256": "29ca25d9b924a7ccb387a2bff78ae587a9decdd5f579c8266968c1caabcb288f",
+              "start": 0,
+              "end": 104,
+              "quote": "Atlas telescope return policy: unopened telescopes can be returned within thirty days. Receipt required.",
+              "score": 1.7508200345799005
+            }
+          ]
+        },
+        {
+          "id": "backup",
+          "query": "Maple backup snapshots nightly",
+          "relevant_ids": [
+            "maple_backup"
+          ],
+          "returned_ids": [
+            "maple_backup",
+            "cedar_backup",
+            "maple_security"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 8.354406034366132
+            },
+            {
+              "document_id": "cedar_backup",
+              "sha256": "49ff5825bda68901edc7258f533244e65c15ee0a3bd50e2e513c0e1cf310b033",
+              "start": 0,
+              "end": 82,
+              "quote": "Cedar service backup recovery: snapshots run weekly on Sunday. Retain four copies.",
+              "score": 4.642647329847575
+            },
+            {
+              "document_id": "maple_security",
+              "sha256": "7c0e01d7facc948267e3de32f31f622d58c56f6202739a94c865d6acfcc952d0",
+              "start": 0,
+              "end": 83,
+              "quote": "Maple service encryption keys rotate every ninety days. Never paste keys into logs.",
+              "score": 1.7897805902944532
+            }
+          ]
+        },
+        {
+          "id": "cancel",
+          "query": "Maple cancellation Stop Pause",
+          "relevant_ids": [
+            "maple_cancel"
+          ],
+          "returned_ids": [
+            "maple_cancel",
+            "maple_security",
+            "maple_backup"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "maple_cancel",
+              "sha256": "8ce7e05452a7e8897dfa74953fddbd215e95a21430ce685ca69c377cd828ae48",
+              "start": 0,
+              "end": 124,
+              "quote": "Maple service cancellation: Stop interrupts current work. Pause blocks future scheduled work. Neither deletes saved history.",
+              "score": 9.987527424390116
+            },
+            {
+              "document_id": "maple_security",
+              "sha256": "7c0e01d7facc948267e3de32f31f622d58c56f6202739a94c865d6acfcc952d0",
+              "start": 0,
+              "end": 83,
+              "quote": "Maple service encryption keys rotate every ninety days. Never paste keys into logs.",
+              "score": 1.7897805902944532
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 1.610581297570287
+            }
+          ]
+        },
+        {
+          "id": "security",
+          "query": "Maple encryption keys rotate",
+          "relevant_ids": [
+            "maple_security"
+          ],
+          "returned_ids": [
+            "maple_security",
+            "maple_cancel",
+            "maple_backup"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "maple_security",
+              "sha256": "7c0e01d7facc948267e3de32f31f622d58c56f6202739a94c865d6acfcc952d0",
+              "start": 0,
+              "end": 83,
+              "quote": "Maple service encryption keys rotate every ninety days. Never paste keys into logs.",
+              "score": 11.520258212952328
+            },
+            {
+              "document_id": "maple_cancel",
+              "sha256": "8ce7e05452a7e8897dfa74953fddbd215e95a21430ce685ca69c377cd828ae48",
+              "start": 0,
+              "end": 124,
+              "quote": "Maple service cancellation: Stop interrupts current work. Pause blocks future scheduled work. Neither deletes saved history.",
+              "score": 1.6777752636291037
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 1.610581297570287
+            }
+          ]
+        },
+        {
+          "id": "other_backup",
+          "query": "Cedar backup weekly",
+          "relevant_ids": [
+            "cedar_backup"
+          ],
+          "returned_ids": [
+            "cedar_backup",
+            "maple_backup"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "cedar_backup",
+              "sha256": "49ff5825bda68901edc7258f533244e65c15ee0a3bd50e2e513c0e1cf310b033",
+              "start": 0,
+              "end": 82,
+              "quote": "Cedar service backup recovery: snapshots run weekly on Sunday. Retain four copies.",
+              "score": 8.365487313932876
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 2.0424205002382596
+            }
+          ]
+        },
+        {
+          "id": "table",
+          "query": "valve quantity north",
+          "relevant_ids": [
+            "station_table"
+          ],
+          "returned_ids": [
+            "station_table"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "station_table",
+              "sha256": "776b08f01fdbbb523aad01b68c75381de86b1146f809edd18965a9201980dd83",
+              "start": 0,
+              "end": 90,
+              "quote": "Synthetic station inventory\nItem | Quantity | Location\nvalve | 12 | north\npump | 4 | south",
+              "score": 9.066245473513632
+            }
+          ]
+        },
+        {
+          "id": "expense",
+          "query": "Orion meal reimbursement cap",
+          "relevant_ids": [
+            "orion_expense"
+          ],
+          "returned_ids": [
+            "orion_expense",
+            "orion_travel"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "orion_expense",
+              "sha256": "d1bb236a4159856fc49444c82a83ca87a1d6fdfbebf676207ae146305f221643",
+              "start": 0,
+              "end": 94,
+              "quote": "Orion expenses: meal reimbursement cap is 45 credits per day. Submit receipts within ten days.",
+              "score": 10.659747123539917
+            },
+            {
+              "document_id": "orion_travel",
+              "sha256": "9ef8e58f24a67cf82957fbfc52b1a0c5c4b8fb843287a4046a29109797d7e3b1",
+              "start": 0,
+              "end": 81,
+              "quote": "Orion travel: rail tickets need manager approval. Flights need director approval.",
+              "score": 2.3753855444116616
+            }
+          ]
+        },
+        {
+          "id": "travel",
+          "query": "Orion rail approval",
+          "relevant_ids": [
+            "orion_travel"
+          ],
+          "returned_ids": [
+            "orion_travel",
+            "orion_expense",
+            "maple_backup"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "orion_travel",
+              "sha256": "9ef8e58f24a67cf82957fbfc52b1a0c5c4b8fb843287a4046a29109797d7e3b1",
+              "start": 0,
+              "end": 81,
+              "quote": "Orion travel: rail tickets need manager approval. Flights need director approval.",
+              "score": 8.489645619263436
+            },
+            {
+              "document_id": "orion_expense",
+              "sha256": "d1bb236a4159856fc49444c82a83ca87a1d6fdfbebf676207ae146305f221643",
+              "start": 0,
+              "end": 94,
+              "quote": "Orion expenses: meal reimbursement cap is 45 credits per day. Submit receipts within ten days.",
+              "score": 2.1729592118526457
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 54,
+              "end": 123,
+              "quote": "t 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 2.0424205002382596
+            }
+          ]
+        },
+        {
+          "id": "access",
+          "query": "Iris bicycle storage",
+          "relevant_ids": [
+            "iris_access"
+          ],
+          "returned_ids": [
+            "iris_access",
+            "iris_hours"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "iris_access",
+              "sha256": "ec3af3d86af89ee034fc9b992df7b0e145020627107b58a3c5e18f47e9a196d2",
+              "start": 0,
+              "end": 86,
+              "quote": "Iris building access: visitors register at reception. Bicycle storage is on floor two.",
+              "score": 8.179332239089863
+            },
+            {
+              "document_id": "iris_hours",
+              "sha256": "b5a06908e703c6f7770ad25299559833950f2f08fdd20ea8f0d0ee9ad6d6b6b6",
+              "start": 0,
+              "end": 73,
+              "quote": "Iris building opening hours: weekdays 08:00 to 18:00. Closed on weekends.",
+              "score": 2.2696678361164175
+            }
+          ]
+        },
+        {
+          "id": "hours",
+          "query": "Iris opening hours",
+          "relevant_ids": [
+            "iris_hours"
+          ],
+          "returned_ids": [
+            "iris_hours",
+            "iris_access"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "iris_hours",
+              "sha256": "b5a06908e703c6f7770ad25299559833950f2f08fdd20ea8f0d0ee9ad6d6b6b6",
+              "start": 0,
+              "end": 73,
+              "quote": "Iris building opening hours: weekdays 08:00 to 18:00. Closed on weekends.",
+              "score": 8.179332239089863
+            },
+            {
+              "document_id": "iris_access",
+              "sha256": "ec3af3d86af89ee034fc9b992df7b0e145020627107b58a3c5e18f47e9a196d2",
+              "start": 0,
+              "end": 86,
+              "quote": "Iris building access: visitors register at reception. Bicycle storage is on floor two.",
+              "score": 2.2696678361164175
+            }
+          ]
+        },
+        {
+          "id": "accent",
+          "query": "café ferme",
+          "relevant_ids": [
+            "cafe_menu"
+          ],
+          "returned_ids": [
+            "cafe_menu"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "cafe_menu",
+              "sha256": "1d6d41e11cd8a86086d9915134a076ec4f85261d926de2791352816aa337242e",
+              "start": 0,
+              "end": 76,
+              "quote": "Café menu: soupe du jour, thé, and croissants. Le café ferme à seize heures.",
+              "score": 6.657132436397004
+            }
+          ]
+        },
+        {
+          "id": "arabic",
+          "query": "مكتبة النور",
+          "relevant_ids": [
+            "arabic_hours"
+          ],
+          "returned_ids": [
+            "arabic_hours"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "arabic_hours",
+              "sha256": "f99327f1c52f90ea498f3ae2f6873908f8481cb84f3c8c46a1791bc9de363545",
+              "start": 0,
+              "end": 66,
+              "quote": "مكتبة النور تفتح الساعة التاسعة صباحاً وتغلق الساعة الخامسة مساءً.",
+              "score": 6.332404600183497
+            }
+          ]
+        },
+        {
+          "id": "multi",
+          "query": "backup recovery",
+          "relevant_ids": [
+            "maple_backup",
+            "cedar_backup"
+          ],
+          "returned_ids": [
+            "cedar_backup",
+            "maple_backup"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "cedar_backup",
+              "sha256": "49ff5825bda68901edc7258f533244e65c15ee0a3bd50e2e513c0e1cf310b033",
+              "start": 0,
+              "end": 82,
+              "quote": "Cedar service backup recovery: snapshots run weekly on Sunday. Retain four copies.",
+              "score": 4.642647329847575
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 4.084841000476519
+            }
+          ]
+        },
+        {
+          "id": "freshness",
+          "query": "Aurora current approved launch",
+          "relevant_ids": [
+            "launch_new"
+          ],
+          "returned_ids": [
+            "launch_new",
+            "launch_old",
+            "maple_cancel"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "launch_new",
+              "sha256": "cfa1aeaf6babe890b1ef58bf927942b1bfd4529c6152cb5c71d21678f97a29ef",
+              "start": 0,
+              "end": 81,
+              "quote": "Dated 2026: Aurora launch target is September. This is the current approved plan.",
+              "score": 9.763835709835975
+            },
+            {
+              "document_id": "launch_old",
+              "sha256": "39a40703e87158894773344fc73ea30cc800318e2e4926ad810cd55bc1fbbf3d",
+              "start": 0,
+              "end": 85,
+              "quote": "Dated 2024: Aurora launch target was June. Historical plan, superseded by launch_new.",
+              "score": 5.204513634860204
+            },
+            {
+              "document_id": "maple_cancel",
+              "sha256": "8ce7e05452a7e8897dfa74953fddbd215e95a21430ce685ca69c377cd828ae48",
+              "start": 0,
+              "end": 124,
+              "quote": "Maple service cancellation: Stop interrupts current work. Pause blocks future scheduled work. Neither deletes saved history.",
+              "score": 2.1276309357362244
+            }
+          ]
+        },
+        {
+          "id": "semantic_gap",
+          "query": "dining allowance ceiling",
+          "relevant_ids": [
+            "orion_expense"
+          ],
+          "returned_ids": [],
+          "recall_at_3": 0.0,
+          "reciprocal_rank_at_3": 0,
+          "abstained": true,
+          "provenance_valid": true,
+          "hits": []
+        },
+        {
+          "id": "absent",
+          "query": "quasar zeppelin",
+          "relevant_ids": [],
+          "returned_ids": [],
+          "recall_at_3": null,
+          "reciprocal_rank_at_3": null,
+          "abstained": true,
+          "provenance_valid": true,
+          "hits": []
+        },
+        {
+          "id": "absent_overlap",
+          "query": "Atlas telescope warranty lifetime",
+          "relevant_ids": [],
+          "returned_ids": [
+            "atlas_shipping",
+            "atlas_return"
+          ],
+          "recall_at_3": null,
+          "reciprocal_rank_at_3": null,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "atlas_shipping",
+              "sha256": "9b766104592f45c5cffb6aa050ff179e6a120d546bf785133871a04837416bbe",
+              "start": 0,
+              "end": 99,
+              "quote": "Atlas telescope shipping policy: standard delivery takes five days. Returns are handled separately.",
+              "score": 4.539335672232835
+            },
+            {
+              "document_id": "atlas_return",
+              "sha256": "29ca25d9b924a7ccb387a2bff78ae587a9decdd5f579c8266968c1caabcb288f",
+              "start": 0,
+              "end": 104,
+              "quote": "Atlas telescope return policy: unopened telescopes can be returned within thirty days. Receipt required.",
+              "score": 4.440521861576866
+            }
+          ]
+        },
+        {
+          "id": "empty",
+          "query": "",
+          "relevant_ids": [],
+          "returned_ids": [],
+          "recall_at_3": null,
+          "reciprocal_rank_at_3": null,
+          "abstained": true,
+          "provenance_valid": true,
+          "hits": []
+        },
+        {
+          "id": "punctuation",
+          "query": "\"*():",
+          "relevant_ids": [],
+          "returned_ids": [],
+          "recall_at_3": null,
+          "reciprocal_rank_at_3": null,
+          "abstained": true,
+          "provenance_valid": true,
+          "hits": []
+        }
+      ]
+    },
+    {
+      "backend": "overlap",
+      "document_count": 256,
+      "corpus_utf8_bytes": 28641,
+      "corpus_sha256": "9cc7ba19d03c31f10e8ef8cdd670dd3f9f0f12615048c6de6b2b6b0c1150e987",
+      "positive_queries": 17,
+      "negative_queries": 4,
+      "macro_recall_at_3": 0.9411764705882353,
+      "mrr_at_3": 0.8823529411764706,
+      "negative_abstention_rate": 0.75,
+      "provenance_valid": true,
+      "build_ms_with_tracemalloc": 3.083042,
+      "python_build_peak_bytes": 349765,
+      "sqlite_page_bytes": 0,
+      "warm_query_samples": 630,
+      "warm_p50_ms": 0.083,
+      "warm_p95_ms": 0.146833,
+      "queries": [
+        {
+          "id": "exact_policy",
+          "query": "Atlas telescope return policy",
+          "relevant_ids": [
+            "atlas_return"
+          ],
+          "returned_ids": [
+            "return_glossary",
+            "atlas_return",
+            "atlas_shipping"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 0.5,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "return_glossary",
+              "sha256": "aea2e2f5df19f771de4ced352275de36604bc7d2e7c54c995bf22ced57c2b8eb",
+              "start": 0,
+              "end": 320,
+              "quote": "return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return polic",
+              "score": 160.0
+            },
+            {
+              "document_id": "atlas_return",
+              "sha256": "29ca25d9b924a7ccb387a2bff78ae587a9decdd5f579c8266968c1caabcb288f",
+              "start": 0,
+              "end": 104,
+              "quote": "Atlas telescope return policy: unopened telescopes can be returned within thirty days. Receipt required.",
+              "score": 4.0
+            },
+            {
+              "document_id": "atlas_shipping",
+              "sha256": "9b766104592f45c5cffb6aa050ff179e6a120d546bf785133871a04837416bbe",
+              "start": 0,
+              "end": 99,
+              "quote": "Atlas telescope shipping policy: standard delivery takes five days. Returns are handled separately.",
+              "score": 3.0
+            }
+          ]
+        },
+        {
+          "id": "shipping",
+          "query": "Atlas shipping delivery",
+          "relevant_ids": [
+            "atlas_shipping"
+          ],
+          "returned_ids": [
+            "atlas_shipping",
+            "atlas_return"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "atlas_shipping",
+              "sha256": "9b766104592f45c5cffb6aa050ff179e6a120d546bf785133871a04837416bbe",
+              "start": 0,
+              "end": 99,
+              "quote": "Atlas telescope shipping policy: standard delivery takes five days. Returns are handled separately.",
+              "score": 3.0
+            },
+            {
+              "document_id": "atlas_return",
+              "sha256": "29ca25d9b924a7ccb387a2bff78ae587a9decdd5f579c8266968c1caabcb288f",
+              "start": 0,
+              "end": 104,
+              "quote": "Atlas telescope return policy: unopened telescopes can be returned within thirty days. Receipt required.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "other_product",
+          "query": "Beacon microscope return",
+          "relevant_ids": [
+            "beacon_return"
+          ],
+          "returned_ids": [
+            "return_glossary",
+            "beacon_return",
+            "atlas_return"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 0.5,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "return_glossary",
+              "sha256": "aea2e2f5df19f771de4ced352275de36604bc7d2e7c54c995bf22ced57c2b8eb",
+              "start": 0,
+              "end": 320,
+              "quote": "return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return polic",
+              "score": 80.0
+            },
+            {
+              "document_id": "beacon_return",
+              "sha256": "a7c11526ce9c7e91cc3b921f9f98aa7c24231f29359f25f637195381c0c438fd",
+              "start": 0,
+              "end": 109,
+              "quote": "Beacon microscope return policy: unopened microscopes can be returned within fourteen days. Receipt required.",
+              "score": 3.0
+            },
+            {
+              "document_id": "atlas_return",
+              "sha256": "29ca25d9b924a7ccb387a2bff78ae587a9decdd5f579c8266968c1caabcb288f",
+              "start": 0,
+              "end": 104,
+              "quote": "Atlas telescope return policy: unopened telescopes can be returned within thirty days. Receipt required.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "backup",
+          "query": "Maple backup snapshots nightly",
+          "relevant_ids": [
+            "maple_backup"
+          ],
+          "returned_ids": [
+            "maple_backup",
+            "cedar_backup",
+            "maple_cancel"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 4.0
+            },
+            {
+              "document_id": "cedar_backup",
+              "sha256": "49ff5825bda68901edc7258f533244e65c15ee0a3bd50e2e513c0e1cf310b033",
+              "start": 0,
+              "end": 82,
+              "quote": "Cedar service backup recovery: snapshots run weekly on Sunday. Retain four copies.",
+              "score": 2.0
+            },
+            {
+              "document_id": "maple_cancel",
+              "sha256": "8ce7e05452a7e8897dfa74953fddbd215e95a21430ce685ca69c377cd828ae48",
+              "start": 0,
+              "end": 124,
+              "quote": "Maple service cancellation: Stop interrupts current work. Pause blocks future scheduled work. Neither deletes saved history.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "cancel",
+          "query": "Maple cancellation Stop Pause",
+          "relevant_ids": [
+            "maple_cancel"
+          ],
+          "returned_ids": [
+            "maple_cancel",
+            "maple_backup",
+            "maple_security"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "maple_cancel",
+              "sha256": "8ce7e05452a7e8897dfa74953fddbd215e95a21430ce685ca69c377cd828ae48",
+              "start": 0,
+              "end": 124,
+              "quote": "Maple service cancellation: Stop interrupts current work. Pause blocks future scheduled work. Neither deletes saved history.",
+              "score": 4.0
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 1.0
+            },
+            {
+              "document_id": "maple_security",
+              "sha256": "7c0e01d7facc948267e3de32f31f622d58c56f6202739a94c865d6acfcc952d0",
+              "start": 0,
+              "end": 83,
+              "quote": "Maple service encryption keys rotate every ninety days. Never paste keys into logs.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "security",
+          "query": "Maple encryption keys rotate",
+          "relevant_ids": [
+            "maple_security"
+          ],
+          "returned_ids": [
+            "maple_security",
+            "maple_backup",
+            "maple_cancel"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "maple_security",
+              "sha256": "7c0e01d7facc948267e3de32f31f622d58c56f6202739a94c865d6acfcc952d0",
+              "start": 0,
+              "end": 83,
+              "quote": "Maple service encryption keys rotate every ninety days. Never paste keys into logs.",
+              "score": 5.0
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 1.0
+            },
+            {
+              "document_id": "maple_cancel",
+              "sha256": "8ce7e05452a7e8897dfa74953fddbd215e95a21430ce685ca69c377cd828ae48",
+              "start": 0,
+              "end": 124,
+              "quote": "Maple service cancellation: Stop interrupts current work. Pause blocks future scheduled work. Neither deletes saved history.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "other_backup",
+          "query": "Cedar backup weekly",
+          "relevant_ids": [
+            "cedar_backup"
+          ],
+          "returned_ids": [
+            "cedar_backup",
+            "maple_backup"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "cedar_backup",
+              "sha256": "49ff5825bda68901edc7258f533244e65c15ee0a3bd50e2e513c0e1cf310b033",
+              "start": 0,
+              "end": 82,
+              "quote": "Cedar service backup recovery: snapshots run weekly on Sunday. Retain four copies.",
+              "score": 3.0
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "table",
+          "query": "valve quantity north",
+          "relevant_ids": [
+            "station_table"
+          ],
+          "returned_ids": [
+            "station_table"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "station_table",
+              "sha256": "776b08f01fdbbb523aad01b68c75381de86b1146f809edd18965a9201980dd83",
+              "start": 0,
+              "end": 90,
+              "quote": "Synthetic station inventory\nItem | Quantity | Location\nvalve | 12 | north\npump | 4 | south",
+              "score": 3.0
+            }
+          ]
+        },
+        {
+          "id": "expense",
+          "query": "Orion meal reimbursement cap",
+          "relevant_ids": [
+            "orion_expense"
+          ],
+          "returned_ids": [
+            "orion_expense",
+            "orion_travel"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "orion_expense",
+              "sha256": "d1bb236a4159856fc49444c82a83ca87a1d6fdfbebf676207ae146305f221643",
+              "start": 0,
+              "end": 94,
+              "quote": "Orion expenses: meal reimbursement cap is 45 credits per day. Submit receipts within ten days.",
+              "score": 4.0
+            },
+            {
+              "document_id": "orion_travel",
+              "sha256": "9ef8e58f24a67cf82957fbfc52b1a0c5c4b8fb843287a4046a29109797d7e3b1",
+              "start": 0,
+              "end": 81,
+              "quote": "Orion travel: rail tickets need manager approval. Flights need director approval.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "travel",
+          "query": "Orion rail approval",
+          "relevant_ids": [
+            "orion_travel"
+          ],
+          "returned_ids": [
+            "orion_travel",
+            "maple_backup",
+            "orion_expense"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "orion_travel",
+              "sha256": "9ef8e58f24a67cf82957fbfc52b1a0c5c4b8fb843287a4046a29109797d7e3b1",
+              "start": 0,
+              "end": 81,
+              "quote": "Orion travel: rail tickets need manager approval. Flights need director approval.",
+              "score": 4.0
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 54,
+              "end": 123,
+              "quote": "t 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 1.0
+            },
+            {
+              "document_id": "orion_expense",
+              "sha256": "d1bb236a4159856fc49444c82a83ca87a1d6fdfbebf676207ae146305f221643",
+              "start": 0,
+              "end": 94,
+              "quote": "Orion expenses: meal reimbursement cap is 45 credits per day. Submit receipts within ten days.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "access",
+          "query": "Iris bicycle storage",
+          "relevant_ids": [
+            "iris_access"
+          ],
+          "returned_ids": [
+            "iris_access",
+            "iris_hours"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "iris_access",
+              "sha256": "ec3af3d86af89ee034fc9b992df7b0e145020627107b58a3c5e18f47e9a196d2",
+              "start": 0,
+              "end": 86,
+              "quote": "Iris building access: visitors register at reception. Bicycle storage is on floor two.",
+              "score": 3.0
+            },
+            {
+              "document_id": "iris_hours",
+              "sha256": "b5a06908e703c6f7770ad25299559833950f2f08fdd20ea8f0d0ee9ad6d6b6b6",
+              "start": 0,
+              "end": 73,
+              "quote": "Iris building opening hours: weekdays 08:00 to 18:00. Closed on weekends.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "hours",
+          "query": "Iris opening hours",
+          "relevant_ids": [
+            "iris_hours"
+          ],
+          "returned_ids": [
+            "iris_hours",
+            "iris_access"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "iris_hours",
+              "sha256": "b5a06908e703c6f7770ad25299559833950f2f08fdd20ea8f0d0ee9ad6d6b6b6",
+              "start": 0,
+              "end": 73,
+              "quote": "Iris building opening hours: weekdays 08:00 to 18:00. Closed on weekends.",
+              "score": 3.0
+            },
+            {
+              "document_id": "iris_access",
+              "sha256": "ec3af3d86af89ee034fc9b992df7b0e145020627107b58a3c5e18f47e9a196d2",
+              "start": 0,
+              "end": 86,
+              "quote": "Iris building access: visitors register at reception. Bicycle storage is on floor two.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "accent",
+          "query": "café ferme",
+          "relevant_ids": [
+            "cafe_menu"
+          ],
+          "returned_ids": [
+            "cafe_menu"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "cafe_menu",
+              "sha256": "1d6d41e11cd8a86086d9915134a076ec4f85261d926de2791352816aa337242e",
+              "start": 0,
+              "end": 76,
+              "quote": "Café menu: soupe du jour, thé, and croissants. Le café ferme à seize heures.",
+              "score": 3.0
+            }
+          ]
+        },
+        {
+          "id": "arabic",
+          "query": "مكتبة النور",
+          "relevant_ids": [
+            "arabic_hours"
+          ],
+          "returned_ids": [
+            "arabic_hours"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "arabic_hours",
+              "sha256": "f99327f1c52f90ea498f3ae2f6873908f8481cb84f3c8c46a1791bc9de363545",
+              "start": 0,
+              "end": 66,
+              "quote": "مكتبة النور تفتح الساعة التاسعة صباحاً وتغلق الساعة الخامسة مساءً.",
+              "score": 2.0
+            }
+          ]
+        },
+        {
+          "id": "multi",
+          "query": "backup recovery",
+          "relevant_ids": [
+            "maple_backup",
+            "cedar_backup"
+          ],
+          "returned_ids": [
+            "maple_backup",
+            "cedar_backup"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 2.0
+            },
+            {
+              "document_id": "cedar_backup",
+              "sha256": "49ff5825bda68901edc7258f533244e65c15ee0a3bd50e2e513c0e1cf310b033",
+              "start": 0,
+              "end": 82,
+              "quote": "Cedar service backup recovery: snapshots run weekly on Sunday. Retain four copies.",
+              "score": 2.0
+            }
+          ]
+        },
+        {
+          "id": "freshness",
+          "query": "Aurora current approved launch",
+          "relevant_ids": [
+            "launch_new"
+          ],
+          "returned_ids": [
+            "launch_new",
+            "launch_old",
+            "maple_cancel"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "launch_new",
+              "sha256": "cfa1aeaf6babe890b1ef58bf927942b1bfd4529c6152cb5c71d21678f97a29ef",
+              "start": 0,
+              "end": 81,
+              "quote": "Dated 2026: Aurora launch target is September. This is the current approved plan.",
+              "score": 4.0
+            },
+            {
+              "document_id": "launch_old",
+              "sha256": "39a40703e87158894773344fc73ea30cc800318e2e4926ad810cd55bc1fbbf3d",
+              "start": 0,
+              "end": 85,
+              "quote": "Dated 2024: Aurora launch target was June. Historical plan, superseded by launch_new.",
+              "score": 3.0
+            },
+            {
+              "document_id": "maple_cancel",
+              "sha256": "8ce7e05452a7e8897dfa74953fddbd215e95a21430ce685ca69c377cd828ae48",
+              "start": 0,
+              "end": 124,
+              "quote": "Maple service cancellation: Stop interrupts current work. Pause blocks future scheduled work. Neither deletes saved history.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "semantic_gap",
+          "query": "dining allowance ceiling",
+          "relevant_ids": [
+            "orion_expense"
+          ],
+          "returned_ids": [],
+          "recall_at_3": 0.0,
+          "reciprocal_rank_at_3": 0,
+          "abstained": true,
+          "provenance_valid": true,
+          "hits": []
+        },
+        {
+          "id": "absent",
+          "query": "quasar zeppelin",
+          "relevant_ids": [],
+          "returned_ids": [],
+          "recall_at_3": null,
+          "reciprocal_rank_at_3": null,
+          "abstained": true,
+          "provenance_valid": true,
+          "hits": []
+        },
+        {
+          "id": "absent_overlap",
+          "query": "Atlas telescope warranty lifetime",
+          "relevant_ids": [],
+          "returned_ids": [
+            "atlas_return",
+            "atlas_shipping"
+          ],
+          "recall_at_3": null,
+          "reciprocal_rank_at_3": null,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "atlas_return",
+              "sha256": "29ca25d9b924a7ccb387a2bff78ae587a9decdd5f579c8266968c1caabcb288f",
+              "start": 0,
+              "end": 104,
+              "quote": "Atlas telescope return policy: unopened telescopes can be returned within thirty days. Receipt required.",
+              "score": 2.0
+            },
+            {
+              "document_id": "atlas_shipping",
+              "sha256": "9b766104592f45c5cffb6aa050ff179e6a120d546bf785133871a04837416bbe",
+              "start": 0,
+              "end": 99,
+              "quote": "Atlas telescope shipping policy: standard delivery takes five days. Returns are handled separately.",
+              "score": 2.0
+            }
+          ]
+        },
+        {
+          "id": "empty",
+          "query": "",
+          "relevant_ids": [],
+          "returned_ids": [],
+          "recall_at_3": null,
+          "reciprocal_rank_at_3": null,
+          "abstained": true,
+          "provenance_valid": true,
+          "hits": []
+        },
+        {
+          "id": "punctuation",
+          "query": "\"*():",
+          "relevant_ids": [],
+          "returned_ids": [],
+          "recall_at_3": null,
+          "reciprocal_rank_at_3": null,
+          "abstained": true,
+          "provenance_valid": true,
+          "hits": []
+        }
+      ]
+    },
+    {
+      "backend": "fts5",
+      "document_count": 256,
+      "corpus_utf8_bytes": 28641,
+      "corpus_sha256": "9cc7ba19d03c31f10e8ef8cdd670dd3f9f0f12615048c6de6b2b6b0c1150e987",
+      "positive_queries": 17,
+      "negative_queries": 4,
+      "macro_recall_at_3": 0.9411764705882353,
+      "mrr_at_3": 0.9411764705882353,
+      "negative_abstention_rate": 0.75,
+      "provenance_valid": true,
+      "build_ms_with_tracemalloc": 5.660375,
+      "python_build_peak_bytes": 361880,
+      "sqlite_page_bytes": 77824,
+      "warm_query_samples": 630,
+      "warm_p50_ms": 0.0165,
+      "warm_p95_ms": 0.04,
+      "queries": [
+        {
+          "id": "exact_policy",
+          "query": "Atlas telescope return policy",
+          "relevant_ids": [
+            "atlas_return"
+          ],
+          "returned_ids": [
+            "atlas_return",
+            "atlas_shipping",
+            "return_glossary"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "atlas_return",
+              "sha256": "29ca25d9b924a7ccb387a2bff78ae587a9decdd5f579c8266968c1caabcb288f",
+              "start": 0,
+              "end": 104,
+              "quote": "Atlas telescope return policy: unopened telescopes can be returned within thirty days. Receipt required.",
+              "score": 14.086290453142388
+            },
+            {
+              "document_id": "atlas_shipping",
+              "sha256": "9b766104592f45c5cffb6aa050ff179e6a120d546bf785133871a04837416bbe",
+              "start": 0,
+              "end": 99,
+              "quote": "Atlas telescope shipping policy: standard delivery takes five days. Returns are handled separately.",
+              "score": 9.89919382105934
+            },
+            {
+              "document_id": "return_glossary",
+              "sha256": "aea2e2f5df19f771de4ced352275de36604bc7d2e7c54c995bf22ced57c2b8eb",
+              "start": 0,
+              "end": 320,
+              "quote": "return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return polic",
+              "score": 8.375166034032656
+            }
+          ]
+        },
+        {
+          "id": "shipping",
+          "query": "Atlas shipping delivery",
+          "relevant_ids": [
+            "atlas_shipping"
+          ],
+          "returned_ids": [
+            "atlas_shipping",
+            "atlas_return"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "atlas_shipping",
+              "sha256": "9b766104592f45c5cffb6aa050ff179e6a120d546bf785133871a04837416bbe",
+              "start": 0,
+              "end": 99,
+              "quote": "Atlas telescope shipping policy: standard delivery takes five days. Returns are handled separately.",
+              "score": 15.951010754006203
+            },
+            {
+              "document_id": "atlas_return",
+              "sha256": "29ca25d9b924a7ccb387a2bff78ae587a9decdd5f579c8266968c1caabcb288f",
+              "start": 0,
+              "end": 104,
+              "quote": "Atlas telescope return policy: unopened telescopes can be returned within thirty days. Receipt required.",
+              "score": 4.813576932835725
+            }
+          ]
+        },
+        {
+          "id": "other_product",
+          "query": "Beacon microscope return",
+          "relevant_ids": [
+            "beacon_return"
+          ],
+          "returned_ids": [
+            "beacon_return",
+            "return_glossary",
+            "atlas_return"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "beacon_return",
+              "sha256": "a7c11526ce9c7e91cc3b921f9f98aa7c24231f29359f25f637195381c0c438fd",
+              "start": 0,
+              "end": 109,
+              "quote": "Beacon microscope return policy: unopened microscopes can be returned within fourteen days. Receipt required.",
+              "score": 15.158220980287046
+            },
+            {
+              "document_id": "return_glossary",
+              "sha256": "aea2e2f5df19f771de4ced352275de36604bc7d2e7c54c995bf22ced57c2b8eb",
+              "start": 0,
+              "end": 320,
+              "quote": "return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return polic",
+              "score": 8.375164078407007
+            },
+            {
+              "document_id": "atlas_return",
+              "sha256": "29ca25d9b924a7ccb387a2bff78ae587a9decdd5f579c8266968c1caabcb288f",
+              "start": 0,
+              "end": 104,
+              "quote": "Atlas telescope return policy: unopened telescopes can be returned within thirty days. Receipt required.",
+              "score": 4.459135546249563
+            }
+          ]
+        },
+        {
+          "id": "backup",
+          "query": "Maple backup snapshots nightly",
+          "relevant_ids": [
+            "maple_backup"
+          ],
+          "returned_ids": [
+            "maple_backup",
+            "cedar_backup",
+            "maple_security"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 17.5109629222222
+            },
+            {
+              "document_id": "cedar_backup",
+              "sha256": "49ff5825bda68901edc7258f533244e65c15ee0a3bd50e2e513c0e1cf310b033",
+              "start": 0,
+              "end": 82,
+              "quote": "Cedar service backup recovery: snapshots run weekly on Sunday. Retain four copies.",
+              "score": 10.187052959636187
+            },
+            {
+              "document_id": "maple_security",
+              "sha256": "7c0e01d7facc948267e3de32f31f622d58c56f6202739a94c865d6acfcc952d0",
+              "start": 0,
+              "end": 83,
+              "quote": "Maple service encryption keys rotate every ninety days. Never paste keys into logs.",
+              "score": 4.585139376441858
+            }
+          ]
+        },
+        {
+          "id": "cancel",
+          "query": "Maple cancellation Stop Pause",
+          "relevant_ids": [
+            "maple_cancel"
+          ],
+          "returned_ids": [
+            "maple_cancel",
+            "maple_security",
+            "maple_backup"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "maple_cancel",
+              "sha256": "8ce7e05452a7e8897dfa74953fddbd215e95a21430ce685ca69c377cd828ae48",
+              "start": 0,
+              "end": 124,
+              "quote": "Maple service cancellation: Stop interrupts current work. Pause blocks future scheduled work. Neither deletes saved history.",
+              "score": 19.43934185489912
+            },
+            {
+              "document_id": "maple_security",
+              "sha256": "7c0e01d7facc948267e3de32f31f622d58c56f6202739a94c865d6acfcc952d0",
+              "start": 0,
+              "end": 83,
+              "quote": "Maple service encryption keys rotate every ninety days. Never paste keys into logs.",
+              "score": 4.585139376441858
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 4.017515519660885
+            }
+          ]
+        },
+        {
+          "id": "security",
+          "query": "Maple encryption keys rotate",
+          "relevant_ids": [
+            "maple_security"
+          ],
+          "returned_ids": [
+            "maple_security",
+            "maple_cancel",
+            "maple_backup"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "maple_security",
+              "sha256": "7c0e01d7facc948267e3de32f31f622d58c56f6202739a94c865d6acfcc952d0",
+              "start": 0,
+              "end": 83,
+              "quote": "Maple service encryption keys rotate every ninety days. Never paste keys into logs.",
+              "score": 22.98666036484375
+            },
+            {
+              "document_id": "maple_cancel",
+              "sha256": "8ce7e05452a7e8897dfa74953fddbd215e95a21430ce685ca69c377cd828ae48",
+              "start": 0,
+              "end": 124,
+              "quote": "Maple service cancellation: Stop interrupts current work. Pause blocks future scheduled work. Neither deletes saved history.",
+              "score": 4.226821682769122
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 4.017515519660885
+            }
+          ]
+        },
+        {
+          "id": "other_backup",
+          "query": "Cedar backup weekly",
+          "relevant_ids": [
+            "cedar_backup"
+          ],
+          "returned_ids": [
+            "cedar_backup",
+            "maple_backup"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "cedar_backup",
+              "sha256": "49ff5825bda68901edc7258f533244e65c15ee0a3bd50e2e513c0e1cf310b033",
+              "start": 0,
+              "end": 82,
+              "quote": "Cedar service backup recovery: snapshots run weekly on Sunday. Retain four copies.",
+              "score": 16.414852746852908
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 4.336854045402201
+            }
+          ]
+        },
+        {
+          "id": "table",
+          "query": "valve quantity north",
+          "relevant_ids": [
+            "station_table"
+          ],
+          "returned_ids": [
+            "station_table"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "station_table",
+              "sha256": "776b08f01fdbbb523aad01b68c75381de86b1146f809edd18965a9201980dd83",
+              "start": 0,
+              "end": 90,
+              "quote": "Synthetic station inventory\nItem | Quantity | Location\nvalve | 12 | north\npump | 4 | south",
+              "score": 16.981989400552223
+            }
+          ]
+        },
+        {
+          "id": "expense",
+          "query": "Orion meal reimbursement cap",
+          "relevant_ids": [
+            "orion_expense"
+          ],
+          "returned_ids": [
+            "orion_expense",
+            "orion_travel"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "orion_expense",
+              "sha256": "d1bb236a4159856fc49444c82a83ca87a1d6fdfbebf676207ae146305f221643",
+              "start": 0,
+              "end": 94,
+              "quote": "Orion expenses: meal reimbursement cap is 45 credits per day. Submit receipts within ten days.",
+              "score": 20.30422634464967
+            },
+            {
+              "document_id": "orion_travel",
+              "sha256": "9ef8e58f24a67cf82957fbfc52b1a0c5c4b8fb843287a4046a29109797d7e3b1",
+              "start": 0,
+              "end": 81,
+              "quote": "Orion travel: rail tickets need manager approval. Flights need director approval.",
+              "score": 5.246078021642929
+            }
+          ]
+        },
+        {
+          "id": "travel",
+          "query": "Orion rail approval",
+          "relevant_ids": [
+            "orion_travel"
+          ],
+          "returned_ids": [
+            "orion_travel",
+            "orion_expense",
+            "maple_backup"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "orion_travel",
+              "sha256": "9ef8e58f24a67cf82957fbfc52b1a0c5c4b8fb843287a4046a29109797d7e3b1",
+              "start": 0,
+              "end": 81,
+              "quote": "Orion travel: rail tickets need manager approval. Flights need director approval.",
+              "score": 17.99810700726982
+            },
+            {
+              "document_id": "orion_expense",
+              "sha256": "d1bb236a4159856fc49444c82a83ca87a1d6fdfbebf676207ae146305f221643",
+              "start": 0,
+              "end": 94,
+              "quote": "Orion expenses: meal reimbursement cap is 45 credits per day. Submit receipts within ten days.",
+              "score": 4.684833419030313
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 54,
+              "end": 123,
+              "quote": "t 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 4.336854045402201
+            }
+          ]
+        },
+        {
+          "id": "access",
+          "query": "Iris bicycle storage",
+          "relevant_ids": [
+            "iris_access"
+          ],
+          "returned_ids": [
+            "iris_access",
+            "iris_hours"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "iris_access",
+              "sha256": "ec3af3d86af89ee034fc9b992df7b0e145020627107b58a3c5e18f47e9a196d2",
+              "start": 0,
+              "end": 86,
+              "quote": "Iris building access: visitors register at reception. Bicycle storage is on floor two.",
+              "score": 15.951010754006203
+            },
+            {
+              "document_id": "iris_hours",
+              "sha256": "b5a06908e703c6f7770ad25299559833950f2f08fdd20ea8f0d0ee9ad6d6b6b6",
+              "start": 0,
+              "end": 73,
+              "quote": "Iris building opening hours: weekdays 08:00 to 18:00. Closed on weekends.",
+              "score": 4.949596375207849
+            }
+          ]
+        },
+        {
+          "id": "hours",
+          "query": "Iris opening hours",
+          "relevant_ids": [
+            "iris_hours"
+          ],
+          "returned_ids": [
+            "iris_hours",
+            "iris_access"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "iris_hours",
+              "sha256": "b5a06908e703c6f7770ad25299559833950f2f08fdd20ea8f0d0ee9ad6d6b6b6",
+              "start": 0,
+              "end": 73,
+              "quote": "Iris building opening hours: weekdays 08:00 to 18:00. Closed on weekends.",
+              "score": 15.951010754006203
+            },
+            {
+              "document_id": "iris_access",
+              "sha256": "ec3af3d86af89ee034fc9b992df7b0e145020627107b58a3c5e18f47e9a196d2",
+              "start": 0,
+              "end": 86,
+              "quote": "Iris building access: visitors register at reception. Bicycle storage is on floor two.",
+              "score": 4.949596375207849
+            }
+          ]
+        },
+        {
+          "id": "accent",
+          "query": "café ferme",
+          "relevant_ids": [
+            "cafe_menu"
+          ],
+          "returned_ids": [
+            "cafe_menu"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "cafe_menu",
+              "sha256": "1d6d41e11cd8a86086d9915134a076ec4f85261d926de2791352816aa337242e",
+              "start": 0,
+              "end": 76,
+              "quote": "Café menu: soupe du jour, thé, and croissants. Le café ferme à seize heures.",
+              "score": 12.611616249966463
+            }
+          ]
+        },
+        {
+          "id": "arabic",
+          "query": "مكتبة النور",
+          "relevant_ids": [
+            "arabic_hours"
+          ],
+          "returned_ids": [
+            "arabic_hours"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "arabic_hours",
+              "sha256": "f99327f1c52f90ea498f3ae2f6873908f8481cb84f3c8c46a1791bc9de363545",
+              "start": 0,
+              "end": 66,
+              "quote": "مكتبة النور تفتح الساعة التاسعة صباحاً وتغلق الساعة الخامسة مساءً.",
+              "score": 12.02041330925309
+            }
+          ]
+        },
+        {
+          "id": "multi",
+          "query": "backup recovery",
+          "relevant_ids": [
+            "maple_backup",
+            "cedar_backup"
+          ],
+          "returned_ids": [
+            "cedar_backup",
+            "maple_backup"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "cedar_backup",
+              "sha256": "49ff5825bda68901edc7258f533244e65c15ee0a3bd50e2e513c0e1cf310b033",
+              "start": 0,
+              "end": 82,
+              "quote": "Cedar service backup recovery: snapshots run weekly on Sunday. Retain four copies.",
+              "score": 10.187052959636187
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 8.673708090804402
+            }
+          ]
+        },
+        {
+          "id": "freshness",
+          "query": "Aurora current approved launch",
+          "relevant_ids": [
+            "launch_new"
+          ],
+          "returned_ids": [
+            "launch_new",
+            "launch_old",
+            "maple_cancel"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "launch_new",
+              "sha256": "cfa1aeaf6babe890b1ef58bf927942b1bfd4529c6152cb5c71d21678f97a29ef",
+              "start": 0,
+              "end": 81,
+              "quote": "Dated 2026: Aurora launch target is September. This is the current approved plan.",
+              "score": 20.349496315022726
+            },
+            {
+              "document_id": "launch_old",
+              "sha256": "39a40703e87158894773344fc73ea30cc800318e2e4926ad810cd55bc1fbbf3d",
+              "start": 0,
+              "end": 85,
+              "quote": "Dated 2024: Aurora launch target was June. Historical plan, superseded by launch_new.",
+              "score": 11.608293082720838
+            },
+            {
+              "document_id": "maple_cancel",
+              "sha256": "8ce7e05452a7e8897dfa74953fddbd215e95a21430ce685ca69c377cd828ae48",
+              "start": 0,
+              "end": 124,
+              "quote": "Maple service cancellation: Stop interrupts current work. Pause blocks future scheduled work. Neither deletes saved history.",
+              "score": 4.562797237347901
+            }
+          ]
+        },
+        {
+          "id": "semantic_gap",
+          "query": "dining allowance ceiling",
+          "relevant_ids": [
+            "orion_expense"
+          ],
+          "returned_ids": [],
+          "recall_at_3": 0.0,
+          "reciprocal_rank_at_3": 0,
+          "abstained": true,
+          "provenance_valid": true,
+          "hits": []
+        },
+        {
+          "id": "absent",
+          "query": "quasar zeppelin",
+          "relevant_ids": [],
+          "returned_ids": [],
+          "recall_at_3": null,
+          "reciprocal_rank_at_3": null,
+          "abstained": true,
+          "provenance_valid": true,
+          "hits": []
+        },
+        {
+          "id": "absent_overlap",
+          "query": "Atlas telescope warranty lifetime",
+          "relevant_ids": [],
+          "returned_ids": [
+            "atlas_shipping",
+            "atlas_return"
+          ],
+          "recall_at_3": null,
+          "reciprocal_rank_at_3": null,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "atlas_shipping",
+              "sha256": "9b766104592f45c5cffb6aa050ff179e6a120d546bf785133871a04837416bbe",
+              "start": 0,
+              "end": 99,
+              "quote": "Atlas telescope shipping policy: standard delivery takes five days. Returns are handled separately.",
+              "score": 9.899192750415699
+            },
+            {
+              "document_id": "atlas_return",
+              "sha256": "29ca25d9b924a7ccb387a2bff78ae587a9decdd5f579c8266968c1caabcb288f",
+              "start": 0,
+              "end": 104,
+              "quote": "Atlas telescope return policy: unopened telescopes can be returned within thirty days. Receipt required.",
+              "score": 9.62715386567145
+            }
+          ]
+        },
+        {
+          "id": "empty",
+          "query": "",
+          "relevant_ids": [],
+          "returned_ids": [],
+          "recall_at_3": null,
+          "reciprocal_rank_at_3": null,
+          "abstained": true,
+          "provenance_valid": true,
+          "hits": []
+        },
+        {
+          "id": "punctuation",
+          "query": "\"*():",
+          "relevant_ids": [],
+          "returned_ids": [],
+          "recall_at_3": null,
+          "reciprocal_rank_at_3": null,
+          "abstained": true,
+          "provenance_valid": true,
+          "hits": []
+        }
+      ]
+    },
+    {
+      "backend": "overlap",
+      "document_count": 2048,
+      "corpus_utf8_bytes": 224999,
+      "corpus_sha256": "400ba13f1e81c69408ea752142a8f8f51a43cbee64a42b855a9f487b52a9582e",
+      "positive_queries": 17,
+      "negative_queries": 4,
+      "macro_recall_at_3": 0.9411764705882353,
+      "mrr_at_3": 0.8823529411764706,
+      "negative_abstention_rate": 0.75,
+      "provenance_valid": true,
+      "build_ms_with_tracemalloc": 25.086125,
+      "python_build_peak_bytes": 2876540,
+      "sqlite_page_bytes": 0,
+      "warm_query_samples": 630,
+      "warm_p50_ms": 0.641666,
+      "warm_p95_ms": 0.84,
+      "queries": [
+        {
+          "id": "exact_policy",
+          "query": "Atlas telescope return policy",
+          "relevant_ids": [
+            "atlas_return"
+          ],
+          "returned_ids": [
+            "return_glossary",
+            "atlas_return",
+            "atlas_shipping"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 0.5,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "return_glossary",
+              "sha256": "aea2e2f5df19f771de4ced352275de36604bc7d2e7c54c995bf22ced57c2b8eb",
+              "start": 0,
+              "end": 320,
+              "quote": "return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return polic",
+              "score": 160.0
+            },
+            {
+              "document_id": "atlas_return",
+              "sha256": "29ca25d9b924a7ccb387a2bff78ae587a9decdd5f579c8266968c1caabcb288f",
+              "start": 0,
+              "end": 104,
+              "quote": "Atlas telescope return policy: unopened telescopes can be returned within thirty days. Receipt required.",
+              "score": 4.0
+            },
+            {
+              "document_id": "atlas_shipping",
+              "sha256": "9b766104592f45c5cffb6aa050ff179e6a120d546bf785133871a04837416bbe",
+              "start": 0,
+              "end": 99,
+              "quote": "Atlas telescope shipping policy: standard delivery takes five days. Returns are handled separately.",
+              "score": 3.0
+            }
+          ]
+        },
+        {
+          "id": "shipping",
+          "query": "Atlas shipping delivery",
+          "relevant_ids": [
+            "atlas_shipping"
+          ],
+          "returned_ids": [
+            "atlas_shipping",
+            "atlas_return"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "atlas_shipping",
+              "sha256": "9b766104592f45c5cffb6aa050ff179e6a120d546bf785133871a04837416bbe",
+              "start": 0,
+              "end": 99,
+              "quote": "Atlas telescope shipping policy: standard delivery takes five days. Returns are handled separately.",
+              "score": 3.0
+            },
+            {
+              "document_id": "atlas_return",
+              "sha256": "29ca25d9b924a7ccb387a2bff78ae587a9decdd5f579c8266968c1caabcb288f",
+              "start": 0,
+              "end": 104,
+              "quote": "Atlas telescope return policy: unopened telescopes can be returned within thirty days. Receipt required.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "other_product",
+          "query": "Beacon microscope return",
+          "relevant_ids": [
+            "beacon_return"
+          ],
+          "returned_ids": [
+            "return_glossary",
+            "beacon_return",
+            "atlas_return"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 0.5,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "return_glossary",
+              "sha256": "aea2e2f5df19f771de4ced352275de36604bc7d2e7c54c995bf22ced57c2b8eb",
+              "start": 0,
+              "end": 320,
+              "quote": "return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return polic",
+              "score": 80.0
+            },
+            {
+              "document_id": "beacon_return",
+              "sha256": "a7c11526ce9c7e91cc3b921f9f98aa7c24231f29359f25f637195381c0c438fd",
+              "start": 0,
+              "end": 109,
+              "quote": "Beacon microscope return policy: unopened microscopes can be returned within fourteen days. Receipt required.",
+              "score": 3.0
+            },
+            {
+              "document_id": "atlas_return",
+              "sha256": "29ca25d9b924a7ccb387a2bff78ae587a9decdd5f579c8266968c1caabcb288f",
+              "start": 0,
+              "end": 104,
+              "quote": "Atlas telescope return policy: unopened telescopes can be returned within thirty days. Receipt required.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "backup",
+          "query": "Maple backup snapshots nightly",
+          "relevant_ids": [
+            "maple_backup"
+          ],
+          "returned_ids": [
+            "maple_backup",
+            "cedar_backup",
+            "maple_cancel"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 4.0
+            },
+            {
+              "document_id": "cedar_backup",
+              "sha256": "49ff5825bda68901edc7258f533244e65c15ee0a3bd50e2e513c0e1cf310b033",
+              "start": 0,
+              "end": 82,
+              "quote": "Cedar service backup recovery: snapshots run weekly on Sunday. Retain four copies.",
+              "score": 2.0
+            },
+            {
+              "document_id": "maple_cancel",
+              "sha256": "8ce7e05452a7e8897dfa74953fddbd215e95a21430ce685ca69c377cd828ae48",
+              "start": 0,
+              "end": 124,
+              "quote": "Maple service cancellation: Stop interrupts current work. Pause blocks future scheduled work. Neither deletes saved history.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "cancel",
+          "query": "Maple cancellation Stop Pause",
+          "relevant_ids": [
+            "maple_cancel"
+          ],
+          "returned_ids": [
+            "maple_cancel",
+            "maple_backup",
+            "maple_security"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "maple_cancel",
+              "sha256": "8ce7e05452a7e8897dfa74953fddbd215e95a21430ce685ca69c377cd828ae48",
+              "start": 0,
+              "end": 124,
+              "quote": "Maple service cancellation: Stop interrupts current work. Pause blocks future scheduled work. Neither deletes saved history.",
+              "score": 4.0
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 1.0
+            },
+            {
+              "document_id": "maple_security",
+              "sha256": "7c0e01d7facc948267e3de32f31f622d58c56f6202739a94c865d6acfcc952d0",
+              "start": 0,
+              "end": 83,
+              "quote": "Maple service encryption keys rotate every ninety days. Never paste keys into logs.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "security",
+          "query": "Maple encryption keys rotate",
+          "relevant_ids": [
+            "maple_security"
+          ],
+          "returned_ids": [
+            "maple_security",
+            "maple_backup",
+            "maple_cancel"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "maple_security",
+              "sha256": "7c0e01d7facc948267e3de32f31f622d58c56f6202739a94c865d6acfcc952d0",
+              "start": 0,
+              "end": 83,
+              "quote": "Maple service encryption keys rotate every ninety days. Never paste keys into logs.",
+              "score": 5.0
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 1.0
+            },
+            {
+              "document_id": "maple_cancel",
+              "sha256": "8ce7e05452a7e8897dfa74953fddbd215e95a21430ce685ca69c377cd828ae48",
+              "start": 0,
+              "end": 124,
+              "quote": "Maple service cancellation: Stop interrupts current work. Pause blocks future scheduled work. Neither deletes saved history.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "other_backup",
+          "query": "Cedar backup weekly",
+          "relevant_ids": [
+            "cedar_backup"
+          ],
+          "returned_ids": [
+            "cedar_backup",
+            "maple_backup"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "cedar_backup",
+              "sha256": "49ff5825bda68901edc7258f533244e65c15ee0a3bd50e2e513c0e1cf310b033",
+              "start": 0,
+              "end": 82,
+              "quote": "Cedar service backup recovery: snapshots run weekly on Sunday. Retain four copies.",
+              "score": 3.0
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "table",
+          "query": "valve quantity north",
+          "relevant_ids": [
+            "station_table"
+          ],
+          "returned_ids": [
+            "station_table"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "station_table",
+              "sha256": "776b08f01fdbbb523aad01b68c75381de86b1146f809edd18965a9201980dd83",
+              "start": 0,
+              "end": 90,
+              "quote": "Synthetic station inventory\nItem | Quantity | Location\nvalve | 12 | north\npump | 4 | south",
+              "score": 3.0
+            }
+          ]
+        },
+        {
+          "id": "expense",
+          "query": "Orion meal reimbursement cap",
+          "relevant_ids": [
+            "orion_expense"
+          ],
+          "returned_ids": [
+            "orion_expense",
+            "orion_travel"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "orion_expense",
+              "sha256": "d1bb236a4159856fc49444c82a83ca87a1d6fdfbebf676207ae146305f221643",
+              "start": 0,
+              "end": 94,
+              "quote": "Orion expenses: meal reimbursement cap is 45 credits per day. Submit receipts within ten days.",
+              "score": 4.0
+            },
+            {
+              "document_id": "orion_travel",
+              "sha256": "9ef8e58f24a67cf82957fbfc52b1a0c5c4b8fb843287a4046a29109797d7e3b1",
+              "start": 0,
+              "end": 81,
+              "quote": "Orion travel: rail tickets need manager approval. Flights need director approval.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "travel",
+          "query": "Orion rail approval",
+          "relevant_ids": [
+            "orion_travel"
+          ],
+          "returned_ids": [
+            "orion_travel",
+            "maple_backup",
+            "orion_expense"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "orion_travel",
+              "sha256": "9ef8e58f24a67cf82957fbfc52b1a0c5c4b8fb843287a4046a29109797d7e3b1",
+              "start": 0,
+              "end": 81,
+              "quote": "Orion travel: rail tickets need manager approval. Flights need director approval.",
+              "score": 4.0
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 54,
+              "end": 123,
+              "quote": "t 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 1.0
+            },
+            {
+              "document_id": "orion_expense",
+              "sha256": "d1bb236a4159856fc49444c82a83ca87a1d6fdfbebf676207ae146305f221643",
+              "start": 0,
+              "end": 94,
+              "quote": "Orion expenses: meal reimbursement cap is 45 credits per day. Submit receipts within ten days.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "access",
+          "query": "Iris bicycle storage",
+          "relevant_ids": [
+            "iris_access"
+          ],
+          "returned_ids": [
+            "iris_access",
+            "iris_hours"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "iris_access",
+              "sha256": "ec3af3d86af89ee034fc9b992df7b0e145020627107b58a3c5e18f47e9a196d2",
+              "start": 0,
+              "end": 86,
+              "quote": "Iris building access: visitors register at reception. Bicycle storage is on floor two.",
+              "score": 3.0
+            },
+            {
+              "document_id": "iris_hours",
+              "sha256": "b5a06908e703c6f7770ad25299559833950f2f08fdd20ea8f0d0ee9ad6d6b6b6",
+              "start": 0,
+              "end": 73,
+              "quote": "Iris building opening hours: weekdays 08:00 to 18:00. Closed on weekends.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "hours",
+          "query": "Iris opening hours",
+          "relevant_ids": [
+            "iris_hours"
+          ],
+          "returned_ids": [
+            "iris_hours",
+            "iris_access"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "iris_hours",
+              "sha256": "b5a06908e703c6f7770ad25299559833950f2f08fdd20ea8f0d0ee9ad6d6b6b6",
+              "start": 0,
+              "end": 73,
+              "quote": "Iris building opening hours: weekdays 08:00 to 18:00. Closed on weekends.",
+              "score": 3.0
+            },
+            {
+              "document_id": "iris_access",
+              "sha256": "ec3af3d86af89ee034fc9b992df7b0e145020627107b58a3c5e18f47e9a196d2",
+              "start": 0,
+              "end": 86,
+              "quote": "Iris building access: visitors register at reception. Bicycle storage is on floor two.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "accent",
+          "query": "café ferme",
+          "relevant_ids": [
+            "cafe_menu"
+          ],
+          "returned_ids": [
+            "cafe_menu"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "cafe_menu",
+              "sha256": "1d6d41e11cd8a86086d9915134a076ec4f85261d926de2791352816aa337242e",
+              "start": 0,
+              "end": 76,
+              "quote": "Café menu: soupe du jour, thé, and croissants. Le café ferme à seize heures.",
+              "score": 3.0
+            }
+          ]
+        },
+        {
+          "id": "arabic",
+          "query": "مكتبة النور",
+          "relevant_ids": [
+            "arabic_hours"
+          ],
+          "returned_ids": [
+            "arabic_hours"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "arabic_hours",
+              "sha256": "f99327f1c52f90ea498f3ae2f6873908f8481cb84f3c8c46a1791bc9de363545",
+              "start": 0,
+              "end": 66,
+              "quote": "مكتبة النور تفتح الساعة التاسعة صباحاً وتغلق الساعة الخامسة مساءً.",
+              "score": 2.0
+            }
+          ]
+        },
+        {
+          "id": "multi",
+          "query": "backup recovery",
+          "relevant_ids": [
+            "maple_backup",
+            "cedar_backup"
+          ],
+          "returned_ids": [
+            "maple_backup",
+            "cedar_backup"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 2.0
+            },
+            {
+              "document_id": "cedar_backup",
+              "sha256": "49ff5825bda68901edc7258f533244e65c15ee0a3bd50e2e513c0e1cf310b033",
+              "start": 0,
+              "end": 82,
+              "quote": "Cedar service backup recovery: snapshots run weekly on Sunday. Retain four copies.",
+              "score": 2.0
+            }
+          ]
+        },
+        {
+          "id": "freshness",
+          "query": "Aurora current approved launch",
+          "relevant_ids": [
+            "launch_new"
+          ],
+          "returned_ids": [
+            "launch_new",
+            "launch_old",
+            "maple_cancel"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "launch_new",
+              "sha256": "cfa1aeaf6babe890b1ef58bf927942b1bfd4529c6152cb5c71d21678f97a29ef",
+              "start": 0,
+              "end": 81,
+              "quote": "Dated 2026: Aurora launch target is September. This is the current approved plan.",
+              "score": 4.0
+            },
+            {
+              "document_id": "launch_old",
+              "sha256": "39a40703e87158894773344fc73ea30cc800318e2e4926ad810cd55bc1fbbf3d",
+              "start": 0,
+              "end": 85,
+              "quote": "Dated 2024: Aurora launch target was June. Historical plan, superseded by launch_new.",
+              "score": 3.0
+            },
+            {
+              "document_id": "maple_cancel",
+              "sha256": "8ce7e05452a7e8897dfa74953fddbd215e95a21430ce685ca69c377cd828ae48",
+              "start": 0,
+              "end": 124,
+              "quote": "Maple service cancellation: Stop interrupts current work. Pause blocks future scheduled work. Neither deletes saved history.",
+              "score": 1.0
+            }
+          ]
+        },
+        {
+          "id": "semantic_gap",
+          "query": "dining allowance ceiling",
+          "relevant_ids": [
+            "orion_expense"
+          ],
+          "returned_ids": [],
+          "recall_at_3": 0.0,
+          "reciprocal_rank_at_3": 0,
+          "abstained": true,
+          "provenance_valid": true,
+          "hits": []
+        },
+        {
+          "id": "absent",
+          "query": "quasar zeppelin",
+          "relevant_ids": [],
+          "returned_ids": [],
+          "recall_at_3": null,
+          "reciprocal_rank_at_3": null,
+          "abstained": true,
+          "provenance_valid": true,
+          "hits": []
+        },
+        {
+          "id": "absent_overlap",
+          "query": "Atlas telescope warranty lifetime",
+          "relevant_ids": [],
+          "returned_ids": [
+            "atlas_return",
+            "atlas_shipping"
+          ],
+          "recall_at_3": null,
+          "reciprocal_rank_at_3": null,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "atlas_return",
+              "sha256": "29ca25d9b924a7ccb387a2bff78ae587a9decdd5f579c8266968c1caabcb288f",
+              "start": 0,
+              "end": 104,
+              "quote": "Atlas telescope return policy: unopened telescopes can be returned within thirty days. Receipt required.",
+              "score": 2.0
+            },
+            {
+              "document_id": "atlas_shipping",
+              "sha256": "9b766104592f45c5cffb6aa050ff179e6a120d546bf785133871a04837416bbe",
+              "start": 0,
+              "end": 99,
+              "quote": "Atlas telescope shipping policy: standard delivery takes five days. Returns are handled separately.",
+              "score": 2.0
+            }
+          ]
+        },
+        {
+          "id": "empty",
+          "query": "",
+          "relevant_ids": [],
+          "returned_ids": [],
+          "recall_at_3": null,
+          "reciprocal_rank_at_3": null,
+          "abstained": true,
+          "provenance_valid": true,
+          "hits": []
+        },
+        {
+          "id": "punctuation",
+          "query": "\"*():",
+          "relevant_ids": [],
+          "returned_ids": [],
+          "recall_at_3": null,
+          "reciprocal_rank_at_3": null,
+          "abstained": true,
+          "provenance_valid": true,
+          "hits": []
+        }
+      ]
+    },
+    {
+      "backend": "fts5",
+      "document_count": 2048,
+      "corpus_utf8_bytes": 224999,
+      "corpus_sha256": "400ba13f1e81c69408ea752142a8f8f51a43cbee64a42b855a9f487b52a9582e",
+      "positive_queries": 17,
+      "negative_queries": 4,
+      "macro_recall_at_3": 0.9411764705882353,
+      "mrr_at_3": 0.9411764705882353,
+      "negative_abstention_rate": 0.75,
+      "provenance_valid": true,
+      "build_ms_with_tracemalloc": 40.948958,
+      "python_build_peak_bytes": 2888654,
+      "sqlite_page_bytes": 409600,
+      "warm_query_samples": 630,
+      "warm_p50_ms": 0.014708,
+      "warm_p95_ms": 0.045042,
+      "queries": [
+        {
+          "id": "exact_policy",
+          "query": "Atlas telescope return policy",
+          "relevant_ids": [
+            "atlas_return"
+          ],
+          "returned_ids": [
+            "atlas_return",
+            "atlas_shipping",
+            "return_glossary"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "atlas_return",
+              "sha256": "29ca25d9b924a7ccb387a2bff78ae587a9decdd5f579c8266968c1caabcb288f",
+              "start": 0,
+              "end": 104,
+              "quote": "Atlas telescope return policy: unopened telescopes can be returned within thirty days. Receipt required.",
+              "score": 20.373752796163263
+            },
+            {
+              "document_id": "atlas_shipping",
+              "sha256": "9b766104592f45c5cffb6aa050ff179e6a120d546bf785133871a04837416bbe",
+              "start": 0,
+              "end": 99,
+              "quote": "Atlas telescope shipping policy: standard delivery takes five days. Returns are handled separately.",
+              "score": 14.211258474180669
+            },
+            {
+              "document_id": "return_glossary",
+              "sha256": "aea2e2f5df19f771de4ced352275de36604bc7d2e7c54c995bf22ced57c2b8eb",
+              "start": 0,
+              "end": 320,
+              "quote": "return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return polic",
+              "score": 12.419710268802515
+            }
+          ]
+        },
+        {
+          "id": "shipping",
+          "query": "Atlas shipping delivery",
+          "relevant_ids": [
+            "atlas_shipping"
+          ],
+          "returned_ids": [
+            "atlas_shipping",
+            "atlas_return"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "atlas_shipping",
+              "sha256": "9b766104592f45c5cffb6aa050ff179e6a120d546bf785133871a04837416bbe",
+              "start": 0,
+              "end": 99,
+              "quote": "Atlas telescope shipping policy: standard delivery takes five days. Returns are handled separately.",
+              "score": 22.400197846199728
+            },
+            {
+              "document_id": "atlas_return",
+              "sha256": "29ca25d9b924a7ccb387a2bff78ae587a9decdd5f579c8266968c1caabcb288f",
+              "start": 0,
+              "end": 104,
+              "quote": "Atlas telescope return policy: unopened telescopes can be returned within thirty days. Receipt required.",
+              "score": 6.906908463903111
+            }
+          ]
+        },
+        {
+          "id": "other_product",
+          "query": "Beacon microscope return",
+          "relevant_ids": [
+            "beacon_return"
+          ],
+          "returned_ids": [
+            "beacon_return",
+            "return_glossary",
+            "atlas_return"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "beacon_return",
+              "sha256": "a7c11526ce9c7e91cc3b921f9f98aa7c24231f29359f25f637195381c0c438fd",
+              "start": 0,
+              "end": 109,
+              "quote": "Beacon microscope return policy: unopened microscopes can be returned within fourteen days. Receipt required.",
+              "score": 21.426766949652926
+            },
+            {
+              "document_id": "return_glossary",
+              "sha256": "aea2e2f5df19f771de4ced352275de36604bc7d2e7c54c995bf22ced57c2b8eb",
+              "start": 0,
+              "end": 320,
+              "quote": "return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return policy return polic",
+              "score": 12.419708319277992
+            },
+            {
+              "document_id": "atlas_return",
+              "sha256": "29ca25d9b924a7ccb387a2bff78ae587a9decdd5f579c8266968c1caabcb288f",
+              "start": 0,
+              "end": 104,
+              "quote": "Atlas telescope return policy: unopened telescopes can be returned within thirty days. Receipt required.",
+              "score": 6.5599348386425325
+            }
+          ]
+        },
+        {
+          "id": "backup",
+          "query": "Maple backup snapshots nightly",
+          "relevant_ids": [
+            "maple_backup"
+          ],
+          "returned_ids": [
+            "maple_backup",
+            "cedar_backup",
+            "maple_security"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 25.00945102449623
+            },
+            {
+              "document_id": "cedar_backup",
+              "sha256": "49ff5825bda68901edc7258f533244e65c15ee0a3bd50e2e513c0e1cf310b033",
+              "start": 0,
+              "end": 82,
+              "quote": "Cedar service backup recovery: snapshots run weekly on Sunday. Retain four copies.",
+              "score": 14.632245085635516
+            },
+            {
+              "document_id": "maple_security",
+              "sha256": "7c0e01d7facc948267e3de32f31f622d58c56f6202739a94c865d6acfcc952d0",
+              "start": 0,
+              "end": 83,
+              "quote": "Maple service encryption keys rotate every ninety days. Never paste keys into logs.",
+              "score": 6.748672224609471
+            }
+          ]
+        },
+        {
+          "id": "cancel",
+          "query": "Maple cancellation Stop Pause",
+          "relevant_ids": [
+            "maple_cancel"
+          ],
+          "returned_ids": [
+            "maple_cancel",
+            "maple_security",
+            "maple_backup"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "maple_cancel",
+              "sha256": "8ce7e05452a7e8897dfa74953fddbd215e95a21430ce685ca69c377cd828ae48",
+              "start": 0,
+              "end": 124,
+              "quote": "Maple service cancellation: Stop interrupts current work. Pause blocks future scheduled work. Neither deletes saved history.",
+              "score": 27.331447911267098
+            },
+            {
+              "document_id": "maple_security",
+              "sha256": "7c0e01d7facc948267e3de32f31f622d58c56f6202739a94c865d6acfcc952d0",
+              "start": 0,
+              "end": 83,
+              "quote": "Maple service encryption keys rotate every ninety days. Never paste keys into logs.",
+              "score": 6.748672224609471
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 5.899930914265573
+            }
+          ]
+        },
+        {
+          "id": "security",
+          "query": "Maple encryption keys rotate",
+          "relevant_ids": [
+            "maple_security"
+          ],
+          "returned_ids": [
+            "maple_security",
+            "maple_cancel",
+            "maple_backup"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "maple_security",
+              "sha256": "7c0e01d7facc948267e3de32f31f622d58c56f6202739a94c865d6acfcc952d0",
+              "start": 0,
+              "end": 83,
+              "quote": "Maple service encryption keys rotate every ninety days. Never paste keys into logs.",
+              "score": 32.36681770048866
+            },
+            {
+              "document_id": "maple_cancel",
+              "sha256": "8ce7e05452a7e8897dfa74953fddbd215e95a21430ce685ca69c377cd828ae48",
+              "start": 0,
+              "end": 124,
+              "quote": "Maple service cancellation: Stop interrupts current work. Pause blocks future scheduled work. Neither deletes saved history.",
+              "score": 6.21245254444922
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 5.899930914265573
+            }
+          ]
+        },
+        {
+          "id": "other_backup",
+          "query": "Cedar backup weekly",
+          "relevant_ids": [
+            "cedar_backup"
+          ],
+          "returned_ids": [
+            "cedar_backup",
+            "maple_backup"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "cedar_backup",
+              "sha256": "49ff5825bda68901edc7258f533244e65c15ee0a3bd50e2e513c0e1cf310b033",
+              "start": 0,
+              "end": 82,
+              "quote": "Cedar service backup recovery: snapshots run weekly on Sunday. Retain four copies.",
+              "score": 23.06377087435294
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 6.2119950533863975
+            }
+          ]
+        },
+        {
+          "id": "table",
+          "query": "valve quantity north",
+          "relevant_ids": [
+            "station_table"
+          ],
+          "returned_ids": [
+            "station_table"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "station_table",
+              "sha256": "776b08f01fdbbb523aad01b68c75381de86b1146f809edd18965a9201980dd83",
+              "start": 0,
+              "end": 90,
+              "quote": "Synthetic station inventory\nItem | Quantity | Location\nvalve | 12 | north\npump | 4 | south",
+              "score": 23.621472497302772
+            }
+          ]
+        },
+        {
+          "id": "expense",
+          "query": "Orion meal reimbursement cap",
+          "relevant_ids": [
+            "orion_expense"
+          ],
+          "returned_ids": [
+            "orion_expense",
+            "orion_travel"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "orion_expense",
+              "sha256": "d1bb236a4159856fc49444c82a83ca87a1d6fdfbebf676207ae146305f221643",
+              "start": 0,
+              "end": 94,
+              "quote": "Orion expenses: meal reimbursement cap is 45 credits per day. Submit receipts within ten days.",
+              "score": 28.412554220673695
+            },
+            {
+              "document_id": "orion_travel",
+              "sha256": "9ef8e58f24a67cf82957fbfc52b1a0c5c4b8fb843287a4046a29109797d7e3b1",
+              "start": 0,
+              "end": 81,
+              "quote": "Orion travel: rail tickets need manager approval. Flights need director approval.",
+              "score": 7.539468238422117
+            }
+          ]
+        },
+        {
+          "id": "travel",
+          "query": "Orion rail approval",
+          "relevant_ids": [
+            "orion_travel"
+          ],
+          "returned_ids": [
+            "orion_travel",
+            "orion_expense",
+            "maple_backup"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "orion_travel",
+              "sha256": "9ef8e58f24a67cf82957fbfc52b1a0c5c4b8fb843287a4046a29109797d7e3b1",
+              "start": 0,
+              "end": 81,
+              "quote": "Orion travel: rail tickets need manager approval. Flights need director approval.",
+              "score": 25.63364718108411
+            },
+            {
+              "document_id": "orion_expense",
+              "sha256": "d1bb236a4159856fc49444c82a83ca87a1d6fdfbebf676207ae146305f221643",
+              "start": 0,
+              "end": 94,
+              "quote": "Orion expenses: meal reimbursement cap is 45 credits per day. Submit receipts within ten days.",
+              "score": 6.7190008843070315
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 54,
+              "end": 123,
+              "quote": "t 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 6.2119950533863975
+            }
+          ]
+        },
+        {
+          "id": "access",
+          "query": "Iris bicycle storage",
+          "relevant_ids": [
+            "iris_access"
+          ],
+          "returned_ids": [
+            "iris_access",
+            "iris_hours"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "iris_access",
+              "sha256": "ec3af3d86af89ee034fc9b992df7b0e145020627107b58a3c5e18f47e9a196d2",
+              "start": 0,
+              "end": 86,
+              "quote": "Iris building access: visitors register at reception. Bicycle storage is on floor two.",
+              "score": 22.400197846199728
+            },
+            {
+              "document_id": "iris_hours",
+              "sha256": "b5a06908e703c6f7770ad25299559833950f2f08fdd20ea8f0d0ee9ad6d6b6b6",
+              "start": 0,
+              "end": 73,
+              "quote": "Iris building opening hours: weekdays 08:00 to 18:00. Closed on weekends.",
+              "score": 7.105628707420005
+            }
+          ]
+        },
+        {
+          "id": "hours",
+          "query": "Iris opening hours",
+          "relevant_ids": [
+            "iris_hours"
+          ],
+          "returned_ids": [
+            "iris_hours",
+            "iris_access"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "iris_hours",
+              "sha256": "b5a06908e703c6f7770ad25299559833950f2f08fdd20ea8f0d0ee9ad6d6b6b6",
+              "start": 0,
+              "end": 73,
+              "quote": "Iris building opening hours: weekdays 08:00 to 18:00. Closed on weekends.",
+              "score": 22.400197846199728
+            },
+            {
+              "document_id": "iris_access",
+              "sha256": "ec3af3d86af89ee034fc9b992df7b0e145020627107b58a3c5e18f47e9a196d2",
+              "start": 0,
+              "end": 86,
+              "quote": "Iris building access: visitors register at reception. Bicycle storage is on floor two.",
+              "score": 7.105628707420005
+            }
+          ]
+        },
+        {
+          "id": "accent",
+          "query": "café ferme",
+          "relevant_ids": [
+            "cafe_menu"
+          ],
+          "returned_ids": [
+            "cafe_menu"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "cafe_menu",
+              "sha256": "1d6d41e11cd8a86086d9915134a076ec4f85261d926de2791352816aa337242e",
+              "start": 0,
+              "end": 76,
+              "quote": "Café menu: soupe du jour, thé, and croissants. Le café ferme à seize heures.",
+              "score": 17.560326829363184
+            }
+          ]
+        },
+        {
+          "id": "arabic",
+          "query": "مكتبة النور",
+          "relevant_ids": [
+            "arabic_hours"
+          ],
+          "returned_ids": [
+            "arabic_hours"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "arabic_hours",
+              "sha256": "f99327f1c52f90ea498f3ae2f6873908f8481cb84f3c8c46a1791bc9de363545",
+              "start": 0,
+              "end": 66,
+              "quote": "مكتبة النور تفتح الساعة التاسعة صباحاً وتغلق الساعة الخامسة مساءً.",
+              "score": 16.739409258603217
+            }
+          ]
+        },
+        {
+          "id": "multi",
+          "query": "backup recovery",
+          "relevant_ids": [
+            "maple_backup",
+            "cedar_backup"
+          ],
+          "returned_ids": [
+            "cedar_backup",
+            "maple_backup"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "cedar_backup",
+              "sha256": "49ff5825bda68901edc7258f533244e65c15ee0a3bd50e2e513c0e1cf310b033",
+              "start": 0,
+              "end": 82,
+              "quote": "Cedar service backup recovery: snapshots run weekly on Sunday. Retain four copies.",
+              "score": 14.632245085635516
+            },
+            {
+              "document_id": "maple_backup",
+              "sha256": "d78832003ca1fbe14500136a3382503cd700f00c1ad0f21ce8b0167e517854ad",
+              "start": 0,
+              "end": 123,
+              "quote": "Maple service backup recovery: snapshots run nightly at 02:00 UTC. Retain seven copies. Restore requires operator approval.",
+              "score": 12.423990106772795
+            }
+          ]
+        },
+        {
+          "id": "freshness",
+          "query": "Aurora current approved launch",
+          "relevant_ids": [
+            "launch_new"
+          ],
+          "returned_ids": [
+            "launch_new",
+            "launch_old",
+            "maple_cancel"
+          ],
+          "recall_at_3": 1.0,
+          "reciprocal_rank_at_3": 1.0,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "launch_new",
+              "sha256": "cfa1aeaf6babe890b1ef58bf927942b1bfd4529c6152cb5c71d21678f97a29ef",
+              "start": 0,
+              "end": 81,
+              "quote": "Dated 2026: Aurora launch target is September. This is the current approved plan.",
+              "score": 28.964170691649873
+            },
+            {
+              "document_id": "launch_old",
+              "sha256": "39a40703e87158894773344fc73ea30cc800318e2e4926ad810cd55bc1fbbf3d",
+              "start": 0,
+              "end": 85,
+              "quote": "Dated 2024: Aurora launch target was June. Historical plan, superseded by launch_new.",
+              "score": 16.69798789302678
+            },
+            {
+              "document_id": "maple_cancel",
+              "sha256": "8ce7e05452a7e8897dfa74953fddbd215e95a21430ce685ca69c377cd828ae48",
+              "start": 0,
+              "end": 124,
+              "quote": "Maple service cancellation: Stop interrupts current work. Pause blocks future scheduled work. Neither deletes saved history.",
+              "score": 6.5410468421256445
+            }
+          ]
+        },
+        {
+          "id": "semantic_gap",
+          "query": "dining allowance ceiling",
+          "relevant_ids": [
+            "orion_expense"
+          ],
+          "returned_ids": [],
+          "recall_at_3": 0.0,
+          "reciprocal_rank_at_3": 0,
+          "abstained": true,
+          "provenance_valid": true,
+          "hits": []
+        },
+        {
+          "id": "absent",
+          "query": "quasar zeppelin",
+          "relevant_ids": [],
+          "returned_ids": [],
+          "recall_at_3": null,
+          "reciprocal_rank_at_3": null,
+          "abstained": true,
+          "provenance_valid": true,
+          "hits": []
+        },
+        {
+          "id": "absent_overlap",
+          "query": "Atlas telescope warranty lifetime",
+          "relevant_ids": [],
+          "returned_ids": [
+            "atlas_shipping",
+            "atlas_return"
+          ],
+          "recall_at_3": null,
+          "reciprocal_rank_at_3": null,
+          "abstained": false,
+          "provenance_valid": true,
+          "hits": [
+            {
+              "document_id": "atlas_shipping",
+              "sha256": "9b766104592f45c5cffb6aa050ff179e6a120d546bf785133871a04837416bbe",
+              "start": 0,
+              "end": 99,
+              "quote": "Atlas telescope shipping policy: standard delivery takes five days. Returns are handled separately.",
+              "score": 14.21125741484001
+            },
+            {
+              "document_id": "atlas_return",
+              "sha256": "29ca25d9b924a7ccb387a2bff78ae587a9decdd5f579c8266968c1caabcb288f",
+              "start": 0,
+              "end": 104,
+              "quote": "Atlas telescope return policy: unopened telescopes can be returned within thirty days. Receipt required.",
+              "score": 13.813816927806222
+            }
+          ]
+        },
+        {
+          "id": "empty",
+          "query": "",
+          "relevant_ids": [],
+          "returned_ids": [],
+          "recall_at_3": null,
+          "reciprocal_rank_at_3": null,
+          "abstained": true,
+          "provenance_valid": true,
+          "hits": []
+        },
+        {
+          "id": "punctuation",
+          "query": "\"*():",
+          "relevant_ids": [],
+          "returned_ids": [],
+          "recall_at_3": null,
+          "reciprocal_rank_at_3": null,
+          "abstained": true,
+          "provenance_valid": true,
+          "hits": []
+        }
+      ]
+    }
+  ],
+  "process_max_rss_bytes": 34996224
+}

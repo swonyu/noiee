@@ -1,0 +1,24 @@
+{
+  "created_at_utc": "2026-11-09T11:47:21.097682+00:00",
+  "command": [
+    "python3",
+    "-B",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tooling/retrieval_lab",
+    "-p",
+    "test_*.py",
+    "-v"
+  ],
+  "exit_code": 0,
+  "stdout": "",
+  "stderr": "test_changed_content_changes_digest (test_retrieval.RetrievalTests.test_changed_content_changes_digest) ... ok\ntest_duplicate_invalid_identity_and_text (test_retrieval.RetrievalTests.test_duplicate_invalid_identity_and_text) ... ok\ntest_empty_absent_and_literal_query_syntax (test_retrieval.RetrievalTests.test_empty_absent_and_literal_query_syntax) ... ok\ntest_fts_available (test_retrieval.RetrievalTests.test_fts_available) ... ok\ntest_grounding_and_reproducibility (test_retrieval.RetrievalTests.test_grounding_and_reproducibility) ... ok\ntest_limits (test_retrieval.RetrievalTests.test_limits) ... ok\ntest_no_synonym_claim (test_retrieval.RetrievalTests.test_no_synonym_claim) ... ok\ntest_same_terms_do_not_imply_same_rank (test_retrieval.RetrievalTests.test_same_terms_do_not_imply_same_rank) ... ok\ntest_snapshot_not_mutable_list (test_retrieval.RetrievalTests.test_snapshot_not_mutable_list) ... ok\n\n----------------------------------------------------------------------\nRan 9 tests in 0.004s\n\nOK\n",
+  "source_sha256": {
+    "tooling/retrieval_lab/benchmark.py": "cc2d4b8f6fd3451889afdf667079a22f7ce74754d9a773111239c03c1edd3dd1",
+    "tooling/retrieval_lab/fixtures.py": "08e035842ff3ea2f97f475187624ca99e829cfd88b53f62a42e486b711488b22",
+    "tooling/retrieval_lab/retrieval.py": "a1c3a7d7da5cff68cc0c16f343e56e734cfe87c413d02e08d93c49e08a353c1a",
+    "tooling/retrieval_lab/test_retrieval.py": "3e1a90a5ab5f67459ab6c3b08fc664a1f9cafb622a8bc1440f58153ce92f3dce"
+  }
+}
