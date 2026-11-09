@@ -158,7 +158,7 @@ class MockTools:
         if not self.discovered:
             return {"status": "fail", "reason": "required tool discovery never occurred"}
         expected = self.case["read_order"]
-        if self.case["grader"] == "tool_recovery":
+        if self.case["grader"] == "tool_recovery" or self.case.get("strict_read_order"):
             correct = self.reads == expected
         else:
             unique_order = []

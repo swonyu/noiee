@@ -21,6 +21,7 @@ import urllib.request
 
 from cases import CASES, DEFAULT_MODEL, DEFAULT_SYSTEM, SUITE_VERSION, TOOL_DEFINITIONS, fixture_hash
 from grading import MockTools, grade
+import agent_cases
 
 
 class TransportError(Exception):
@@ -141,6 +142,9 @@ def run_case(api, args, case, system_prompt, run_deadline, out_dir):
     receipt = {"id": case["id"], "name": case["name"], "category": case["category"],
                "started_at": utc_now(), "status": "running", "synthetic": True,
                "output_schema": case["schema"], "messages": copy.deepcopy(messages),
+               "source_sha256": source_hashes(),
+               "rubric": {"answer": "strict JSON schema and bounded code assertions" if case["category"] == "coding" else "strict JSON schema and exact reference values",
+                          "tool_trace": "required discovery, allowed operation/arguments, observed read sequence" if case.get("tools") else "no tools allowed"},
                "requests": [], "tool_trace": [], "grading": None}
     path = out_dir / (case["id"] + ".json")
     atomic_json(path, receipt)
@@ -244,7 +248,26 @@ def run_case(api, args, case, system_prompt, run_deadline, out_dir):
     atomic_json(path, receipt)
     return {"id": case["id"], "name": case["name"], "category": case["category"],
             "status": result["status"], "reason": result.get("reason"),
-            "elapsed_seconds": receipt["elapsed_seconds"], "receipt": path.name}
+            "elapsed_seconds": receipt["elapsed_seconds"], "receipt": path.name,
+            "receipt_sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+
+
+def source_hashes():
+    root = Path(__file__).resolve().parent
+    return {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in sorted(root.glob("*.py"))}
+
+
+def category_scores(results):
+    scores = {}
+    for category in sorted({row["category"] for row in results}):
+        rows = [row for row in results if row["category"] == category]
+        passed = sum(row["status"] == "pass" for row in rows)
+        scorable = sum(row["status"] in {"pass", "fail"} for row in rows)
+        scores[category] = {"passed": passed, "scorable": scorable, "selected": len(rows),
+                            "pass_rate": passed / scorable if scorable else None,
+                            "coverage": scorable / len(rows)}
+    return scores
 
 
 def summary_counts(results):
@@ -262,7 +285,8 @@ def parse_args(argv=None):
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--system-prompt-file", help="Optional exact baseline/candidate app prompt; never inferred automatically")
     parser.add_argument("--label", default="baseline")
-    parser.add_argument("--case", action="append", dest="case_ids", choices=[case["id"] for case in CASES])
+    parser.add_argument("--suite", choices=["legacy", "agent"], default="legacy")
+    parser.add_argument("--case", action="append", dest="case_ids", choices=[case["id"] for case in CASES + agent_cases.CASES])
     parser.add_argument("--max-tokens", type=int, default=768)
     parser.add_argument("--case-timeout", type=float, default=180)
     parser.add_argument("--run-timeout", type=float, default=1200)
@@ -275,6 +299,9 @@ def parse_args(argv=None):
     parser.add_argument("--constrained-json", action="store_true", help="Use response_format json_schema on text/code cases; changes the experiment")
     parser.add_argument("--api-key-env", default="NOIEE_LOCAL_API_KEY", help="Optional environment variable name; key is never saved")
     args = parser.parse_args(argv)
+    available = CASES if args.suite == "legacy" else agent_cases.CASES
+    if args.case_ids and set(args.case_ids) - {c["id"] for c in available}:
+        parser.error("selected case does not belong to selected suite")
     if not 128 <= args.max_tokens <= 1024: parser.error("max-tokens must be 128..1024")
     if not 1 <= args.case_timeout <= 180: parser.error("case-timeout must be 1..180 seconds")
     if not 1 <= args.run_timeout <= 1200: parser.error("run-timeout must be 1..1200 seconds")
@@ -313,11 +340,14 @@ def main(argv=None):
     if len(system_prompt) > 24000:
         print("System prompt exceeds the bounded 24000-character limit.", file=sys.stderr)
         return 2
-    selected = [case for case in CASES if not args.case_ids or case["id"] in args.case_ids]
+    suite_cases = CASES if args.suite == "legacy" else agent_cases.CASES
+    selected = [case for case in suite_cases if not args.case_ids or case["id"] in args.case_ids]
     started = time.monotonic()
     deadline = started + args.run_timeout
     manifest = {
-        "suite": SUITE_VERSION, "fixture_sha256": fixture_hash(), "synthetic": True,
+        "suite": SUITE_VERSION if args.suite == "legacy" else agent_cases.SUITE_VERSION,
+        "fixture_sha256": fixture_hash() if args.suite == "legacy" else agent_cases.fixture_hash(), "synthetic": True,
+        "evidence_kind": "model_transport", "source_sha256": source_hashes(),
         "scope": "Local-model transport regression with bounded code interpretation and in-memory tool mocks. Not end-to-end app/UI testing or a broad capability benchmark.",
         "started_at": utc_now(), "label": args.label, "status": "preflight",
         "model": args.model, "verified_source_model_id": args.source_model_id,
@@ -353,6 +383,7 @@ def main(argv=None):
         manifest["results"] = [{"id": case["id"], "category": case["category"], "status": "not_run",
                                 "reason": "preflight blocked"} for case in selected]
         manifest["counts"] = summary_counts(manifest["results"])
+        manifest["category_scores"] = category_scores(manifest["results"])
         atomic_json(manifest_path, manifest)
         print(json.dumps({"status": "blocked", "reason": str(exc), "results": str(manifest_path)}), flush=True)
         return 2
@@ -367,6 +398,7 @@ def main(argv=None):
         result = run_case(api, args, case, system_prompt, deadline, out_dir)
         manifest["results"].append(result)
         manifest["counts"] = summary_counts(manifest["results"])
+        manifest["category_scores"] = category_scores(manifest["results"])
         atomic_json(manifest_path, manifest)
         print(json.dumps(result, ensure_ascii=False), flush=True)
         if result["status"] in {"transport_error", "timeout", "interrupted", "harness_error"}:
@@ -374,12 +406,16 @@ def main(argv=None):
     counts = summary_counts(manifest["results"])
     scorable = counts.get("pass", 0) + counts.get("fail", 0)
     manifest.update({"status": "complete" if scorable == len(selected) else "partial",
-                     "counts": counts, "scorable_cases": scorable,
+                     "counts": counts, "category_scores": category_scores(manifest["results"]),
+                     "source_unchanged": manifest["source_sha256"] == source_hashes(),
+                     "scorable_cases": scorable,
                      "passed_scorable_cases": counts.get("pass", 0),
                      "finished_at": utc_now(), "elapsed_seconds": round(time.monotonic() - started, 4)})
+    if not manifest["source_unchanged"]:
+        manifest.update(status="invalidated", invalidation_reason="harness source changed during run; scores are not comparable")
     atomic_json(manifest_path, manifest)
     print(json.dumps({"status": manifest["status"], "counts": counts, "results": str(manifest_path)}), flush=True)
-    if manifest["status"] == "partial": return 3
+    if manifest["status"] in {"partial", "invalidated"}: return 3
     return 1 if counts.get("fail", 0) else 0
 
 

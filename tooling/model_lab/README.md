@@ -2,6 +2,8 @@
 
 Date: 2026-11-09. Noiee was previously named Saleh Uncensored.
 
+Current checkout note (2026-11-09): the historical lab change is present in this checkout ancestry as `6ab32d1` (telemetry, deferred snapshots and lab). The original branch/install statements below describe the experiment when recorded, not the current release status. The eight-case scores are historical experiments, not a current Build 182 baseline. See [the separate Agent evaluation suite](bench/AGENT_EVALUATION.md) for new offline coverage and explicitly unmeasured model cases.
+
 ## What is implemented
 
 - Preserve validated streamed token usage in `source/agent-stream.mjs`; seven focused usage checks supplement the existing stream checks. Callers still need to persist and present this telemetry.

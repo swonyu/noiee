@@ -2,6 +2,10 @@
 
 **Synthetic holdout, never training data.** This standard-library-only runner measures a small set of concrete behaviors from the existing local model. It does not train, download, replace, quantize, or otherwise modify model weights. It performs no real app actions. All tool results are in-memory fixtures, and candidate code is interpreted by a bounded AST evaluator rather than executed as Python or shell code.
 
+## Expanded Agent evaluation
+
+See [AGENT_EVALUATION.md](AGENT_EVALUATION.md) for the separately versioned 15-case tool selection, arguments, grounding, memory and cancellation-reasoning suite, source-bound offline integration receipts, rubrics and limitations. `--suite agent` opts in; this original eight-case suite remains the default. No actual model results are claimed by passing synthetic fixtures.
+
 ## Run
 
 Run the offline harness tests first:
