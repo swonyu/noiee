@@ -1,0 +1,80 @@
+{
+  "scope": "synthetic trial evidence and supporting source, no executable package payloads",
+  "files": [
+    {
+      "path": "research/analyze_trial.py",
+      "bytes": 2515,
+      "sha256": "26ed31bd54c52be9ddf0e68e86a3f848092d9eaf11b6488049ae9abf446f182f"
+    },
+    {
+      "path": "research/bounded_process.py",
+      "bytes": 4006,
+      "sha256": "7e58c26e25943846e2a4e2a2fbc3f52adedef447f654575c51e5dffd1664df43"
+    },
+    {
+      "path": "research/continue_trial.py",
+      "bytes": 3855,
+      "sha256": "7521bc9dad1ada3b3ea83224b6fdc761d6b3bf93e568fdf99afb2b3d01402f94"
+    },
+    {
+      "path": "research/run_trial.py",
+      "bytes": 4969,
+      "sha256": "cfa52726341b7479425ad7245de906f7b923a3fb2456f15dfd11ed0e6c4a3d69"
+    },
+    {
+      "path": "research/trial_child.py",
+      "bytes": 5883,
+      "sha256": "f894a83d282bfeebcd16efcea78cbf77b29ad1d653b9a044d4e122b4eb799654"
+    },
+    {
+      "path": "research/trial_stage.py",
+      "bytes": 4532,
+      "sha256": "93176c4c741373a2e6497d2bc3ebd01a053245d99c03cfb2f8a39a07951457e5"
+    },
+    {
+      "path": "test_trial_results.py",
+      "bytes": 4349,
+      "sha256": "7d818bc139faff28e1d071c536c1f77fce3173bba7913ab34285c960fd9b7516"
+    },
+    {
+      "path": "test_trial_stage.py",
+      "bytes": 2303,
+      "sha256": "e6bd8808aeaf0451547eeed284362ca3a35a6a803f3e4f65b4479ed6ca0fe82a"
+    },
+    {
+      "path": "trial_result/RESULTS.md",
+      "bytes": 7974,
+      "sha256": "b5da736200390b9e1f918cc9b49a18bcc2cd48d3044a4cda56321c9012b2792e"
+    },
+    {
+      "path": "trial_result/configuration.json",
+      "bytes": 1007,
+      "sha256": "e73c2c9d1a13ccef93ccae5f0788d585208e79a62fb403585c5fe29b38beac6b"
+    },
+    {
+      "path": "trial_result/installed-packages.json",
+      "bytes": 2292,
+      "sha256": "828fe803825a52c1f13c19fad9eae69a283e03247c37966890bbcaa20212f26d"
+    },
+    {
+      "path": "trial_result/network-probe.json",
+      "bytes": 99,
+      "sha256": "8fad2cf6ebe3c170772f8adb2569719c389d1d45172ebc6aa3b93e0696bbb1c6"
+    },
+    {
+      "path": "trial_result/observations.json",
+      "bytes": 38565,
+      "sha256": "a2c2a143386573b3539a37230fec90f377a9e81fb39c4404f6be2a599e32bc09"
+    },
+    {
+      "path": "trial_result/receipt.json",
+      "bytes": 7342,
+      "sha256": "844e93c14ef1eb70ad01240c51b9aee8f3268d576cead9de690801075f629ac9"
+    },
+    {
+      "path": "trial_result/verified-wheels.json",
+      "bytes": 13177,
+      "sha256": "bf49a9d54a664ab80664e0abf30071737751fa653091483c7434b1a805bcd4b3"
+    }
+  ]
+}

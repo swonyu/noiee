@@ -1,6 +1,6 @@
 # Proposed model-free synthetic Docling experiment
 
-2026-11-09, base `82e757c`. **Not installed or run. Await independent review before installation.** LM Studio remains off; no model-server endpoints, accounts, credentials or user documents are involved.
+Historical pre-install plan recorded 2026-11-09 at base `82e757c`, reviewed as `29df463`. At that point installation/conversion had not run. **The subsequently authorized executed trial is documented in [Measured results](../trial_result/RESULTS.md).** LM Studio remains off; no model-server endpoints, accounts, credentials or user documents are involved.
 
 ## Concrete package plan
 

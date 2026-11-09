@@ -4,6 +4,8 @@ Reviewed 2026-11-09 against Noiee base `6cda13010f5f11493c4e890ae91eecae4327af85
 
 **Follow-up:** [Exact wheel resolution and artifact licences](FOLLOWUP.md) now records a successful 103-wheel binary-only resolution, actual wheel notices and specific remaining model/distribution obligations. Initial unresolved-resolution statements below are historical.
 
+**Executed follow-up:** [Model-free synthetic trial](trial_result/RESULTS.md) now records actual isolated installation and eight conversions, separately from the historical feasibility work below.
+
 ## Decision
 
 Keep Docling **optional and out of the shipped app** pending an isolated real-parser benchmark and a resolved dependency/model licence audit. It offers a plausible capability beyond current text/image input, especially PDF reading order, tables and OCR. This work does not add PDF/Office support, install packages, fetch model weights, access user documents, or connect to a model server. Only public source/metadata was fetched. No converter stub or synthetic test is counted as a successful document conversion.

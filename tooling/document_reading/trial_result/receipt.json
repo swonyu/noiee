@@ -1,0 +1,257 @@
+{
+  "scope": "approved isolated model-free synthetic trial",
+  "steps": [
+    {
+      "status": "complete",
+      "started": true,
+      "returncode": 0,
+      "elapsed_seconds": 6.2561,
+      "peak_sampled_rss_bytes": 35012608,
+      "name": "stage",
+      "output_sha256": "bf49a9d54a664ab80664e0abf30071737751fa653091483c7434b1a805bcd4b3",
+      "output_bytes": 13177
+    },
+    {
+      "status": "complete",
+      "started": true,
+      "returncode": 0,
+      "elapsed_seconds": 1.4043,
+      "peak_sampled_rss_bytes": 126582784,
+      "name": "venv",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_bytes": 0
+    },
+    {
+      "status": "complete",
+      "started": true,
+      "returncode": 0,
+      "elapsed_seconds": 1.8059,
+      "peak_sampled_rss_bytes": 73580544,
+      "name": "install",
+      "output_sha256": "3f5364620f569deb65339347ae76e41e15c7e2cfa4886a90a092ed837f67180d",
+      "output_bytes": 11087
+    },
+    {
+      "status": "complete",
+      "started": true,
+      "returncode": 0,
+      "elapsed_seconds": 0.0695,
+      "peak_sampled_rss_bytes": 4177920,
+      "name": "network-probe",
+      "output_sha256": "8fad2cf6ebe3c170772f8adb2569719c389d1d45172ebc6aa3b93e0696bbb1c6",
+      "output_bytes": 99
+    },
+    {
+      "status": "complete",
+      "started": true,
+      "returncode": 0,
+      "elapsed_seconds": 17.6951,
+      "peak_sampled_rss_bytes": 211927040,
+      "name": "import-probe",
+      "output_sha256": "03e60f640f20a76fba47a680dc4e412f24c8a0cfbaafe792351f37a3be2b4b97",
+      "output_bytes": 96
+    },
+    {
+      "status": "complete",
+      "started": true,
+      "returncode": 0,
+      "elapsed_seconds": 0.4911,
+      "peak_sampled_rss_bytes": 68517888,
+      "name": "generate-office",
+      "output_sha256": "055d5732215eec6331823718a44f9febf9208f6c86e039a839ae15e26fee61b2",
+      "output_bytes": 473
+    },
+    {
+      "status": "complete",
+      "started": true,
+      "returncode": 0,
+      "elapsed_seconds": 1.4928,
+      "peak_sampled_rss_bytes": 187547648,
+      "name": "convert-text.pdf",
+      "output_sha256": "d9bd806fee26df227fa0fc2f826cd89eac68dfce42b7480d5f921b41fc25b466",
+      "output_bytes": 934
+    },
+    {
+      "status": "complete",
+      "started": true,
+      "returncode": 0,
+      "elapsed_seconds": 1.1142,
+      "peak_sampled_rss_bytes": 185794560,
+      "name": "convert-table.pdf",
+      "output_sha256": "0f919011ae3bd17482d1b59529b873cd2e9e7461c76bbc5b83490773e9d994b6",
+      "output_bytes": 2023
+    },
+    {
+      "status": "complete",
+      "started": true,
+      "returncode": 0,
+      "elapsed_seconds": 1.2641,
+      "peak_sampled_rss_bytes": 186908672,
+      "name": "convert-columns.pdf",
+      "output_sha256": "c3339b7a9d2028f2c5bfe33d4966ea7fc1a2e969732122216fb533bd18535fa8",
+      "output_bytes": 1078
+    },
+    {
+      "status": "complete",
+      "started": true,
+      "returncode": 0,
+      "elapsed_seconds": 1.186,
+      "peak_sampled_rss_bytes": 185729024,
+      "name": "convert-image.pdf",
+      "output_sha256": "93d14f9e4fca1185f7f6f6cdffa1f9dcae67ea52e8b999684e4ef528de64d688",
+      "output_bytes": 250
+    },
+    {
+      "status": "complete",
+      "started": true,
+      "returncode": 0,
+      "elapsed_seconds": 1.2025,
+      "peak_sampled_rss_bytes": 185843712,
+      "name": "convert-blank.pdf",
+      "output_sha256": "3f0c8cdff74b3c853ba47d5c5fe0c775d02a1e1c582cd28068d9296352da8afe",
+      "output_bytes": 250
+    },
+    {
+      "status": "complete",
+      "started": true,
+      "returncode": 0,
+      "elapsed_seconds": 1.5503,
+      "peak_sampled_rss_bytes": 190283776,
+      "name": "convert-synthetic.docx",
+      "output_sha256": "28b041fd564379471733b99523a7a5ed3370562ea3aeec861ef88efa58aa271f",
+      "output_bytes": 5067
+    },
+    {
+      "status": "complete",
+      "started": true,
+      "returncode": 0,
+      "elapsed_seconds": 1.4934,
+      "peak_sampled_rss_bytes": 184532992,
+      "name": "convert-synthetic.pptx",
+      "output_sha256": "991d6e801815896ac9c10037484ba286a0ab6cb8181d9391cc7064b5ce913fe6",
+      "output_bytes": 5077
+    },
+    {
+      "status": "complete",
+      "started": true,
+      "returncode": 0,
+      "elapsed_seconds": 1.476,
+      "peak_sampled_rss_bytes": 183713792,
+      "name": "convert-synthetic.xlsx",
+      "output_sha256": "2d773a179440d0fc4754b8a0c3b9f781cf5ef6c57216ed8fc75c169940e73d70",
+      "output_bytes": 4874
+    },
+    {
+      "status": "complete",
+      "started": true,
+      "returncode": 0,
+      "elapsed_seconds": 0.0961,
+      "peak_sampled_rss_bytes": 4161536,
+      "name": "installed-inventory",
+      "output_sha256": "828fe803825a52c1f13c19fad9eae69a283e03247c37966890bbcaa20212f26d",
+      "output_bytes": 2292
+    }
+  ],
+  "fixture_hashes": {
+    "text": "91a3ea1c7d6e93ba2e4a92d1492ff96b97a20262e86c0c37841fb47ff7c7c1a1",
+    "table": "8feeb4b6a19c5e006ddd6c76b113372890153b8969ea472e57ca529dd00fbb46",
+    "columns": "d7b42fd43c6744d02cf22059fd4b3a1413681f21d73602d1e48ce427a9fc1d24",
+    "image": "595cec5a80e127d4778174585f211de7b3c3c482ed0b15469742be1d9179d1ed",
+    "blank": "da13813059e0b379649f9b5d37b1a632fd1be42d59542fdc8b221dc922e6710b"
+  },
+  "conversion_executed": true,
+  "baseline_extractions": {
+    "text": {
+      "ocr_performed": false,
+      "page_count": 1,
+      "pages": [
+        {
+          "page": 1,
+          "text": "Synthetic research memo\nProject Cedar ships on 14 November 2026.\nBudget: 4200 credits. Owner: Ada Example."
+        }
+      ],
+      "semantic_tables": false
+    },
+    "table": {
+      "ocr_performed": false,
+      "page_count": 1,
+      "pages": [
+        {
+          "page": 1,
+          "text": "Item Quantity Cost\nPencils 12 24\nFolders 3 18"
+        }
+      ],
+      "semantic_tables": false
+    },
+    "columns": {
+      "ocr_performed": false,
+      "page_count": 1,
+      "pages": [
+        {
+          "page": 1,
+          "text": "LEFT FIRST RIGHT FIRST\nLEFT SECOND RIGHT SECOND"
+        }
+      ],
+      "semantic_tables": false
+    },
+    "image": {
+      "ocr_performed": false,
+      "page_count": 1,
+      "pages": [
+        {
+          "page": 1,
+          "text": ""
+        }
+      ],
+      "semantic_tables": false
+    },
+    "blank": {
+      "ocr_performed": false,
+      "page_count": 1,
+      "pages": [
+        {
+          "page": 1,
+          "text": ""
+        }
+      ],
+      "semantic_tables": false
+    }
+  },
+  "peak_sampled_scratch_bytes": 343755885,
+  "disk_limit_exceeded": false,
+  "conversion_child_sha256": "f894a83d282bfeebcd16efcea78cbf77b29ad1d653b9a044d4e122b4eb799654",
+  "office_fixtures": {
+    "authored": true,
+    "expected_cells": [
+      [
+        "Item",
+        "Quantity",
+        "Cost"
+      ],
+      [
+        "Pencils",
+        "12",
+        "24"
+      ],
+      [
+        "Folders",
+        "3",
+        "18"
+      ]
+    ],
+    "fixtures": {
+      "synthetic.docx": {
+        "bytes": 36849,
+        "sha256": "d8ef8679124471e98fe8238555f9d6c4636ebff59fb58953b65071b2137b02b4"
+      },
+      "synthetic.pptx": {
+        "bytes": 28508,
+        "sha256": "535e71b460167f128ab1607b352270127d191067d86b0c966037e0b28736eaa6"
+      },
+      "synthetic.xlsx": {
+        "bytes": 4906,
+        "sha256": "416e0ac6c7428d4c69d2d0a5b2e51f25c27fb9760cceeb4c369d8cf836d216f6"
+      }
+    }
+  }
+}

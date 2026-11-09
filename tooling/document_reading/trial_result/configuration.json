@@ -1,0 +1,40 @@
+{
+  "input_scope": "authored synthetic fixtures only",
+  "formats": [
+    "PDF",
+    "DOCX",
+    "PPTX",
+    "XLSX"
+  ],
+  "pdf_format_option": "NativePdfFormatOption",
+  "pdf_pipeline_options": {
+    "document_timeout": 45.0,
+    "enable_remote_services": false,
+    "allow_external_plugins": false,
+    "generate_picture_images": false,
+    "generate_page_images": false
+  },
+  "convert_limits": {
+    "max_num_pages": 5,
+    "max_file_size": 1048576
+  },
+  "process_bounds": {
+    "wall_seconds": 60.0,
+    "combined_output_bytes": 1048576,
+    "sampled_group_rss_bytes": 2147483648
+  },
+  "stage_bounds": {
+    "wall_seconds": 120,
+    "cumulative_response_body_bytes": 83886080
+  },
+  "sampled_scratch_limit_bytes": 1073741824,
+  "threads": {
+    "OMP_NUM_THREADS": "2",
+    "OPENBLAS_NUM_THREADS": "2"
+  },
+  "sandbox_profile": "(version 1)(allow default)(deny network*)",
+  "file_read_sandbox": false,
+  "model_server_used": false,
+  "ocr_performed": false,
+  "pipeline_inference_requested": false
+}

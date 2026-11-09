@@ -1,0 +1,1 @@
+{"network_probe": {"bind": {"denied": true, "errno": 1}, "connect": {"denied": true, "errno": 1}}}

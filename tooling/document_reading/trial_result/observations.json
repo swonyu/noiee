@@ -1,0 +1,1313 @@
+{
+  "scope": "eight authored fixtures; no OCR/models/app integration",
+  "comparisons": {
+    "text.pdf": {
+      "status": "success",
+      "matches_pdfkit_token_sequence": true,
+      "text_empty": false,
+      "native_table_count": 0,
+      "text_item_count": 3,
+      "all_text_items_have_page_box": true
+    },
+    "table.pdf": {
+      "status": "success",
+      "matches_pdfkit_token_sequence": true,
+      "text_empty": false,
+      "native_table_count": 0,
+      "text_item_count": 9,
+      "all_text_items_have_page_box": true
+    },
+    "columns.pdf": {
+      "status": "success",
+      "matches_pdfkit_token_sequence": true,
+      "text_empty": false,
+      "native_table_count": 0,
+      "text_item_count": 4,
+      "all_text_items_have_page_box": true,
+      "column_major_order": false
+    },
+    "image.pdf": {
+      "status": "success",
+      "matches_pdfkit_token_sequence": true,
+      "text_empty": true,
+      "native_table_count": 0,
+      "text_item_count": 0,
+      "all_text_items_have_page_box": null
+    },
+    "blank.pdf": {
+      "status": "success",
+      "matches_pdfkit_token_sequence": true,
+      "text_empty": true,
+      "native_table_count": 0,
+      "text_item_count": 0,
+      "all_text_items_have_page_box": null
+    },
+    "synthetic.docx": {
+      "status": "success",
+      "table_count": 1,
+      "exact_expected_cell_texts_and_coordinates": true,
+      "page_count_as_reported_not_invented": 0
+    },
+    "synthetic.pptx": {
+      "status": "success",
+      "table_count": 1,
+      "exact_expected_cell_texts_and_coordinates": true,
+      "page_count_as_reported_not_invented": 1
+    },
+    "synthetic.xlsx": {
+      "status": "success",
+      "table_count": 1,
+      "exact_expected_cell_texts_and_coordinates": true,
+      "page_count_as_reported_not_invented": 1
+    }
+  },
+  "observations": {
+    "text.pdf": {
+      "filename": "text.pdf",
+      "source_sha256": "91a3ea1c7d6e93ba2e4a92d1492ff96b97a20262e86c0c37841fb47ff7c7c1a1",
+      "status": "success",
+      "ocr_performed": false,
+      "model_inference_requested": false,
+      "page_count": 1,
+      "texts": [
+        {
+          "text": "Synthetic research memo",
+          "label": "text",
+          "provenance": [
+            {
+              "page_no": 1,
+              "bbox": {
+                "l": 50.0,
+                "t": 751.472,
+                "r": 231.40800000000002,
+                "b": 736.5732987012987,
+                "coord_origin": "BOTTOMLEFT"
+              },
+              "charspan": [
+                0,
+                23
+              ]
+            }
+          ]
+        },
+        {
+          "text": "Project Cedar ships on 14 November 2026.",
+          "label": "text",
+          "provenance": [
+            {
+              "page_no": 1,
+              "bbox": {
+                "l": 50.0,
+                "t": 711.472,
+                "r": 356.8512,
+                "b": 696.5732987012987,
+                "coord_origin": "BOTTOMLEFT"
+              },
+              "charspan": [
+                0,
+                40
+              ]
+            }
+          ]
+        },
+        {
+          "text": "Budget: 4200 credits. Owner: Ada Example.",
+          "label": "text",
+          "provenance": [
+            {
+              "page_no": 1,
+              "bbox": {
+                "l": 50.0,
+                "t": 671.472,
+                "r": 360.4176000000001,
+                "b": 656.5732987012987,
+                "coord_origin": "BOTTOMLEFT"
+              },
+              "charspan": [
+                0,
+                41
+              ]
+            }
+          ]
+        }
+      ],
+      "tables": [],
+      "errors": []
+    },
+    "table.pdf": {
+      "filename": "table.pdf",
+      "source_sha256": "8feeb4b6a19c5e006ddd6c76b113372890153b8969ea472e57ca529dd00fbb46",
+      "status": "success",
+      "ocr_performed": false,
+      "model_inference_requested": false,
+      "page_count": 1,
+      "texts": [
+        {
+          "text": "Item",
+          "label": "text",
+          "provenance": [
+            {
+              "page_no": 1,
+              "bbox": {
+                "l": 50.0,
+                "t": 751.472,
+                "r": 81.1104,
+                "b": 736.5732987012987,
+                "coord_origin": "BOTTOMLEFT"
+              },
+              "charspan": [
+                0,
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "text": "Quantity",
+          "label": "text",
+          "provenance": [
+            {
+              "page_no": 1,
+              "bbox": {
+                "l": 220.0,
+                "t": 751.472,
+                "r": 279.56160000000006,
+                "b": 736.5732987012987,
+                "coord_origin": "BOTTOMLEFT"
+              },
+              "charspan": [
+                0,
+                8
+              ]
+            }
+          ]
+        },
+        {
+          "text": "Cost",
+          "label": "text",
+          "provenance": [
+            {
+              "page_no": 1,
+              "bbox": {
+                "l": 390.0,
+                "t": 751.472,
+                "r": 422.9024,
+                "b": 736.5732987012987,
+                "coord_origin": "BOTTOMLEFT"
+              },
+              "charspan": [
+                0,
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "text": "Pencils",
+          "label": "text",
+          "provenance": [
+            {
+              "page_no": 1,
+              "bbox": {
+                "l": 50.0,
+                "t": 711.472,
+                "r": 101.58080000000004,
+                "b": 696.5732987012987,
+                "coord_origin": "BOTTOMLEFT"
+              },
+              "charspan": [
+                0,
+                7
+              ]
+            }
+          ]
+        },
+        {
+          "text": "12",
+          "label": "text",
+          "provenance": [
+            {
+              "page_no": 1,
+              "bbox": {
+                "l": 220.0,
+                "t": 711.472,
+                "r": 237.79520000000002,
+                "b": 696.5732987012987,
+                "coord_origin": "BOTTOMLEFT"
+              },
+              "charspan": [
+                0,
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "text": "24",
+          "label": "text",
+          "provenance": [
+            {
+              "page_no": 1,
+              "bbox": {
+                "l": 390.0,
+                "t": 711.472,
+                "r": 407.7952,
+                "b": 696.5732987012987,
+                "coord_origin": "BOTTOMLEFT"
+              },
+              "charspan": [
+                0,
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "text": "Folders",
+          "label": "text",
+          "provenance": [
+            {
+              "page_no": 1,
+              "bbox": {
+                "l": 50.0,
+                "t": 671.472,
+                "r": 103.35360000000004,
+                "b": 656.5732987012987,
+                "coord_origin": "BOTTOMLEFT"
+              },
+              "charspan": [
+                0,
+                7
+              ]
+            }
+          ]
+        },
+        {
+          "text": "3",
+          "label": "text",
+          "provenance": [
+            {
+              "page_no": 1,
+              "bbox": {
+                "l": 220.0,
+                "t": 671.472,
+                "r": 228.89600000000002,
+                "b": 656.5732987012987,
+                "coord_origin": "BOTTOMLEFT"
+              },
+              "charspan": [
+                0,
+                1
+              ]
+            }
+          ]
+        },
+        {
+          "text": "18",
+          "label": "text",
+          "provenance": [
+            {
+              "page_no": 1,
+              "bbox": {
+                "l": 390.0,
+                "t": 671.472,
+                "r": 407.7952,
+                "b": 656.5732987012987,
+                "coord_origin": "BOTTOMLEFT"
+              },
+              "charspan": [
+                0,
+                2
+              ]
+            }
+          ]
+        }
+      ],
+      "tables": [],
+      "errors": []
+    },
+    "columns.pdf": {
+      "filename": "columns.pdf",
+      "source_sha256": "d7b42fd43c6744d02cf22059fd4b3a1413681f21d73602d1e48ce427a9fc1d24",
+      "status": "success",
+      "ocr_performed": false,
+      "model_inference_requested": false,
+      "page_count": 1,
+      "texts": [
+        {
+          "text": "LEFT FIRST",
+          "label": "text",
+          "provenance": [
+            {
+              "page_no": 1,
+              "bbox": {
+                "l": 50.0,
+                "t": 751.472,
+                "r": 139.5024,
+                "b": 736.5732987012987,
+                "coord_origin": "BOTTOMLEFT"
+              },
+              "charspan": [
+                0,
+                10
+              ]
+            }
+          ]
+        },
+        {
+          "text": "RIGHT FIRST",
+          "label": "text",
+          "provenance": [
+            {
+              "page_no": 1,
+              "bbox": {
+                "l": 330.0,
+                "t": 751.472,
+                "r": 430.15840000000003,
+                "b": 736.5732987012987,
+                "coord_origin": "BOTTOMLEFT"
+              },
+              "charspan": [
+                0,
+                11
+              ]
+            }
+          ]
+        },
+        {
+          "text": "LEFT SECOND",
+          "label": "text",
+          "provenance": [
+            {
+              "page_no": 1,
+              "bbox": {
+                "l": 50.0,
+                "t": 711.472,
+                "r": 161.73279999999997,
+                "b": 696.5732987012987,
+                "coord_origin": "BOTTOMLEFT"
+              },
+              "charspan": [
+                0,
+                11
+              ]
+            }
+          ]
+        },
+        {
+          "text": "RIGHT SECOND",
+          "label": "text",
+          "provenance": [
+            {
+              "page_no": 1,
+              "bbox": {
+                "l": 330.0,
+                "t": 711.472,
+                "r": 452.38880000000006,
+                "b": 696.5732987012987,
+                "coord_origin": "BOTTOMLEFT"
+              },
+              "charspan": [
+                0,
+                12
+              ]
+            }
+          ]
+        }
+      ],
+      "tables": [],
+      "errors": []
+    },
+    "image.pdf": {
+      "filename": "image.pdf",
+      "source_sha256": "595cec5a80e127d4778174585f211de7b3c3c482ed0b15469742be1d9179d1ed",
+      "status": "success",
+      "ocr_performed": false,
+      "model_inference_requested": false,
+      "page_count": 1,
+      "texts": [],
+      "tables": [],
+      "errors": []
+    },
+    "blank.pdf": {
+      "filename": "blank.pdf",
+      "source_sha256": "da13813059e0b379649f9b5d37b1a632fd1be42d59542fdc8b221dc922e6710b",
+      "status": "success",
+      "ocr_performed": false,
+      "model_inference_requested": false,
+      "page_count": 1,
+      "texts": [],
+      "tables": [],
+      "errors": []
+    },
+    "synthetic.docx": {
+      "filename": "synthetic.docx",
+      "source_sha256": "d8ef8679124471e98fe8238555f9d6c4636ebff59fb58953b65071b2137b02b4",
+      "status": "success",
+      "ocr_performed": false,
+      "model_inference_requested": false,
+      "page_count": 0,
+      "texts": [
+        {
+          "text": "Synthetic Cedar Office Memo",
+          "label": "section_header",
+          "provenance": []
+        },
+        {
+          "text": "Project Cedar ships on 14 November 2026. Owner: Ada Example.",
+          "label": "text",
+          "provenance": []
+        }
+      ],
+      "tables": [
+        {
+          "table_cells": [
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 0,
+              "end_row_offset_idx": 1,
+              "start_col_offset_idx": 0,
+              "end_col_offset_idx": 1,
+              "text": "Item",
+              "column_header": true,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 0,
+              "end_row_offset_idx": 1,
+              "start_col_offset_idx": 1,
+              "end_col_offset_idx": 2,
+              "text": "Quantity",
+              "column_header": true,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 0,
+              "end_row_offset_idx": 1,
+              "start_col_offset_idx": 2,
+              "end_col_offset_idx": 3,
+              "text": "Cost",
+              "column_header": true,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 1,
+              "end_row_offset_idx": 2,
+              "start_col_offset_idx": 0,
+              "end_col_offset_idx": 1,
+              "text": "Pencils",
+              "column_header": false,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 1,
+              "end_row_offset_idx": 2,
+              "start_col_offset_idx": 1,
+              "end_col_offset_idx": 2,
+              "text": "12",
+              "column_header": false,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 1,
+              "end_row_offset_idx": 2,
+              "start_col_offset_idx": 2,
+              "end_col_offset_idx": 3,
+              "text": "24",
+              "column_header": false,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 2,
+              "end_row_offset_idx": 3,
+              "start_col_offset_idx": 0,
+              "end_col_offset_idx": 1,
+              "text": "Folders",
+              "column_header": false,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 2,
+              "end_row_offset_idx": 3,
+              "start_col_offset_idx": 1,
+              "end_col_offset_idx": 2,
+              "text": "3",
+              "column_header": false,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 2,
+              "end_row_offset_idx": 3,
+              "start_col_offset_idx": 2,
+              "end_col_offset_idx": 3,
+              "text": "18",
+              "column_header": false,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            }
+          ],
+          "num_rows": 3,
+          "num_cols": 3,
+          "orientation": "rot_0",
+          "grid": [
+            [
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 0,
+                "end_row_offset_idx": 1,
+                "start_col_offset_idx": 0,
+                "end_col_offset_idx": 1,
+                "text": "Item",
+                "column_header": true,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              },
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 0,
+                "end_row_offset_idx": 1,
+                "start_col_offset_idx": 1,
+                "end_col_offset_idx": 2,
+                "text": "Quantity",
+                "column_header": true,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              },
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 0,
+                "end_row_offset_idx": 1,
+                "start_col_offset_idx": 2,
+                "end_col_offset_idx": 3,
+                "text": "Cost",
+                "column_header": true,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              }
+            ],
+            [
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 1,
+                "end_row_offset_idx": 2,
+                "start_col_offset_idx": 0,
+                "end_col_offset_idx": 1,
+                "text": "Pencils",
+                "column_header": false,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              },
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 1,
+                "end_row_offset_idx": 2,
+                "start_col_offset_idx": 1,
+                "end_col_offset_idx": 2,
+                "text": "12",
+                "column_header": false,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              },
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 1,
+                "end_row_offset_idx": 2,
+                "start_col_offset_idx": 2,
+                "end_col_offset_idx": 3,
+                "text": "24",
+                "column_header": false,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              }
+            ],
+            [
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 2,
+                "end_row_offset_idx": 3,
+                "start_col_offset_idx": 0,
+                "end_col_offset_idx": 1,
+                "text": "Folders",
+                "column_header": false,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              },
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 2,
+                "end_row_offset_idx": 3,
+                "start_col_offset_idx": 1,
+                "end_col_offset_idx": 2,
+                "text": "3",
+                "column_header": false,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              },
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 2,
+                "end_row_offset_idx": 3,
+                "start_col_offset_idx": 2,
+                "end_col_offset_idx": 3,
+                "text": "18",
+                "column_header": false,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              }
+            ]
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "synthetic.pptx": {
+      "filename": "synthetic.pptx",
+      "source_sha256": "535e71b460167f128ab1607b352270127d191067d86b0c966037e0b28736eaa6",
+      "status": "success",
+      "ocr_performed": false,
+      "model_inference_requested": false,
+      "page_count": 1,
+      "texts": [
+        {
+          "text": "Synthetic Cedar Slide",
+          "label": "title",
+          "provenance": [
+            {
+              "page_no": 1,
+              "bbox": {
+                "l": 457200.0,
+                "t": 274638.0,
+                "r": 8686800.0,
+                "b": 1417638.0,
+                "coord_origin": "TOPLEFT"
+              },
+              "charspan": [
+                0,
+                21
+              ]
+            }
+          ]
+        }
+      ],
+      "tables": [
+        {
+          "table_cells": [
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 0,
+              "end_row_offset_idx": 1,
+              "start_col_offset_idx": 0,
+              "end_col_offset_idx": 1,
+              "text": "Item",
+              "column_header": true,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 0,
+              "end_row_offset_idx": 1,
+              "start_col_offset_idx": 1,
+              "end_col_offset_idx": 2,
+              "text": "Quantity",
+              "column_header": true,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 0,
+              "end_row_offset_idx": 1,
+              "start_col_offset_idx": 2,
+              "end_col_offset_idx": 3,
+              "text": "Cost",
+              "column_header": true,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 1,
+              "end_row_offset_idx": 2,
+              "start_col_offset_idx": 0,
+              "end_col_offset_idx": 1,
+              "text": "Pencils",
+              "column_header": false,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 1,
+              "end_row_offset_idx": 2,
+              "start_col_offset_idx": 1,
+              "end_col_offset_idx": 2,
+              "text": "12",
+              "column_header": false,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 1,
+              "end_row_offset_idx": 2,
+              "start_col_offset_idx": 2,
+              "end_col_offset_idx": 3,
+              "text": "24",
+              "column_header": false,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 2,
+              "end_row_offset_idx": 3,
+              "start_col_offset_idx": 0,
+              "end_col_offset_idx": 1,
+              "text": "Folders",
+              "column_header": false,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 2,
+              "end_row_offset_idx": 3,
+              "start_col_offset_idx": 1,
+              "end_col_offset_idx": 2,
+              "text": "3",
+              "column_header": false,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 2,
+              "end_row_offset_idx": 3,
+              "start_col_offset_idx": 2,
+              "end_col_offset_idx": 3,
+              "text": "18",
+              "column_header": false,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            }
+          ],
+          "num_rows": 3,
+          "num_cols": 3,
+          "orientation": "rot_0",
+          "grid": [
+            [
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 0,
+                "end_row_offset_idx": 1,
+                "start_col_offset_idx": 0,
+                "end_col_offset_idx": 1,
+                "text": "Item",
+                "column_header": true,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              },
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 0,
+                "end_row_offset_idx": 1,
+                "start_col_offset_idx": 1,
+                "end_col_offset_idx": 2,
+                "text": "Quantity",
+                "column_header": true,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              },
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 0,
+                "end_row_offset_idx": 1,
+                "start_col_offset_idx": 2,
+                "end_col_offset_idx": 3,
+                "text": "Cost",
+                "column_header": true,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              }
+            ],
+            [
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 1,
+                "end_row_offset_idx": 2,
+                "start_col_offset_idx": 0,
+                "end_col_offset_idx": 1,
+                "text": "Pencils",
+                "column_header": false,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              },
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 1,
+                "end_row_offset_idx": 2,
+                "start_col_offset_idx": 1,
+                "end_col_offset_idx": 2,
+                "text": "12",
+                "column_header": false,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              },
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 1,
+                "end_row_offset_idx": 2,
+                "start_col_offset_idx": 2,
+                "end_col_offset_idx": 3,
+                "text": "24",
+                "column_header": false,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              }
+            ],
+            [
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 2,
+                "end_row_offset_idx": 3,
+                "start_col_offset_idx": 0,
+                "end_col_offset_idx": 1,
+                "text": "Folders",
+                "column_header": false,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              },
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 2,
+                "end_row_offset_idx": 3,
+                "start_col_offset_idx": 1,
+                "end_col_offset_idx": 2,
+                "text": "3",
+                "column_header": false,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              },
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 2,
+                "end_row_offset_idx": 3,
+                "start_col_offset_idx": 2,
+                "end_col_offset_idx": 3,
+                "text": "18",
+                "column_header": false,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              }
+            ]
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "synthetic.xlsx": {
+      "filename": "synthetic.xlsx",
+      "source_sha256": "416e0ac6c7428d4c69d2d0a5b2e51f25c27fb9760cceeb4c369d8cf836d216f6",
+      "status": "success",
+      "ocr_performed": false,
+      "model_inference_requested": false,
+      "page_count": 1,
+      "texts": [],
+      "tables": [
+        {
+          "table_cells": [
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 0,
+              "end_row_offset_idx": 1,
+              "start_col_offset_idx": 0,
+              "end_col_offset_idx": 1,
+              "text": "Item",
+              "column_header": true,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 0,
+              "end_row_offset_idx": 1,
+              "start_col_offset_idx": 1,
+              "end_col_offset_idx": 2,
+              "text": "Quantity",
+              "column_header": true,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 0,
+              "end_row_offset_idx": 1,
+              "start_col_offset_idx": 2,
+              "end_col_offset_idx": 3,
+              "text": "Cost",
+              "column_header": true,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 1,
+              "end_row_offset_idx": 2,
+              "start_col_offset_idx": 0,
+              "end_col_offset_idx": 1,
+              "text": "Pencils",
+              "column_header": false,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 1,
+              "end_row_offset_idx": 2,
+              "start_col_offset_idx": 1,
+              "end_col_offset_idx": 2,
+              "text": "12",
+              "column_header": false,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 1,
+              "end_row_offset_idx": 2,
+              "start_col_offset_idx": 2,
+              "end_col_offset_idx": 3,
+              "text": "24",
+              "column_header": false,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 2,
+              "end_row_offset_idx": 3,
+              "start_col_offset_idx": 0,
+              "end_col_offset_idx": 1,
+              "text": "Folders",
+              "column_header": false,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 2,
+              "end_row_offset_idx": 3,
+              "start_col_offset_idx": 1,
+              "end_col_offset_idx": 2,
+              "text": "3",
+              "column_header": false,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            },
+            {
+              "bbox": null,
+              "row_span": 1,
+              "col_span": 1,
+              "start_row_offset_idx": 2,
+              "end_row_offset_idx": 3,
+              "start_col_offset_idx": 2,
+              "end_col_offset_idx": 3,
+              "text": "18",
+              "column_header": false,
+              "row_header": false,
+              "row_section": false,
+              "fillable": false
+            }
+          ],
+          "num_rows": 3,
+          "num_cols": 3,
+          "orientation": "rot_0",
+          "grid": [
+            [
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 0,
+                "end_row_offset_idx": 1,
+                "start_col_offset_idx": 0,
+                "end_col_offset_idx": 1,
+                "text": "Item",
+                "column_header": true,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              },
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 0,
+                "end_row_offset_idx": 1,
+                "start_col_offset_idx": 1,
+                "end_col_offset_idx": 2,
+                "text": "Quantity",
+                "column_header": true,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              },
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 0,
+                "end_row_offset_idx": 1,
+                "start_col_offset_idx": 2,
+                "end_col_offset_idx": 3,
+                "text": "Cost",
+                "column_header": true,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              }
+            ],
+            [
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 1,
+                "end_row_offset_idx": 2,
+                "start_col_offset_idx": 0,
+                "end_col_offset_idx": 1,
+                "text": "Pencils",
+                "column_header": false,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              },
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 1,
+                "end_row_offset_idx": 2,
+                "start_col_offset_idx": 1,
+                "end_col_offset_idx": 2,
+                "text": "12",
+                "column_header": false,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              },
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 1,
+                "end_row_offset_idx": 2,
+                "start_col_offset_idx": 2,
+                "end_col_offset_idx": 3,
+                "text": "24",
+                "column_header": false,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              }
+            ],
+            [
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 2,
+                "end_row_offset_idx": 3,
+                "start_col_offset_idx": 0,
+                "end_col_offset_idx": 1,
+                "text": "Folders",
+                "column_header": false,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              },
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 2,
+                "end_row_offset_idx": 3,
+                "start_col_offset_idx": 1,
+                "end_col_offset_idx": 2,
+                "text": "3",
+                "column_header": false,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              },
+              {
+                "bbox": null,
+                "row_span": 1,
+                "col_span": 1,
+                "start_row_offset_idx": 2,
+                "end_row_offset_idx": 3,
+                "start_col_offset_idx": 2,
+                "end_col_offset_idx": 3,
+                "text": "18",
+                "column_header": false,
+                "row_header": false,
+                "row_section": false,
+                "fillable": false
+              }
+            ]
+          ]
+        }
+      ],
+      "errors": []
+    }
+  }
+}
