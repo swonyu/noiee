@@ -1521,7 +1521,56 @@ function codingTerminalResultSnapshot(value,threadId,recordId,ownerId,rootThread
   }
   // FILE PREVIEW END
   function inlineText(parent, text, allowFilePreview=true) {
-    for (const part of String(text).split(/(\*\*[^*\n]+\*\*|`[^`\n]+`|\[[^\]\n]+\]\((?:<[^>\n]+>|[^\s)]+)\))/g)) {
+    const fileLinks = true;
+    // INLINE TOKENIZER BEGIN
+    // Each delimiter search advances monotonically, including failed matches.
+    // Repeated unmatched '[' must not rescan the remaining model response.
+    const input = String(text), parts = [], cached = new Map();
+    function next(delimiter, from) {
+      let found = cached.get(delimiter);
+      if (found === undefined || found < from) {
+        found = input.indexOf(delimiter, from);
+        if (found < 0) found = input.length;
+        cached.set(delimiter, found);
+      }
+      return found;
+    }
+    let targetStop = -1;
+    const targetBoundary = /[\s)]/g;
+    function linkEnd(close) {
+      const start = close + 2;
+      if (input[close + 1] !== '(') return -1;
+      if (!fileLinks && !input.startsWith('https://', start) && !input.startsWith('http://', start)) return -1;
+      if (fileLinks && input[start] === '<') {
+        const angle = next('>', start + 1);
+        if (angle > start + 1 && angle < next('\n', start + 1) && input[angle + 1] === ')') return angle + 2;
+      }
+      if (targetStop < start) {
+        targetBoundary.lastIndex = start;
+        targetStop = targetBoundary.exec(input)?.index ?? input.length;
+      }
+      const minimum = fileLinks ? start : start + (input.startsWith('https://', start) ? 8 : 7);
+      return targetStop > minimum && input[targetStop] === ')' ? targetStop + 1 : -1;
+    }
+    let plain = 0;
+    for (let i = 0; i < input.length;) {
+      let end = -1;
+      if (input[i] === '[') {
+        const close = next(']', i + 1);
+        if (close > i + 1 && close < next('\n', i + 1)) end = linkEnd(close);
+      } else if (input[i] === '*' && input[i + 1] === '*') {
+        const close = next('*', i + 2);
+        if (close > i + 2 && close < next('\n', i + 2) && input[close + 1] === '*') end = close + 2;
+      } else if (input[i] === '`') {
+        const close = next('`', i + 1);
+        if (close > i + 1 && close < next('\n', i + 1)) end = close + 1;
+      }
+      if (end >= 0) {parts.push(input.slice(plain, i), input.slice(i, end)); i = end; plain = end;}
+      else i++;
+    }
+    parts.push(input.slice(plain));
+    // INLINE TOKENIZER END
+    for (const part of parts) {
       const link = part.match(/^\[([^\]]+)\]\((<[^>\n]+>|[^\s)]+)\)$/);
       if (link && /^https?:\/\//.test(link[2])) {const node = element('a', '', link[1]); node.href = link[2]; node.target = '_blank'; node.rel = 'noopener noreferrer'; parent.append(node);}
       else if (allowFilePreview && link && codingLocalFileLink(link[2])) parent.append(codingFileButton(codingLocalFileLink(link[2]),`Preview ${link[1]}`));

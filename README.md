@@ -10,6 +10,8 @@ Noiee is the native macOS local AI workspace formerly named Saleh Uncensored. Th
 - `tooling/`: native compilation, startup checks, preserved integration suites, qualification and the reviewed host release adapter.
 - `.artifacts/`: exclusive generated evidence, omitted from Git. Generated runtime homes and browser profiles use private Caches directories.
 
+The focused inline Markdown regression runs with `/opt/homebrew/bin/node --preserve-symlinks tests/inline-rendering-check.mjs`. It checks Chat/Tasks dialect compatibility, deterministic linear scan bounds, a bounded reproduction of the former regex stall, and actual Chrome DOM rendering with synthetic text. It does not contact models or read saved stores, and is not installed-app or full-release acceptance. Chrome is required at its standard application path.
+
 The `source/node_modules` link points to the verified owned dependency snapshot at `/Users/saleh/Documents/Noiee/dependencies/node-26.13.0-build171`. The dependency versions are pinned in `source/package-lock.json`; they have not been upgraded in this workflow release. Development commands use `--preserve-symlinks` because the copied dependency directory has a descriptive name. The signed application embeds its own dependency tree.
 
 ## Workflow improvements
