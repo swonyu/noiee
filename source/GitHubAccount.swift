@@ -5,6 +5,7 @@ import LocalAuthentication
 // Registered GitHub App device flow. These types have no WebKit/model decoder.
 // Only native UI can invoke connect. Tokens never leave this native subsystem.
 enum GitHubAccountError:String,Error,LocalizedError {
+    case selectionChanged="Repository access or its name changed. Read account status for the current approved repositories; no new repository access was granted."
     case configuration="Enter the registered GitHub App slug and client ID in Private Accounts. No secret or private key is needed."
     case permissions="The GitHub App or installation is not limited to selected repositories with Metadata and Issues read-only permissions. No access was activated."
     case denied="GitHub authorization was denied, revoked, suspended or changed. Reconnect through Private Accounts."
@@ -216,7 +217,9 @@ private final class GitHubAccountRedirect:NSObject,URLSessionTaskDelegate,@unche
         let response:GitHubAccountResponse
         do {response=try await http.send(request)} catch let e as GitHubAccountError {throw e} catch {throw Task.isCancelled ? GitHubAccountError.cancelled:.transport}
         try check(expected)
-        if [401,403,404].contains(response.status) {throw GitHubAccountError.denied}
+        if response.status==401 {throw GitHubAccountError.denied}
+        // 403 includes rate limiting/abuse controls; 404 can mask visibility.
+        // Neither proves repository removal. Keep the durable scope unchanged.
         guard response.status==200,response.data.count<=262144 else {throw GitHubAccountError.transport}
         return response.data
     }
@@ -227,21 +230,23 @@ private final class GitHubAccountRedirect:NSObject,URLSessionTaskDelegate,@unche
         try GitHubAccountJSON.permissions(object["permissions"])
         return .init(id:try GitHubAccountJSON.integer(object["id"]),registration:registration)
     }
-    private func installations(_ token:GitHubAccountSecret,app:GitHubAccountApp,_ expected:UUID)async throws->[GitHubAccountInstallation] {
-        var rows:[GitHubAccountInstallation]=[],total:Int?
+    private func installations(_ token:GitHubAccountSecret,appID:Int,_ expected:UUID)async throws->(rows:[GitHubAccountInstallation],slug:String) {
+        var rows:[GitHubAccountInstallation]=[],total:Int?,slug:String?
         for page in 1...5 {
             let result=try GitHubAccountJSON.object(await send(.installations(token,page),expected))
             let count=try GitHubAccountJSON.integer(result["total_count"],max:100,zero:true)
             guard let entries=result["installations"] as? [[String:Any]],entries.count<=20,total==nil || total==count else {throw GitHubAccountError.invalid};total=count
             for value in entries {
-                guard try GitHubAccountJSON.integer(value["app_id"])==app.id,value["app_slug"] as? String==app.registration.slug,
+                let currentSlug=try GitHubAccountJSON.string(value["app_slug"],max:100)
+                guard try GitHubAccountJSON.integer(value["app_id"])==appID,slug==nil || slug==currentSlug,
                       value["repository_selection"] as? String=="selected",value["suspended_at"] is NSNull,
                       let owner=value["account"] as? [String:Any] else {throw GitHubAccountError.permissions}
+                slug=currentSlug
                 try GitHubAccountJSON.permissions(value["permissions"])
                 rows.append(try .init(id:GitHubAccountJSON.integer(value["id"]),owner:GitHubAccountJSON.user(owner)))
             }
             guard rows.count<=count,Set(rows.map(\.id)).count==rows.count else {throw GitHubAccountError.invalid}
-            if rows.count==count {guard !rows.isEmpty else {throw GitHubAccountError.denied};return rows}
+            if rows.count==count {guard !rows.isEmpty,let slug else {throw GitHubAccountError.denied};return (rows,slug)}
             guard entries.count==20 else {throw GitHubAccountError.invalid}
         }
         throw GitHubAccountError.invalid
@@ -258,7 +263,7 @@ private final class GitHubAccountRedirect:NSObject,URLSessionTaskDelegate,@unche
                 rows.append(try .init(id:GitHubAccountJSON.integer(value["id"]),name:name))
             }
             guard rows.count<=count,Set(rows.map(\.id)).count==rows.count,Set(rows.map(\.name)).count==rows.count else {throw GitHubAccountError.invalid}
-            if rows.count==count {guard !rows.isEmpty else {throw GitHubAccountError.denied};return rows.sorted {$0.id<$1.id}}
+            if rows.count==count {return rows.sorted {$0.id<$1.id}}
             guard entries.count==20 else {throw GitHubAccountError.invalid}
         }
         throw GitHubAccountError.invalid
@@ -267,15 +272,45 @@ private final class GitHubAccountRedirect:NSObject,URLSessionTaskDelegate,@unche
         let fields=[selection.registration.slug,selection.registration.clientID,selection.user.login,selection.installation.owner.login]+selection.repositories.map(\.name)
         guard fields.allSatisfy({!$0.contains(tokens.access.value) && !$0.contains(tokens.refresh.value)}) else {throw GitHubAccountError.invalid}
     }
-    private func verify(_ selection:GitHubAccountSelection,tokens:GitHubAccountTokens,_ expected:UUID)async throws {
+    // Authority follows immutable provider IDs. Provider names are display/routing
+    // metadata. A complete inventory can only intersect, never grow, saved IDs.
+    private func verify(_ selection:GitHubAccountSelection,tokens:GitHubAccountTokens,_ expected:UUID)async throws->GitHubAccountSelection {
         try selection.validate();try tokens.validate();try rejectCredentialEcho(selection,tokens:tokens)
-        let app=try await app(selection.registration,expected)
-        guard app.id==selection.appID else {throw GitHubAccountError.denied}
         let user=try GitHubAccountJSON.user(GitHubAccountJSON.object(await send(.user(tokens.access),expected)))
-        guard user==selection.user else {throw GitHubAccountError.denied}
-        let installations=try await installations(tokens.access,app:app,expected)
-        guard installations.contains(selection.installation) else {throw GitHubAccountError.denied}
-        guard try await repositories(tokens.access,installation:selection.installation.id,expected)==selection.repositories else {throw GitHubAccountError.denied}
+        guard user.id==selection.user.id else {throw GitHubAccountError.denied}
+        let inventory=try await installations(tokens.access,appID:selection.appID,expected)
+        guard let installation=inventory.rows.first(where:{$0.id==selection.installation.id}),installation.owner.id==selection.installation.owner.id else {throw GitHubAccountError.denied}
+        // Current installation metadata supplies a renamed app slug; the public
+        // app lookup must still confirm the original app ID and client ID.
+        let registration=try GitHubAccountRegistration(slug:inventory.slug,clientID:selection.registration.clientID)
+        let currentApp=try await app(registration,expected)
+        guard currentApp.id==selection.appID else {throw GitHubAccountError.denied}
+        let current=try await repositories(tokens.access,installation:installation.id,expected)
+        let approvedIDs=Set(selection.repositories.map(\.id)),retained=current.filter {approvedIDs.contains($0.id)}
+        guard !retained.isEmpty else {throw GitHubAccountError.denied}
+        let verified=GitHubAccountSelection(registration:registration,appID:selection.appID,user:user,installation:installation,repositories:retained)
+        try verified.validate();try rejectCredentialEcho(verified,tokens:tokens);try check(expected)
+        return verified
+    }
+    private func reconcile(_ saved:GitHubAccountRecord,selection:GitHubAccountSelection,_ expected:UUID)throws->GitHubAccountRecord {
+        try check(expected)
+        guard saved.selection != selection else {return saved}
+        // Persist removals before any result is delivered. A later reappearance
+        // cannot re-enter authority without a new explicit native grant.
+        let next=GitHubAccountRecord(state:.active,selection:selection,tokens:saved.tokens)
+        let oldIDs=Set(saved.selection.repositories.map(\.id)),newIDs=Set(selection.repositories.map(\.id))
+        guard newIDs.isSubset(of:oldIDs) else {throw GitHubAccountError.denied}
+        let reducing=newIDs != oldIDs
+        if reducing {
+            do {try store.setBlocked(true)} catch {
+                // If the independent marker fails, try to retain the confirmed
+                // reduction in Keychain anyway. Never report publication success.
+                held=true;try? save(next,expected:saved.id);throw GitHubAccountError.storage
+            }
+        }
+        try save(next,expected:saved.id)
+        if reducing {do {try store.setBlocked(false)} catch {held=true;throw GitHubAccountError.storage}}
+        return next
     }
     private func save(_ next:GitHubAccountRecord,expected:UUID?)throws {
         do {try store.save(next,expected:expected);record=next} catch {held=true;record=nil;throw GitHubAccountError.storage}
@@ -303,9 +338,12 @@ private final class GitHubAccountRedirect:NSObject,URLSessionTaskDelegate,@unche
             let sent=now(),data=try await send(.refresh(saved.selection.registration.clientID,old.refresh),expected)
             let renewed=try GitHubAccountJSON.tokens(data,sent:sent)
             guard renewed.access.value != old.access.value,renewed.refresh.value != old.refresh.value else {throw GitHubAccountError.invalid}
-            try await verify(saved.selection,tokens:renewed,expected);try check(expected)
-            saved = .init(state:.active,selection:saved.selection,tokens:renewed);try save(saved,expected:tombstone.id)
-        } else {try await verify(saved.selection,tokens:old,expected)}
+            let verified=try await verify(saved.selection,tokens:renewed,expected);try check(expected)
+            saved = .init(state:.active,selection:verified,tokens:renewed);try save(saved,expected:tombstone.id)
+        } else {
+            let verified=try await verify(saved.selection,tokens:old,expected)
+            saved=try reconcile(saved,selection:verified,expected)
+        }
         try check(expected);return saved
     }
     // Native UI calls only. Approval is independent of all operational tool modes.
@@ -350,15 +388,16 @@ private final class GitHubAccountRedirect:NSObject,URLSessionTaskDelegate,@unche
             }
             guard let tokens else {throw GitHubAccountError.expired}
             let user=try GitHubAccountJSON.user(GitHubAccountJSON.object(await send(.user(tokens.access),expected)))
-            let installations=try await installations(tokens.access,app:app,expected)
+            let inventory=try await installations(tokens.access,appID:app.id,expected),installations=inventory.rows
             guard let id=try await choose(installations),let installation=installations.first(where:{$0.id==id}) else {throw GitHubAccountError.cancelled};try check(expected)
             let repos=try await repositories(tokens.access,installation:id,expected)
+            guard !repos.isEmpty else {throw GitHubAccountError.denied}
             let selection=GitHubAccountSelection(registration:registration,appID:app.id,user:user,installation:installation,repositories:repos)
             try rejectCredentialEcho(selection,tokens:tokens)
             guard try await approve(selection) else {throw GitHubAccountError.cancelled};try check(expected)
             // Recheck provider identity/permissions/resources after the native review.
-            try await verify(selection,tokens:tokens,expected);try check(expected)
-            try save(.init(state:.active,selection:selection,tokens:tokens),expected:original?.id)
+            let verified=try await verify(selection,tokens:tokens,expected);try check(expected)
+            try save(.init(state:.active,selection:verified,tokens:tokens),expected:original?.id)
             do {try store.setBlocked(false)} catch {held=true;throw GitHubAccountError.storage};held=false
         } catch let e as GitHubAccountError {throw e} catch {throw Task.isCancelled ? GitHubAccountError.cancelled:.transport}
     }
@@ -386,13 +425,17 @@ private final class GitHubAccountRedirect:NSObject,URLSessionTaskDelegate,@unche
                 let saved=try await self.usable(expected),tokens=saved.tokens!,selection=saved.selection
                 if let operation {
                     let name:String;switch operation {case let .githubRepository(n),let .githubIssues(n,_):name=n;default:throw PrivateAccountFailure.invalid}
-                    guard let repository=selection.repositories.first(where:{$0.name==name}) else {throw PrivateAccountFailure.denied}
+                    guard let repository=selection.repositories.first(where:{$0.name==name}) else {throw GitHubAccountError.selectionChanged}
                     let grant=try PrivateAccountGrant(provider:.github,token:tokens.access.value,expiresAt:tokens.expires,selectedResources:Set(selection.repositories.map(\.name)))
                     let data=try await self.send(.read(operation,grant),expected)
                     let result=try operation.parse(data,grant:grant)
-                    if case .githubRepository=operation {guard result["id"] as? Int==repository.id else {throw GitHubAccountError.denied}}
+                    let responseIdentityMatches:Bool
+                    if case .githubRepository=operation {responseIdentityMatches=result["id"] as? Int==repository.id} else {responseIdentityMatches=true}
                     // Reject late results if provider/account/resource identity changed mid-read.
-                    try await self.verify(selection,tokens:tokens,expected);try self.check(expected)
+                    let verified=try await self.verify(selection,tokens:tokens,expected)
+                    _ = try self.reconcile(saved,selection:verified,expected)
+                    guard responseIdentityMatches,verified.repositories.contains(where:{$0.id==repository.id && $0.name==name}) else {throw GitHubAccountError.selectionChanged}
+                    try self.check(expected)
                     let text=String(data:try JSONSerialization.data(withJSONObject:result),encoding:.utf8)!
                     guard !text.contains(tokens.refresh.value) else {throw GitHubAccountError.invalid}
                     return result

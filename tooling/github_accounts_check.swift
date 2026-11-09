@@ -16,6 +16,8 @@ import Foundation
 }
 @MainActor final class GitHubFixtureHTTP:GitHubAccountHTTP {
     var requests:[URLRequest]=[],polls=0,refreshes=0,userID=10,repoID=21,repoName="owner/one",appID=7,selection="selected",scope="",tokenType="bearer",suspended=false
+    var userLogin="fixtureuser",ownerLogin="owner",ownerID=12,installationID=11,appSlug="fixture-app"
+    var repositoryRows:[GitHubAccountRepository]?,partialRepositories=false,repoFailurePage:Int?,afterRead:(()->Void)?
     var permissions:[String:String]=["metadata":"read","issues":"read"],pollErrors:[String]=[],deniedStatus:Int?,fail=false,invalidVerification=false,partial=false
     var holdPath:String?,continuation:CheckedContinuation<Void,Never>?,newSecret="ghu_fixture_new_access",newRefresh="ghr_fixture_new_refresh"
     static let access="ghu_fixture_old_access",refresh="ghr_fixture_old_refresh"
@@ -28,17 +30,26 @@ import Foundation
         if let deniedStatus {return .init(status:deniedStatus,data:try data(["error":Self.access]))}
         let object:Any
         switch request.url!.path {
-        case "/apps/fixture-app":object=["id":appID,"slug":"fixture-app","client_id":"Iv1.fixtureclient","permissions":permissions]
+        case let path where path=="/apps/"+appSlug:object=["id":appID,"slug":appSlug,"client_id":"Iv1.fixtureclient","permissions":permissions]
         case "/login/device/code":object=["device_code":String(repeating:"a",count:40),"user_code":"AB12-EF34","verification_uri":invalidVerification ? "https://evil.example/":"https://github.com/login/device","expires_in":900,"interval":5]
         case "/login/oauth/access_token":
             let body=String(data:request.httpBody!,encoding:.utf8)!
             if body.contains("grant_type=refresh_token") {refreshes+=1;object=pair(newSecret,newRefresh)}
             else {polls+=1;if !pollErrors.isEmpty {object=["error":pollErrors.removeFirst(),"error_description":Self.access]} else {object=pair(Self.access,Self.refresh)}}
-        case "/user":object=["id":userID,"login":"fixtureuser","secret":Self.access]
-        case "/user/installations":object=["total_count":partial ? 2:1,"installations":[["id":11,"app_id":appID,"app_slug":"fixture-app","repository_selection":selection,"permissions":permissions,"suspended_at":suspended ? "2026":NSNull(),"account":["id":12,"login":"owner"]]]]
-        case "/user/installations/11/repositories":object=["total_count":1,"repositories":[["id":repoID,"full_name":repoName]]]
-        case "/repos/owner/one":object=["id":repoID,"full_name":"owner/one","description":"Repository "+Self.access]
-        case "/repos/owner/one/issues":object=[["number":1,"state":"open","title":"Issue","body":"Untrusted text "+Self.access]]
+        case "/user":object=["id":userID,"login":userLogin,"secret":Self.access]
+        case "/user/installations":object=["total_count":partial ? 2:1,"installations":[["id":installationID,"app_id":appID,"app_slug":appSlug,"repository_selection":selection,"permissions":permissions,"suspended_at":suspended ? "2026":NSNull(),"account":["id":ownerID,"login":ownerLogin]]]]
+        case let path where path=="/user/installations/\(installationID)/repositories":
+            let page=Int(URLComponents(url:request.url!,resolvingAgainstBaseURL:false)!.queryItems!.first {$0.name=="page"}!.value!)!
+            if repoFailurePage==page {throw GitHubAccountError.transport}
+            let all=repositoryRows ?? [.init(id:repoID,name:repoName)]
+            let rows=Array(all.dropFirst((page-1)*20).prefix(20))
+            object=["total_count":all.count+(partialRepositories ? 1:0),"repositories":rows.map {["id":$0.id,"full_name":$0.name] as [String:Any]}]
+        case let path where path.hasPrefix("/repos/"):
+            let issues=path.hasSuffix("/issues"),name=String(path.dropFirst(7).dropLast(path.hasSuffix("/issues") ? 7:0))
+            guard let repository=(repositoryRows ?? [.init(id:repoID,name:repoName)]).first(where:{$0.name==name}) else {return .init(status:404,data:Data())}
+            if issues {object=[["number":1,"state":"open","title":"Issue","body":"Untrusted text "+Self.access]]}
+            else {object=["id":repository.id,"full_name":repository.name,"description":"Repository "+Self.access]}
+            afterRead?()
         default:throw GitHubAccountError.invalid
         }
         return .init(status:200,data:try data(object))
@@ -172,6 +183,91 @@ import Foundation
             }
             expect(approvals==0 && echoStore.saves==0,"neither access nor refresh secret reaches selection UI/store")
         }
+        let (renamed,renameStore,renameHTTP,renameClock)=fixture();try await connect(renamed)
+        renameHTTP.userLogin="renameduser";renameHTTP.ownerLogin="renamedowner";renameHTTP.appSlug="renamed-app";renameHTTP.repoName="renamedowner/project"
+        let renamedStatus=try await renamed.perform(["action":"status"])
+        let renamedProvider=(renamedStatus["providers"] as! [[String:Any]])[2]
+        expect(renamedProvider["account"] as? String=="renameduser" && renamedProvider["repositories"] as? [String]==["renamedowner/project"],"names reconcile from stable IDs without a grant")
+        expect(renameStore.record?.selection.appID==7 && renameStore.record?.selection.registration.slug=="renamed-app" && renameStore.record?.selection.user.id==10 && renameStore.record?.selection.installation.id==11 && renameStore.record?.selection.installation.owner.id==12,"all authority IDs remain stable through rename")
+        _ = try await renamed.perform(["action":"github_repository","repository":"renamedowner/project"])
+        await rejects("old renamed path no longer routes") {_ = try await renamed.perform(["action":"github_repository","repository":"owner/one"])}
+        expect(!renameHTTP.requests.contains {$0.url!.path=="/repos/owner/one"},"old repository path never dispatched after rename")
+        renameClock.value=renameClock.value.addingTimeInterval(28800);renameHTTP.repoName="renamedowner/again"
+        _ = try await renamed.perform(["action":"status"])
+        expect(renameStore.record?.selection.repositories.first?.name=="renamedowner/again" && renameHTTP.refreshes==1,"refresh also reconciles same-ID names")
+
+        let (reduced,reducedStore,reducedHTTP,reducedClock)=fixture()
+        let one=GitHubAccountRepository(id:21,name:"owner/one"),two=GitHubAccountRepository(id:22,name:"owner/two"),new=GitHubAccountRepository(id:23,name:"owner/new")
+        reducedHTTP.repositoryRows=[one,two];try await connect(reduced)
+        reducedHTTP.repositoryRows=[two,new]
+        let reducedStatus=try await reduced.perform(["action":"status"])
+        expect((reducedStatus["providers"] as! [[String:Any]])[2]["repositories"] as? [String]==["owner/two"],"confirmed reduction persists and added ID is ignored")
+        expect(reducedStore.record?.selection.repositories==[two] && !reducedStore.blocked,"remaining approved IDs stay active without new consent")
+        _ = try await reduced.perform(["action":"github_repository","repository":"owner/two"])
+        reducedHTTP.repositoryRows=[one,two,new]
+        let reducedRestart=GitHubAccountSession(http:reducedHTTP,store:reducedStore,now:{reducedClock.value},sleep:{try await reducedClock.sleep($0)})
+        _ = try await reducedRestart.perform(["action":"status"])
+        expect(reducedStore.record?.selection.repositories==[two],"removed ID cannot be restored after restart or provider reappearance")
+        await rejects("removed ID remains excluded") {_ = try await reducedRestart.perform(["action":"github_repository","repository":"owner/one"])}
+        await rejects("new ID never silently admitted") {_ = try await reducedRestart.perform(["action":"github_repository","repository":"owner/new"])}
+
+        for status in [403,404,429,500,503] {
+            let (transient,tStore,tHTTP,_)=fixture();try await connect(transient)
+            let original=tStore.record!.id;tHTTP.deniedStatus=status
+            await rejects("transient HTTP \(status)",.transport) {_ = try await transient.perform(["action":"github_repository","repository":"owner/one"])}
+            expect(tStore.record?.id==original && !tStore.blocked && tStore.record?.tokens != nil,"transient status never prunes or revokes")
+            tHTTP.deniedStatus=nil
+            _ = try await transient.perform(["action":"github_repository","repository":"owner/one"])
+            expect(tStore.record?.id==original,"transient recovery needs no new grant")
+        }
+        let (incomplete,iStore,iHTTP,_)=fixture();iHTTP.repositoryRows=[one,two];try await connect(incomplete)
+        let prior=iStore.record!.id;iHTTP.repositoryRows=[two];iHTTP.partialRepositories=true
+        await rejects("partial inventory is not removal",.invalid) {_ = try await incomplete.perform(["action":"github_repository","repository":"owner/two"])}
+        expect(iStore.record?.id==prior && iStore.record?.selection.repositories==[one,two] && !iStore.blocked,"incomplete inventory preserves prior authority but returns no data")
+        iHTTP.partialRepositories=false
+        _ = try await incomplete.perform(["action":"status"])
+        expect(iStore.record?.selection.repositories==[two],"only complete inventory confirms removal")
+
+        let (pages,pStore,pHTTP,_)=fixture()
+        let many=(21...41).map {GitHubAccountRepository(id:$0,name:"owner/r\($0)")}
+        pHTTP.repositoryRows=many;try await connect(pages)
+        let beforePages=pStore.record!.id;pHTTP.repositoryRows=Array(many.dropFirst())+[.init(id:99,name:"owner/replacement")];pHTTP.repoFailurePage=2
+        await rejects("second-page failure",.transport) {_ = try await pages.perform(["action":"github_repository","repository":"owner/r22"])}
+        expect(pStore.record?.id==beforePages && pStore.record?.selection.repositories==many,"earlier pages cannot establish deletion")
+        pHTTP.repoFailurePage=nil;_ = try await pages.perform(["action":"status"])
+        expect(pStore.record?.selection.repositories==Array(many.dropFirst()),"complete pagination intersects only approved IDs")
+
+        let (during,dStore,dHTTP,_)=fixture();dHTTP.repositoryRows=[one,two];try await connect(during)
+        dHTTP.afterRead={dHTTP.repositoryRows=[two];dHTTP.afterRead=nil}
+        await rejects("requested ID removed during read") {_ = try await during.perform(["action":"github_issues","repository":"owner/one","page":1])}
+        expect(dStore.record?.selection.repositories==[two] && !dStore.blocked,"post-read removal discards result but preserves other approved repositories")
+        _ = try await during.perform(["action":"github_repository","repository":"owner/two"])
+
+        let (empty,eStore,eHTTP,eClock)=fixture();try await connect(empty);eHTTP.repositoryRows=[]
+        await rejects("all repositories confirmed removed",.denied) {_ = try await empty.perform(["action":"github_repository","repository":"owner/one"])}
+        expect(eStore.blocked && eStore.record?.tokens==nil,"complete loss of authority durably disconnects")
+        eHTTP.repositoryRows=[one]
+        let emptyRestart=GitHubAccountSession(http:eHTTP,store:eStore,now:{eClock.value},sleep:{try await eClock.sleep($0)})
+        let noRevival=eHTTP.requests.count;_ = try await emptyRestart.perform(["action":"status"])
+        expect(eHTTP.requests.count==noRevival,"fully removed grant cannot revive automatically")
+        for identity in ["app","installation","owner"] {
+            let (changed,cStore,cHTTP,_)=fixture();try await connect(changed)
+            if identity=="app" {cHTTP.appID=99};if identity=="installation" {cHTTP.installationID=99};if identity=="owner" {cHTTP.ownerID=99}
+            await rejects("changed authority ID "+identity) {_ = try await changed.perform(["action":"github_repository","repository":"owner/one"])}
+            expect(cStore.blocked && cStore.record?.tokens==nil,"name reconciliation never changes authority ID")
+        }
+        let (writeScope,wStore,wHTTP,_)=fixture();try await connect(writeScope);wHTTP.permissions["issues"]="write"
+        await rejects("scope expansion after grant",.permissions) {_ = try await writeScope.perform(["action":"github_repository","repository":"owner/one"])}
+        expect(wStore.blocked && wStore.record?.tokens==nil,"read permissions never silently expand")
+        let (prune,pruneStore,pruneHTTP,pruneClock)=fixture();pruneHTTP.repositoryRows=[one,two];try await connect(prune)
+        pruneHTTP.repositoryRows=[two];pruneStore.failSave=true
+        await rejects("failed reduction publication",.storage) {_ = try await prune.perform(["action":"github_repository","repository":"owner/two"])}
+        expect(pruneStore.blocked,"confirmed removal has independent durable deny fence before Keychain update")
+        pruneStore.failSave=false;pruneHTTP.repositoryRows=[one,two]
+        let pruneRestart=GitHubAccountSession(http:pruneHTTP,store:pruneStore,now:{pruneClock.value},sleep:{try await pruneClock.sleep($0)})
+        let pruneRequests=pruneHTTP.requests.count
+        await rejects("failed removal cannot revive prior scope",.unavailable) {_ = try await pruneRestart.perform(["action":"github_repository","repository":"owner/one"])}
+        expect(pruneHTTP.requests.count==pruneRequests,"failed removal never restores revoked ID on restart")
         print("PASS: \(count) offline GitHub device/identity/consent/refresh/read/disconnect assertions. No browser, network, Keychain, app UI or real account used.")
     }
 }
