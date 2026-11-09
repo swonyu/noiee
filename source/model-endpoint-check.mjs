@@ -73,6 +73,13 @@ try{
     assert(launchEnv.SALEH_CODING_LOCAL_KEY===engine.relay.authToken);assert(!JSON.stringify(launchArgs).includes(engine.relay.authToken));
     assert(launchArgs.includes('model_providers.saleh_local.env_key="SALEH_CODING_LOCAL_KEY"'));
     assert(launchArgs.includes('shell_environment_policy.exclude=["SALEH_CODING_LOCAL_KEY","SALEH_CODING_CLOUD_KEY"]'));
+    const unadmitted=await post(engine.relay);
+    assert.equal(unadmitted.statusCode,409);
+    assert.match(JSON.parse(Buffer.concat(unadmitted.chunks)).error.message,/context has not been admitted/);
+    assert.deepEqual(calls,[],'Unadmitted context must reject before discovery or inference');
+    const selected=await catalog.resolve(model,{mode:'coding'});
+    engine.modelProfiles.admit(model,selected);
+    calls.length=0;
     assert.equal((await post(engine.relay)).statusCode,200);
     assert.deepEqual(calls.map(call=>call.url),[origin+'/api/v1/models',origin+'/v1/responses']);
     console.log('PASS actual CodingEngine launch composition binds catalog and inference to the custom origin before synthetic spawn');
