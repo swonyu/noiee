@@ -14,17 +14,27 @@ export class BoundedStdioTransport {
   #buffer = Buffer.alloc(0);
   #size = 0;
   #closing;
-  constructor(params, onOversize) { this.params = params; this.onOversize = onOversize; }
+  #trusted; #started=false;
+  constructor(params, onOversize, trusted) { this.params = params; this.onOversize = onOversize; this.#trusted=trusted; }
   async start() {
-    if (this.#child || this.#closing) throw new Error('MCP transport already started or closed.');
+    if (this.#started || this.#closing) throw new Error('MCP transport already started or closed.');
+    this.#started=true;
+    const consume=this.#trusted?.beforeStart ? await this.#trusted.beforeStart() : null;
+    if(this.#closing)throw Error('MCP transport closed before spawn.');
     await new Promise((resolve, reject) => {
+      const snapshot=consume?.(); // Private one-shot grant, synchronously adjacent to spawn.
+      if(this.#trusted?.sourceSnapshot&&(!Buffer.isBuffer(snapshot)||snapshot.length<1||snapshot.length>1024*1024))throw Error('Missing bounded private external source snapshot.');
       const child = this.#child = spawn(this.params.command, this.params.args, {
-        env: { ...getDefaultEnvironment(), ...this.params.env }, cwd: this.params.cwd,
-        stdio: ['pipe', 'pipe', 'ignore'], shell: false,
+        env: this.#trusted?.cleanEnvironment ? {...this.params.env} : { ...getDefaultEnvironment(), ...this.params.env }, cwd: this.params.cwd,
+        stdio: this.#trusted?.sourceSnapshot ? ['pipe', 'pipe', 'ignore', 'pipe'] : ['pipe', 'pipe', 'ignore'], shell: false,
       });
       child.once('spawn', resolve);
       child.on('error', error => { reject(error); this.onerror?.(error); });
       child.once('close', () => { if (this.#child === child) { this.#child = undefined; this.onclose?.(); } });
+      if(this.#trusted?.sourceSnapshot){
+        child.stdio[3].on('error',error=>{reject(error);this.onerror?.(error);});
+        child.stdio[3].end(snapshot);
+      }
       child.stdin.on('error', error => this.onerror?.(error));
       child.stdout.on('error', error => this.onerror?.(error));
       child.stdout.on('data', chunk => {
@@ -72,7 +82,7 @@ export class BoundedStdioTransport {
       } finally {
         // A descendant may inherit stdout after the provider exits. Close our
         // pipe ends and notify the SDK once; never wait for that descendant.
-        child.stdin.destroy(); child.stdout.destroy();
+        child.stdin.destroy(); child.stdout.destroy(); child.stdio[3]?.destroy(); child.stdio?.[3]?.destroy();
         if(observed){child.unref();if (this.#child === child) { this.#child = undefined; this.onclose?.(); }}
       }
     })();

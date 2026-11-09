@@ -211,12 +211,15 @@ export class MCPHub {
   #prepared = new WeakMap();
   #recovery;#recoveryWork;#recoveryHalted=false;#recoveryStatus=new Map();#suppressed=new Set();
   #managedFetch;
+  #managedExternal; #externalAuthority;
 
   constructor(configPath = path.join(homedir(), 'Library', 'Application Support', 'Qwen Local', 'mcp.json'),options={}) {
     this.configPath = configPath;
-    if(!plain(options)||Object.keys(options).some(key=>!['recoveryDirectory','fault','managedFetch'].includes(key))||options.recoveryDirectory!==undefined&&typeof options.recoveryDirectory!=='string'||options.fault!==undefined&&typeof options.fault!=='function'||options.managedFetch!==undefined&&typeof options.managedFetch!=='function')throw Error('Invalid trusted MCP recovery options.');
+    if(!plain(options)||Object.keys(options).some(key=>!['recoveryDirectory','fault','managedFetch','managedExternal','externalAuthority'].includes(key))||options.recoveryDirectory!==undefined&&typeof options.recoveryDirectory!=='string'||options.fault!==undefined&&typeof options.fault!=='function'||options.managedFetch!==undefined&&typeof options.managedFetch!=='function')throw Error('Invalid trusted MCP recovery options.');
     if(options.recoveryDirectory!==undefined)this.#recovery=new MCPRecoveryState(options.recoveryDirectory,options.fault);
     this.#managedFetch=options.managedFetch;
+    this.#managedExternal=options.managedExternal; this.#externalAuthority=options.externalAuthority;
+    if(this.#managedExternal && (typeof this.#managedExternal!=='function'|| !this.#externalAuthority || typeof this.#externalAuthority!=='object'))throw Error('Invalid external manager authority.');
   }
 
   #beginWork(id, connection) {
@@ -237,6 +240,15 @@ export class MCPHub {
 
   async #config() {
     const configured=await this.#userConfig();
+    if([...configured.keys()].some(id=>id.startsWith('external-js-')))throw Error('external-js- IDs are reserved for native-reviewed external tools.');
+    if(this.#managedExternal){
+      const entries=await this.#managedExternal();
+      if(!Array.isArray(entries)||entries.length>64)throw Error('Invalid managed external registry.');
+      for(const {id,config} of entries){
+        if(!/^external-js-[a-f0-9]{64}$/.test(id)||configured.has(id)||config.url!==undefined)throw Error('Invalid or colliding external MCP ID.');
+        configured.set(id,{...serverConfig(id,config,path.dirname(path.resolve(this.configPath))),external:true,configuration:config,configHash:createHmac('sha256',this.#hashKey).update(id).update('\0').update(JSON.stringify(config)).digest('hex')});
+      }
+    }
     if(!this.#managedFetch)return configured;
     if(configured.has('managed-fetch'))throw Error('The managed-fetch MCP ID is reserved; a user configuration collision must be resolved before connecting.');
     const config=await this.#managedFetch();
@@ -292,7 +304,12 @@ export class MCPHub {
   }
 
   connect(id,expectedConfigHash){this.#suppressed.delete(id);return this.#connect(id,expectedConfigHash);}
-  async #connect(id, expectedConfigHash,desired=null) {
+  connectExternal(id,hash,authority,preStart){
+    if(!this.#externalAuthority||authority!==this.#externalAuthority||typeof preStart!=='function'||!/^external-js-[a-f0-9]{64}$/.test(id))return Promise.reject(Error('Native external authority required.'));
+    this.#suppressed.delete(id);return this.#connect(id,hash,null,preStart);
+  }
+  async #connect(id, expectedConfigHash,desired=null,externalStart=null) {
+    if(id.startsWith('external-js-')&&!externalStart)throw Error('A fresh native review is required for every external connection.');
     if (this.#closed) throw new Error('MCP hub is closed.');
     const stopEpoch = this.#stopEpoch;
     if(this.#recovery)await this.#recovery.openBoot();
@@ -317,7 +334,12 @@ export class MCPHub {
       controller.abort(error);
       void client.close().catch(() => {});
     };
-    const transport = entry.metadata.transport === 'stdio' ? new BoundedStdioTransport(entry.params, onOversize) : new StreamableHTTPClientTransport(entry.params.url, {
+    const transport = entry.metadata.transport === 'stdio' ? new BoundedStdioTransport(entry.params, onOversize, entry.external ? {cleanEnvironment:true, sourceSnapshot:true, beforeStart:async()=>{
+      const consume=await externalStart();
+      const current=(await this.#config()).get(id);
+      if(!current||current.configHash!==entry.configHash)throw Error('External configuration changed before admission.');
+      return ()=>{if(this.#closed||stopEpoch!==this.#stopEpoch||controller.signal.aborted||this.#suppressed.has(id))throw Error('External launch stopped before spawn.');return consume();};
+    }} : undefined) : new StreamableHTTPClientTransport(entry.params.url, {
       requestInit: { headers: entry.params.headers, redirect: 'error' },
       fetch: async (url, init) => boundedResponse(await fetch(url, { ...init, redirect: 'error', signal: AbortSignal.any([controller.signal, ...(init?.signal ? [init.signal] : [])]) }), onOversize),
       reconnectionOptions: { maxRetries: 0, initialReconnectionDelay: 1000, maxReconnectionDelay: 1000, reconnectionDelayGrowFactor: 1 },
@@ -370,7 +392,7 @@ export class MCPHub {
       for (const tool of allTools) if (connection.tools.has(tool.name) && tool.outputSchema) connection.outputValidators.set(tool.name, compileSchema(tool.outputSchema));
       if (controller.signal.aborted || this.#connections.get(id) !== connection) throw new Error('MCP connection was cancelled.');
       const current=()=>!this.#closed&&stopEpoch===this.#stopEpoch&&!this.#suppressed.has(id)&&!controller.signal.aborted&&this.#connections.get(id)===connection;
-      if(this.#recovery){
+      if(this.#recovery&&!entry.external){
         const row={id,transport:entry.metadata.transport,config:this.#recovery.fingerprint('config',{id,transport:entry.metadata.transport,params:entry.params,configuration:entry.configuration}),catalog:this.#recovery.fingerprint('catalog',allTools.slice().sort((a,b)=>a.name<b.name?-1:a.name>b.name?1:0))};
         const fresh=(await this.#config()).get(id);if(!fresh||fresh.configHash!==entry.configHash||!current())throw Error('MCP configuration changed or connection was stopped.');
         if(desired&&(truncated||connection.omittedTools||row.config!==desired.config||row.catalog!==desired.catalog||row.transport!==desired.transport))throw Error('Saved MCP configuration or catalog changed. Use explicit Connect.');
@@ -597,6 +619,7 @@ export class MCPHub {
     if(typeof assertReady!=='function'||typeof automatic!=='boolean')throw Error('Invalid trusted MCP recovery gate.');
     const epoch=this.#stopEpoch,{eligible,rows}=await this.#recovery.openBoot();
     for(const row of rows){
+      if(row.id.startsWith('external-js-')){this.#recoveryStatus.set(row.id,'native review required; recovery forbidden');continue;}
       if(this.#closed||this.#recoveryHalted||epoch!==this.#stopEpoch)break;
       if(this.#suppressed.has(row.id))continue;
       this.#recoveryStatus.set(row.id,!automatic?'awaiting native Connect':!eligible?'inspection required':'checking');

@@ -17,6 +17,7 @@ import { ScheduledTasks } from './scheduled-tasks.mjs';
 import { openGuestExecutor } from './guest-executor.mjs';
 import { MCPHub } from './mcp.mjs';
 import {createManagedFetch} from './managed-fetch.mjs';
+import {ExternalToolRuntime} from './external-tool-runtime.mjs';
 import { DEFAULT_LOCAL_MODEL,validateModelID,bindLocalModelTransport,assertModelContext,outputPolicy,responseStyleInstructions } from './local-models.mjs';
 
 export const MODEL = DEFAULT_LOCAL_MODEL;
@@ -59,7 +60,7 @@ export function validateMessages(value) {
 }
 
 export function createServer({ upstream, model = MODEL, instanceToken = '', hub, coding, worktrees, gitWorkflow, schedules, enableScheduling=false,localModels,fetchImpl,ownedRuntime,chatRunOptions,fullAccess=false,unconfinedBoot=false,recoveryStartup=false } = {}) {
-  let managedFetch;
+  let managedFetch,externalToolRuntime;
   validateToolAccess({fullAccess,unconfinedBoot,recoveryStartup});
   if(recoveryStartup)enableScheduling=false;
   const binding=bindLocalModelTransport({upstream,localModels,fetchImpl});
@@ -72,16 +73,18 @@ export function createServer({ upstream, model = MODEL, instanceToken = '', hub,
     const nativeHelper=process.env.QWEN_LOCAL_NATIVE_HELPER;
     const mcpConfigPath=path.join(path.dirname(dataDir),'mcp.json');
     managedFetch=createManagedFetch({parent:path.dirname(dataDir),resources:ROOT});
-    hub=new MCPHub(mcpConfigPath,{managedFetch,recoveryDirectory:path.join(path.dirname(dataDir),'agent-mcp-recovery')});
+    const externalAuthority=Object.freeze({});
+    hub=new MCPHub(mcpConfigPath,{managedFetch,managedExternal:()=>externalToolRuntime?.managedExternal()??[],externalAuthority,recoveryDirectory:path.join(path.dirname(dataDir),'agent-mcp-recovery')});
     const legacyAdmission=createLegacyAdmission({resources:ROOT});
     worktrees=new ManagedWorktrees({dataDir,nativeHelper,legacyAdmission,managedMutationBlocked:unconfinedBoot,reserveMutation:(resolvePaths,policy)=>coding.reserveProjectMutation(resolvePaths,policy)});
     coding=new CodingOwners({managedMutationBlocked:unconfinedBoot,handoffStatus:marker=>worktrees.inspectOwnerHandoff(marker),unconfinedStatus:()=>worktrees.inspectUnconfinedAccess(),dataDir,mcpConfigPath,legacyAdmission,executorPolicy:{runtimeDir:executor.runtimeDir,resources:executor.resources,limits},
       openExecutor:context=>openGuestExecutor(context,executor,{onProvisioningReady:context.onProvisioningReady,onStartupProgress:context.onStartupProgress}),
       engineOptions:{nativeHelper,localModels,fullAccess:fullAccess&&!recoveryStartup,assertProject:async(cwd,authority)=>{if(recoveryStartup&&!authority)throw Error(RECOVERY_STARTUP_MESSAGE);if(fullAccess&&!recoveryStartup)await worktrees.assertUnconfinedAccess();await worktrees.assertProject(cwd,authority);}}});
     worktrees.coding=coding;
+    externalToolRuntime=new ExternalToolRuntime({parent:path.dirname(dataDir),hub,authority:externalAuthority,unconfinedBoot,recoveryStartup,assertUnconfinedAccess:async()=>{await worktrees.assertUnconfinedAccess();await coding.assertUnconfinedAccess();}});
     if(enableScheduling)schedules=new ScheduledTasks({dataDir,coding,nativeHelper,assertProject:cwd=>worktrees.assertProject(cwd)});
   }
-  const agentRoute = toolRoutes({instanceToken,hub,managedFetch,upstream,model,coding,worktrees,gitWorkflow,schedules,enableScheduling,localModels,fetchImpl,fullAccess,unconfinedBoot,recoveryStartup});
+  const agentRoute = toolRoutes({instanceToken,hub,managedFetch,externalToolRuntime,upstream,model,coding,worktrees,gitWorkflow,schedules,enableScheduling,localModels,fetchImpl,fullAccess,unconfinedBoot,recoveryStartup});
   if(chatRunOptions!==undefined&&(!chatRunOptions||Object.keys(chatRunOptions).some(key=>!['directory','fault'].includes(key))))throw Error('Invalid trusted text-run options.');
   const chatDirectory=chatRunOptions?.directory??(agentRoute.dataDir?path.join(path.dirname(agentRoute.dataDir),'chat-runs'):null);
   const chatRuns=chatDirectory?new ChatRuns({directory:chatDirectory,beginInference:agentRoute.beginInference,admissionGeneration:agentRoute.admissionGeneration,agentReply:agentRoute.agentReply,fetchImpl,upstream,fault:chatRunOptions?.fault,prepare:async(input,signal)=>{

@@ -164,7 +164,7 @@ enum ExternalToolInstall {
             _ = try CodingTemporary.checked(fsync(chain.fd),"Sync published artifact")
             try chain.verify()
             guard created==directoryIdentity(try CodingTemporary.namedInfo(chain.fd,proposal.sha256)),try read(fd,"artifact.mjs",limit:limit)==data,try read(fd,"receipt.json",limit:16384)==raw else {throw fail("Published artifact changed.")}
-            return ["state":"installed-inert","operationId":operation,"revision":proposal.sha256,"path":destination(scope.parent,proposal.sha256),"receiptSHA256":hash(raw),"installed":true,"connected":false,"executable":false,"message":"Exact artifact stored inertly. No external code ran. This increment does not connect tools; no MCP configuration or provider was changed."]
+            return ["state":"installed-inert","operationId":operation,"revision":proposal.sha256,"path":destination(scope.parent,proposal.sha256),"receiptSHA256":hash(raw),"installed":true,"connected":false,"executable":false,"message":"Exact artifact stored inertly. No external code ran. Use connect with this exact revision for a separate mandatory launch review. No MCP configuration or provider was changed."]
         } catch {throw fail("Installation publication is unconfirmed. Inspect revision "+proposal.sha256+" and retained operation "+operation+" before retrying. No external code ran. "+error.localizedDescription)}
     }
     static func inspect(_ parent: String) throws -> [String:Any] {
@@ -183,7 +183,7 @@ enum ExternalToolInstall {
             _ = try proposal(["action":"install","url":receipt["url"] as Any,"sha256":name,"purpose":receipt["purpose"] as Any])
             try CodingTemporary.requireContents(fd,["artifact.mjs","receipt.json"]);try chain.verify()
             guard before==directoryIdentity(try CodingTemporary.namedInfo(chain.fd,name)) else {throw fail("Installed revision changed during inspection.")}
-            entries.append(["revision":name,"operationId":operation,"state":"installed-inert","installed":true,"connected":false,"path":destination(parent,name),"receiptSHA256":hash(raw)])
+            entries.append(["revision":name,"operationId":operation,"state":"installed","installed":true,"connectionState":"inspect-runtime-status","path":destination(parent,name),"receiptSHA256":hash(raw)])
         }
         try chain.verify();return ["entries":entries,"message":"External artifacts inspected without execution. Retained stages are not installed tools."]
     }
@@ -206,7 +206,7 @@ enum ExternalToolInstall {
         let scope=try ExternalToolInstall.scope(parent)
         let response=try await download(proposal.input);try requireCurrent()
         let data=try ExternalToolInstall.downloaded(response,for:proposal)
-        let detail="Install inert external JavaScript artifact?\n\nSource trust: unknown, unreviewed external code. A hash proves identity, not trust.\nURL: \(proposal.url)\nSHA-256: \(proposal.sha256)\nBytes: \(data.count)\nPurpose supplied by the model (untrusted): \(proposal.purpose)\nDestination: \(ExternalToolInstall.destination(parent,proposal.sha256))\nOperation: \(operation)\n\nOnly this exact file and an immutable receipt will be installed. No code, imports, help/version probes, dependencies or package scripts run. This increment cannot connect the artifact as a tool. Existing MCP and provider configuration stays unchanged. A later launch would run as your Mac user, not in an OS sandbox; a private HOME or working directory would only separate storage. Source content and tool descriptions cannot authorize execution."
+        let detail="Install inert external JavaScript artifact?\n\nSource trust: unknown, unreviewed external code. A hash proves identity, not trust.\nURL: \(proposal.url)\nSHA-256: \(proposal.sha256)\nBytes: \(data.count)\nPurpose supplied by the model (untrusted): \(proposal.purpose)\nDestination: \(ExternalToolInstall.destination(parent,proposal.sha256))\nOperation: \(operation)\n\nOnly this exact file and an immutable receipt will be installed. No code, imports, help/version probes, dependencies or package scripts run. A separate Connect once review is required before running this artifact as a tool. Launch requires an already unconfined non-recovery backend boot. Existing MCP and provider configuration stays unchanged. A later launch would run as your Mac user, not in an OS sandbox; a private HOME or working directory would only separate storage. Source content and tool descriptions cannot authorize execution."
         guard try await ask(detail) else {return ["cancelled":true,"installed":false,"connected":false,"message":"Installation cancelled. Downloaded bytes were not published or executed."]}
         try requireCurrent();_ = try ExternalToolInstall.verify(scope)
         let task=Task.detached(priority:.userInitiated) {try ExternalToolInstall.install(scope,proposal:proposal,data:data,operation:operation,generation:expected.uuidString.lowercased(),check:{_ in try Task.checkCancellation()})}

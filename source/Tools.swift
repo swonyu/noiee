@@ -981,6 +981,7 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
         return try await privateAccounts.perform(input)
     }
     private let externalTools = ExternalToolInstallSession()
+    private let externalLaunch = ExternalToolLaunchSession()
     private let codingFilePreview = CodingFilePreviewSession()
     private let codingSetup = CodingMCPSetupSession()
     private let provisioning = CodingProvisioning()
@@ -1003,6 +1004,13 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
             return current+"\n\n"+saved
         } catch {return current+"\n\n"+error.localizedDescription}
     }
+    private func recordExternalClosures(_ result:[String:Any]) async throws {
+        guard let subsystems=result["results"] as? [String:Any],let runtime=subsystems["externalRuntime"] as? [String:Any] else {return}
+        guard runtime["stopped"] is NSNumber else {throw ComputerError.message("External shutdown evidence is malformed.")}
+        guard let closures=runtime["closures"] as? [[String:Any]] else {return}
+        let parent=try runtimePaths.get().dataDir.deletingLastPathComponent().path
+        try await Task.detached {try ExternalToolLaunch.closures(closures,parent:parent)}.value
+    }
     func stop() { stopTools(includeCoding:true) }
     func shutdown() async throws {
         let pending=agentStepTask
@@ -1010,13 +1018,15 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
         if let pending {
             let stopping=Task {try await self.request("stop",["reason":"shutdown-drain"])}
             _ = await pending.result
-            _ = try await stopping.value
+            try await recordExternalClosures(stopping.value)
         }
         await projectSkills.drain()
         await fetchPlugin.drain()
         await externalTools.drain()
+        await externalLaunch.drain()
         if let failure=agentStepSettlementError {throw ComputerError.message("Agent completion persistence is unconfirmed. "+failure)}
         let result = try await request("shutdown",[:])
+        try await recordExternalClosures(result)
         guard let stopped = result["stopped"] as? NSNumber,
               CFGetTypeID(stopped) == CFBooleanGetTypeID(), stopped.boolValue else {
             throw ComputerError.message("Shutdown is unconfirmed. Cleanup ownership is retained; inspect pending work before quitting.")
@@ -1038,7 +1048,9 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
                 await self.projectSkills.drain()
                 await self.fetchPlugin.drain()
                 await self.externalTools.drain()
+                await self.externalLaunch.drain()
                 let result=try await stopping.value
+                try await self.recordExternalClosures(result)
                 if let failure=agentStepSettlementError {throw ComputerError.message("Agent completion persistence is unconfirmed. "+failure)}
                 let flag=result["stopped"] as? NSNumber,valid=flag.map{CFGetTypeID($0)==CFBooleanGetTypeID()}==true
                 if valid && flag!.boolValue {
@@ -1054,7 +1066,7 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
         codingAnswer?.cancel()
         provisioning.invalidate()
         privateAccountsUI.cancel()
-        codingSkills.invalidate(); projectSkills.invalidate(); fetchPlugin.invalidate(); externalTools.invalidate(); codingFilePreview.invalidate(); codingSetup.invalidate(); codingQueue.invalidate(); queueAlertRoot=nil; setupAlertID=nil;providerBinding=nil;providerBindingAlert=nil
+        codingSkills.invalidate(); projectSkills.invalidate(); fetchPlugin.invalidate(); externalTools.invalidate(); externalLaunch.invalidate(); codingFilePreview.invalidate(); codingSetup.invalidate(); codingQueue.invalidate(); queueAlertRoot=nil; setupAlertID=nil;providerBinding=nil;providerBindingAlert=nil
         epoch=UUID(); worktreeEpoch=UUID(); scheduleEpoch=UUID(); gitEpoch=UUID(); gitRequest=nil; routineReads=[:]; codingGrants=[]; codingInteractive.revoke(); computer.stop()
         if includeCoding { codingTerminals=[:] }
         let event=includeCoding ? "agent-stopped":"tools-stopped"
@@ -1344,7 +1356,7 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
                     var input=body; input.removeValue(forKey:"op"); result=try await request("catalog",input)
                 case "connect":
                     guard let id=body["id"] as? String else { throw ComputerError.message("Missing server.") }; result=try await connect(id,expected:expected)
-                case "disconnect": guard let id=body["id"] as? String else { throw ComputerError.message("Missing server.") }; routineReads[id]=nil; result=try await request("disconnect",["id":id])
+                case "disconnect": guard let id=body["id"] as? String else { throw ComputerError.message("Missing server.") }; routineReads[id]=nil; result=id.hasPrefix("external-js-") ? try await performExternalArtifact(["action":"disconnect","revision":String(id.dropFirst(12))],expected:expected):try await request("disconnect",["id":id])
                 case "addFilesystem", "addBrowser", "editConfig": result=try await configure(op,expected:expected)
                 case "agentStep":
                     guard Set(body.keys)==["op","runId","stepId"],let run=NativeAgentStep.uuid(body["runId"]),let step=NativeAgentStep.uuid(body["stepId"]),agentStepTask==nil,agentStepSettlementError==nil else{throw ComputerError.message("Invalid or unsettled native Agent step.")}
@@ -1397,6 +1409,25 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
         throw ComputerError.message("Unknown tool.")
     }
     private func performExternalArtifact(_ input:[String:Any],expected:UUID,beforeEffect:(() async throws -> Void)?=nil,agentClaim:(() -> [String:Any]?)?=nil) async throws -> [String:Any] {
+        if let action=input["action"] as? String,["connect","disconnect","status"].contains(action) {
+            _ = try ExternalToolLaunch.request(input)
+            try await beforeEffect?();try require(expected)
+            let parent=try runtimePaths.get().dataDir.deletingLastPathComponent().path
+            guard let resources=Bundle.main.resourceURL else {throw ComputerError.message("Qualified runtime contract is unavailable.")}
+            let contract=try Data(contentsOf:resources.appendingPathComponent("runtime-contract.json"))
+            _ = try NoieeRuntimeContract.decode(contract)
+            var forwarded=false
+            return try await externalLaunch.perform(input,parent:parent,contract:contract,check:{try self.require(expected)},request:{ value in
+                var body=value
+                if !forwarded,let claim=agentClaim?(){body["agentClaim"]=claim;forwarded=true}
+                let response=try await self.request("externalToolRuntime",body)
+                return response
+            },ask:{ detail in
+                try await self.approve("Run unknown-source tool?",detail:detail,button:"Connect once",expected:expected,operational:false)
+            },rearmAsk:{ detail in
+                try await self.approve("Acknowledge uncertain prior execution?",detail:detail,button:"Acknowledge prior uncertainty",expected:expected,operational:false)
+            })
+        }
         if !(Set(input.keys)==["action"] && input["action"] as? String=="inspect") {_ = try ExternalToolInstall.proposal(input)}
         try await beforeEffect?();try require(expected)
         if input["action"] as? String=="inspect" {
@@ -1405,12 +1436,14 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
             guard response["admitted"] as? Bool==true else {throw ComputerError.message("External artifact inspection was not admitted.")}
         }
         let parent=try runtimePaths.get().dataDir.deletingLastPathComponent().path
-        return try await externalTools.perform(input,parent:parent,check:{try self.require(expected)},download:{ proposal in
+        var installed=try await externalTools.perform(input,parent:parent,check:{try self.require(expected)},download:{ proposal in
             var body=proposal;if let claim=agentClaim?(){body["agentClaim"]=claim}
             let response=try await self.request("externalArtifact",body);try self.require(expected);return response
         },ask:{ detail in
             try await self.approve("Install unknown-source artifact?",detail:detail,button:"Install inert file once",expected:expected,operational:false)
         })
+        if input["action"] as? String=="inspect" {installed["launchHistory"]=try await Task.detached{try ExternalToolLaunch.inspect(parent)}.value;try require(expected)}
+        return installed
     }
     private func performFetchPlugin(_ input:[String:Any],expected:UUID,beforeEffect:(() async throws -> Void)?=nil,agentClaim:(() -> [String:Any]?)?=nil) async throws -> [String:Any] {
         let request=try FetchPluginRequest.parse(input);try require(expected)
@@ -1918,6 +1951,9 @@ final class NativeToolsController: NSObject, WKScriptMessageHandlerWithReply {
         return try await request("schedules",["action":"commit","planId":plan.id])
     }
     private func connect(_ id:String, expected:UUID,beforeEffect:(() async throws -> Void)?=nil,agentClaim:(() -> [String:Any]?)?=nil) async throws -> [String:Any] {
+        if id.hasPrefix("external-js-") {
+            return try await performExternalArtifact(["action":"connect","revision":String(id.dropFirst(12))],expected:expected,beforeEffect:beforeEffect,agentClaim:agentClaim)
+        }
         let configURL=try runtimePaths.get().mcpConfig
         guard let servers=try await request("describe",[:])["servers"] as? [[String:Any]], let entry=servers.first(where:{$0["id"] as? String==id}), let hash=entry["configHash"] as? String else { throw ComputerError.message("Unknown configured server.") }
         let data=try JSONSerialization.data(withJSONObject:entry,options:[.prettyPrinted,.sortedKeys])

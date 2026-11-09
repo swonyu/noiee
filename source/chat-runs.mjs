@@ -263,7 +263,8 @@ export class ChatRuns{
    ||step.name==='search_tools'&&operation==='search'&&equal(input,step.args);
   const skillValid=step.name==='project_skills'&&operation==='projectSkills'&&equal(input,step.args);
   const fetchValid=step.name==='fetch_plugin'&&operation==='fetchPlugin'&&equal(input,step.args);
-  const externalValid=step.name==='external_tool_artifact'&&operation==='externalArtifact'&&equal(input,step.args);
+  const externalValid=step.name==='external_tool_artifact'&&(operation==='externalArtifact'&&equal(input,step.args)||operation==='externalToolRuntime'&&(step.args.action==='connect'?Object.keys(step.args).sort().join()==='action,revision'&&keys==='action,revision'&&input.action==='prepare'&&input.revision===step.args.revision:equal(input,step.args)))
+   ||step.name==='connect_tool_server'&&operation==='externalToolRuntime'&&keys==='action,revision'&&input.action==='prepare'&&step.args.server==='external-js-'+input.revision;
   if(!valid&&!skillValid&&!fetchValid&&!externalValid)throw Error('Agent effect differs from its exact claimed tool.');
   const check=()=>{entry.inference.controller.signal.throwIfAborted();step.controller.signal.throwIfAborted();if(this.#active.get(claim.runId)!==entry||step.settled||step.generation!==this.#generation())throw Error('Agent effect authority expired.');};
   check();step.effectUsed=true;return {check,signal:AbortSignal.any([entry.inference.controller.signal,step.controller.signal])};

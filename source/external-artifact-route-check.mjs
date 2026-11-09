@@ -28,5 +28,14 @@ try{
  held=false;
  const claims=[];handler.setDurableRuns({agentStep(){},agentDispatch(claim,operation,value){claims.push({claim,operation,value});return {check(){}};},revokeAgentClaims(){}});
  assert.equal((await send(handler,{...input,agentClaim:{test:'exact'}})).status,200);assert.equal(claims[0].operation,'externalArtifact');assert.deepEqual(claims[0].value,input);
+ const runtimeCalls=[],rt={prepare:async v=>{runtimeCalls.push(['prepare',v]);return {fixture:true};},commit:async(v,{signal})=>{runtimeCalls.push(['commit',v]);signal.throwIfAborted();return {connected:false,launchState:'not-started'};},rearm:async v=>{runtimeCalls.push(['rearm',v]);return {rearmed:true};},status:async()=>({entries:[]}),disconnect:async v=>({revision:v,connected:false}),stop:async()=>({stopped:true,closures:[]})},rhandler=make({externalToolRuntime:rt}),rroute='/api/tools/externalToolRuntime';
+ const prepare={action:'prepare',revision:'a'.repeat(64)},commit={action:'commit',prepareId:randomUUID(),nonce:'b'.repeat(64),fingerprint:'c'.repeat(64)};
+ assert.equal((await send(rhandler,prepare,{signed:false,route:rroute})).status,403);
+ assert.equal((await send(rhandler,prepare,{route:rroute})).status,200);
+ assert.equal((await send(rhandler,{...commit,approved:true},{route:rroute})).status,400);
+ const once=headers(rroute,JSON.stringify(commit));assert.equal((await send(rhandler,commit,{provided:once,route:rroute})).status,200);assert.equal((await send(rhandler,commit,{provided:once,route:rroute})).status,403);
+ assert.equal((await send(rhandler,{action:'rearm',rearmID:randomUUID(),fingerprint:'d'.repeat(64)},{route:rroute})).value.rearmed,true);
+ let commitEntered,enterCommit;const admitted=new Promise(r=>enterCommit=r);rt.commit=async(v,{signal})=>{enterCommit();await new Promise((_,reject)=>signal.addEventListener('abort',()=>{commitEntered=true;reject(Error('response closed'))},{once:true}));};
+ const response=new EventEmitter(),lost=send(rhandler,commit,{route:rroute,res:response});await admitted;response.destroyed=true;response.emit('close');await lost;assert(commitEntered,'lost response aborts exact launch scope');
  console.log('PASS: inert external artifact signed routes, replay/forgery, clean/recovery boot, Stop and exact Agent binding. No sockets, network or external execution.');
 }finally{await rm(directory,{recursive:true,force:true});}
