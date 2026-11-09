@@ -36,7 +36,7 @@ let fixtures=0;
 async function fixture(label,{legacy=false,admission=true}={}){
  const home=join(root,String(++fixtures)+'-'+label),project=join(home,'project');await mkdir(project,{recursive:true,mode:0o700});
  if(legacy)await mkdir(join(home,'sessions'),{mode:0o700});
- const state={home,project,engines:[],owners:[],roots:[],familyCalls:[],closes:[],calls:[],active:0,maximum:0,admissions:0,allocations:0,modelLookups:0,readHook:null,closeHook:null,admissionHook:null,pageHook:null,pageSize:50,closeWhileReading:[]};
+ const state={home,project,engines:[],owners:[],roots:[],familyCalls:[],closes:[],calls:[],active:0,maximum:0,admissions:0,allocations:0,modelLookups:0,readHook:null,resolvedHook:null,closeHook:null,admissionHook:null,pageHook:null,pageSize:50,closeWhileReading:[]};
  const file=path=>join(path,'fixture-catalog-threads.json');
  const rows=async path=>{assert(path===home||path.startsWith(home+'/'));try{return JSON.parse(await readFile(file(path),'utf8'));}catch(error){if(error.code==='ENOENT')return [];throw error;}};
  const save=async(path,value)=>{assert(path===home||path.startsWith(home+'/'));await writeFile(file(path),JSON.stringify(value),{mode:0o600});};
@@ -66,7 +66,7 @@ async function fixture(label,{legacy=false,admission=true}={}){
   async resolveFamily(id,...args){
    this.familyActive++;state.active++;state.maximum=Math.max(state.maximum,state.active);
    const call={home:this.dataDir,id,historyOnly:this.historyOnly,ordinal:state.familyCalls.length};state.familyCalls.push(call);
-   try{if(state.readHook)await state.readHook(this,id,call);return await super.resolveFamily(id,...args);}
+   try{if(state.readHook)await state.readHook(this,id,call);const family=await super.resolveFamily(id,...args);state.resolvedHook?.(this,id,call);return family;}
    finally{this.familyActive--;state.active--;}
   }
   async handle(input){
@@ -116,7 +116,7 @@ async function fixture(label,{legacy=false,admission=true}={}){
   await save(home,list);return list;
  };
  state.reset=()=>{state.familyCalls=[];state.closes=[];state.calls=[];state.active=0;state.maximum=0;state.closeWhileReading=[];};
- state.cleanup=async()=>{state.readHook=null;state.closeHook=null;state.admissionHook=null;state.pageHook=null;for(const owner of state.owners)await owner.close().catch(()=>{});};
+ state.cleanup=async()=>{state.readHook=null;state.resolvedHook=null;state.closeHook=null;state.admissionHook=null;state.pageHook=null;for(const owner of state.owners)await owner.close().catch(()=>{});};
  return state;
 }
 function progressShape(value){
@@ -243,14 +243,40 @@ try{
   try{await assert.rejects(owner.handle({action:'list'}),/Duplicate native history ownership|Conflicting verified thread ownership/);assert.equal(f.engines.filter(engine=>engine.historyOnly).length,2);assert.equal(f.closes.filter(row=>row.historyOnly).length,2);assert.deepEqual(f.closeWhileReading,[]);}
   finally{await f.cleanup();}
  });
- await check('managed and legacy identities are checked for collision before exposure',async()=>{
-  const f=await fixture('legacy-collision');await (await f.seed(1,4)).close();f.reset();
-  await mkdir(join(f.home,'sessions'),{mode:0o700});await f.save(f.home,[f.roots[0].thread,...Array.from({length:4},(_,index)=>({...f.roots[0].thread,id:randomUUID(),name:'legacy other '+index}))]);
+ for(const order of ['collision-first','sibling-first'])await check('managed and legacy collision drains before exposure: '+order,async()=>{
+  const f=await fixture('legacy-'+order),four=latch(),fifth=latch(),collision=latch(),siblings=latch(),resolved=latch();
+  await (await f.seed(1,4)).close();f.reset();
+  const collisionId=f.roots[0].thread.id;
+  await mkdir(join(f.home,'sessions'),{mode:0o700});await f.save(f.home,[f.roots[0].thread,...Array.from({length:8},(_,index)=>({...f.roots[0].thread,id:randomUUID(),name:'legacy other '+index}))]);
+  // Inventory order is not completion order: a noncolliding read may finish
+  // and admit another family before the collision becomes known. Gate both
+  // schedules explicitly instead of relying on filesystem completion order.
+  f.readHook=async(_engine,id,call)=>{
+   if(f.familyCalls.length===4)four.resolve();
+   if(f.familyCalls.length===5)fifth.resolve();
+   if(id===collisionId)await collision.promise;
+   else if(order==='sibling-first'&&call.ordinal===1)await four.promise;
+   else await siblings.promise;
+  };
+  f.resolvedHook=(_engine,id)=>{if(id===collisionId)resolved.resolve();};
   // The explicit generated-home callback grants history inspection only.
   const owner=new CodingOwners({dataDir:f.home,engineOptions:{binary:join(f.home,'never-run-codex')},assertLegacyClosed:async()=>{},
    engineFactory:options=>new (f.engines[0].constructor)(options),openExecutor:async()=>{throw Error('Collision inspection attempted allocation');}});f.owners.push(owner);
-  try{await assert.rejects(owner.handle({action:'list'}),/Conflicting managed and legacy thread ownership/);assert.equal(f.familyCalls.length,4);assert.deepEqual(f.closeWhileReading,[]);assert(f.closes.some(row=>row.historyOnly&&row.home===f.home));}
-  finally{await f.cleanup();}
+  const pending=track(owner.handle({action:'list'})),expected=order==='collision-first'?4:5;
+  try{
+   await within(order==='collision-first'?four.promise:fifth.promise,'Collision schedule did not admit its expected reads');
+   assert.equal(f.familyCalls.length,expected);assert.equal(f.active,4);assert.equal(pending.settled,false);
+   const poll=await owner.handle({action:'events',after:0});assert.equal(poll.deferred,true);assert(!('threads' in poll));
+   collision.resolve();await within(resolved.promise,'Colliding family did not resolve');
+   // Let the caller observe the completed family and record its collision.
+   await tick();await tick();
+   assert.equal(f.familyCalls.length,expected);assert.equal(f.active,3);assert.equal(f.closes.length,0);assert.equal(pending.settled,false);
+   siblings.resolve();await expectFailure(pending,/Conflicting managed and legacy thread ownership/);
+   assert.equal(f.familyCalls.length,expected);assert.equal(f.maximum,4);assert.equal(f.active,0);assert.deepEqual(f.closeWhileReading,[]);
+   assert.deepEqual(f.closes,[{home:f.home,historyOnly:true,active:0}]);
+   assert(f.familyCalls.every(call=>call.home===f.home&&call.historyOnly));
+   observations.push({name:'legacy-'+order,admittedFamilyReads:expected,maximumConcurrentFamilyReads:f.maximum,rowsExposed:false});
+  }finally{collision.resolve();siblings.resolve();await pending.promise;await f.cleanup();}
  });
  await check('unconfirmed reader retirement withholds rows and preserves its open marker and lease',async()=>{
   const f=await fixture('retirement-failure');await (await f.seed(2,4)).close();f.reset();
