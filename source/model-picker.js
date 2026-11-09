@@ -43,7 +43,7 @@
     for(const row of Array.isArray(catalog?.models)?catalog.models:[]) {
       if(!row||typeof row.id!=='string'||!row.id||seen.has(row.id))continue;
       seen.add(row.id);
-      const state=row.state==='unsupported'?'Unsupported':row.loaded===true?'Loaded':'Installed · not loaded';
+      const state=catalog?.online!==true?'not verified':row.state==='unsupported'?'Unsupported':row.loaded===true?'Loaded':'Installed · not loaded';
       choices.push([row.id,(row.label||row.id)+' · '+state]);
     }
     if(selected&&!seen.has(selected))choices.push([selected,selected+' · '+(catalog?.online===true?'unavailable':'not verified')]);

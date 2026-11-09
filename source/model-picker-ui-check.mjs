@@ -20,7 +20,7 @@ const storage = (entries = {}) => {
   const values = new Map(Object.entries(entries));
   return {getItem: key => values.has(key) ? values.get(key) : null, setItem: (key, value) => values.set(key, String(value))};
 };
-const model = (id, extra = {}) => ({id, key: id, label: id, loaded: true, available: true, state: 'loaded', capabilities: {chat: true, agent: true, coding: true, standard: true, deep: true, vision: false}, reasons: {}, ...extra});
+const model = (id, extra = {}) => ({id, key: id, label: id, contextLength: 131072, loaded: true, available: true, state: 'loaded', capabilities: {chat: true, agent: true, coding: true, standard: true, deep: true, vision: false}, reasons: {}, ...extra});
 const catalog = {online: true, defaultModel:legacy, models: [model(legacy), model('other'), model('standard-only', {capabilities: {chat: true, agent: true, coding: true, standard: true, deep: false}}), model('unloaded', {loaded: false, state: 'installed'}), model('unsupported', {capabilities: {chat: false, agent: false, coding: false, deep: false}, reasons: {chat: 'Unsupported chat format'}, state: 'unsupported'})]};
 function helpers(file, localStorage = storage()) {
   const text = source(file), start = text.indexOf('// MODEL PICKER HELPERS BEGIN'), end = text.indexOf('// MODEL PICKER HELPERS END');
@@ -66,6 +66,24 @@ for (const file of ['app.js', 'coding.js']) {
     assert(select.children.some(option => option.value === 'unloaded' && /installed/i.test(option.textContent)));
     assert(select.children.some(option => option.value === 'unsupported' && /unsupported/i.test(option.textContent)));
     assert(select.children.some(option => option.value === 'unsafe' && option.textContent.includes('<img')));
+  });
+  test(`${file}: cached model options stay unverified until inventory recovers`, () => {
+    const {api, context} = helpers(file, storage({[defaultKey]: 'other'}));
+    context.document = {createElement: () => ({})};
+    const select = {options: [], value: '', replaceChildren(...options) {this.options = options;}};
+    for (const online of [false, null]) {
+      const unavailable = {...catalog, online};
+      api.modelOptions(select, unavailable, 'other');
+      assert.equal(select.value, 'other');
+      assert.equal(api.modelDefault(unavailable), 'other', 'Saved identity is preserved');
+      assert(select.options.every(option => option.textContent.endsWith(' · not verified')));
+      assert.equal(api.modelEligibility(unavailable, 'other', file === 'coding.js' ? 'coding' : 'chat').ready, false);
+    }
+    api.modelOptions(select, catalog, 'other');
+    assert.equal(select.value, 'other');
+    assert(select.options.find(option => option.value === 'other').textContent.endsWith(' · Loaded'));
+    assert.match(select.options.find(option => option.value === 'unloaded').textContent, /Installed · not loaded/);
+    assert.match(select.options.find(option => option.value === 'unsupported').textContent, /Unsupported/);
   });
   test(`${file}: unchanged inventory preserves options and reconciles an unsaved selection`, () => {
     const {api, context} = helpers(file);
@@ -246,14 +264,16 @@ test('real frontend selectors and dispatch through a routed browser fixture', {s
     }
     throw error;
   }
+  let inventoryFailed = false;
+  const inventoryRequests = [];
   const errors = [], nativeCalls = [], chatCalls = [], runs=new Map(), admissions=new Map(),generation=crypto.randomUUID();
   const assetNames = {'/': 'index.html', '/coding': 'coding.html', '/xterm.js': 'node_modules/@xterm/xterm/lib/xterm.js', '/xterm-fit.js': 'node_modules/@xterm/addon-fit/lib/addon-fit.js', '/xterm.css': 'node_modules/@xterm/xterm/css/xterm.css'};
-  const assets = new Set(['model-policy.js','model-picker.js','chat-storage.js','chat-runs.js','coding-submission.js','coding-goals.js', 'attachments.js','attachment-storage.js','coding-metrics.js','coding-skills.js','coding-mcp-setup.js','workspace.css','workspace-extensions.js','workspace.js','index.html', 'app.js', 'style.css', 'tools.js', 'computer.js', 'work.js', 'coding.html', 'coding.js', 'coding.css', 'coding-terminal.js']);
+  const assets = new Set(['context-compaction.js','model-policy.js','model-picker.js','chat-storage.js','chat-runs.js','coding-submission.js','coding-goals.js', 'attachments.js','attachment-storage.js','coding-metrics.js','coding-skills.js','coding-mcp-setup.js','workspace.css','workspace-extensions.js','workspace.js','index.html', 'app.js', 'style.css', 'tools.js', 'computer.js', 'work.js', 'coding.html', 'coding.js', 'coding.css', 'coding-terminal.js']);
   // Match the real app's trustworthy loopback origin; nonlocal HTTP disables crypto.randomUUID.
   const setup = async context => context.route('**/*', async route => {
     const url = new URL(route.request().url());
     assert.equal(url.origin, 'http://127.0.0.1:18787', 'Fixture must not contact any other origin');
-    if (url.pathname === '/api/models') return route.fulfill({json: catalog});
+    if (url.pathname === '/api/models') {inventoryRequests.push(route.request().method());return inventoryFailed ? route.fulfill({status: 503, json: {error: 'Fixture inventory unavailable'}}) : route.fulfill({json: catalog});}
     if(url.pathname==='/api/chat/runs'){
       const input=route.request().postDataJSON();let result;
       if(input.action==='list')result={generation,truncated:false,runs:[...runs.values()]};
@@ -269,6 +289,34 @@ test('real frontend selectors and dispatch through a routed browser fixture', {s
     if (!assetNames[url.pathname] && !assets.has(name)) return route.fulfill({status: 404, body: ''});
     return route.fulfill({body: readFileSync(new URL(name, root)), contentType: name.endsWith('.js') ? 'text/javascript' : name.endsWith('.css') ? 'text/css' : 'text/html'});
   });
+  const failedInventoryRefresh = async (page, picker, coding = false) => {
+    const selected = await page.locator(picker).inputValue();
+    const defaultBefore = await page.locator('#default-model').inputValue();
+    const draft = await page.locator('#prompt').inputValue();
+    const starts = nativeCalls.filter(call => call.input?.action === 'start').length, chats = chatCalls.length;
+    inventoryFailed = true;
+    await page.locator('#workspace-settings-open').click();
+    await page.locator('#models-refresh').click();
+    await page.waitForFunction(id => [...document.querySelector(id).options].every(option => option.textContent.endsWith(' · not verified')), picker);
+    assert.equal(await page.locator(picker).inputValue(), selected);
+    assert.equal(await page.locator('#default-model').inputValue(), defaultBefore);
+    assert(await page.locator('#send').isDisabled());
+    if (coding) assert(await page.locator('#new-chat').isDisabled());
+    else await page.evaluate(() => document.querySelector('#composer').dispatchEvent(new Event('submit', {cancelable: true})));
+    assert.equal(chatCalls.length, chats);
+    assert.equal(nativeCalls.filter(call => call.input?.action === 'start').length, starts);
+    assert.equal(await page.locator('#prompt').inputValue(), draft);
+    inventoryFailed = false;
+    await page.locator('#models-refresh').click();
+    await page.waitForFunction(id => [...document.querySelector(id).options].some(option => option.selected && option.textContent.endsWith(' · Loaded')), picker);
+    assert.equal(await page.locator(picker).inputValue(), selected);
+    assert.equal(await page.locator('#default-model').inputValue(), defaultBefore);
+    assert.equal(await page.locator('#prompt').inputValue(), draft);
+    assert.equal(chatCalls.length, chats);
+    assert.equal(nativeCalls.filter(call => call.input?.action === 'start').length, starts);
+    assert(inventoryRequests.every(method => method === 'GET'), 'Refresh only reads inventory; no model load/download request');
+    await page.locator('#workspace-settings-close').click();
+  };
   const failedDefaultSave = async page => {
     const before = await page.locator('#default-model').inputValue();
     await page.evaluate(key => {
@@ -310,6 +358,7 @@ test('real frontend selectors and dispatch through a routed browser fixture', {s
     await page.evaluate(() => document.querySelector('#composer').dispatchEvent(new Event('submit', {cancelable: true})));
     assert.equal(chatCalls.length, 0);
     await page.locator('#chat-model').selectOption('other');
+    await failedInventoryRefresh(page, '#chat-model');
     await page.locator('#thinking').selectOption('standard');
     await page.locator('#send').click();
     await page.waitForFunction(() => document.querySelector('#messages').textContent.includes('Fixture reply'));
@@ -370,6 +419,7 @@ test('real frontend selectors and dispatch through a routed browser fixture', {s
     await codingPage.locator('#new-chat').click();
     await codingPage.waitForFunction(() => document.querySelector('#thread-model').textContent === 'other');
     assert.equal(nativeCalls.find(call => call.input?.action === 'start').input.model, 'other');
+    await failedInventoryRefresh(codingPage, '#new-chat-model', true);
     await codingPage.locator('#workspace-settings-open').click();
     await codingPage.evaluate(() => {
       window.fixturePickerBaseline = window.fixturePickerPolls || 0;
