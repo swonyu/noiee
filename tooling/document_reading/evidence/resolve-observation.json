@@ -1,0 +1,27 @@
+{
+  "command": [
+    "/opt/homebrew/Cellar/python@3.14/3.14.8_2/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+    "-m",
+    "pip",
+    "--isolated",
+    "--disable-pip-version-check",
+    "install",
+    "--dry-run",
+    "--ignore-installed",
+    "--only-binary=:all:",
+    "--no-cache-dir",
+    "--index-url",
+    "https://pypi.org/simple",
+    "--report",
+    "tooling/document_reading/evidence/pip-report.json",
+    "docling==2.149.0"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 20.83,
+  "stop_reason": null,
+  "temporary_storage_limit_bytes": 52428800,
+  "note": "No installation; binary-only prevents sdists/build hooks. Temporary storage monitored, not a total network-transfer quota.",
+  "command_presentation": "Report output destination normalized to repository-relative form; interpreter identity and other arguments retained.",
+  "original_observation_sha256": "61f727eff7d34e5a2e244d9d7066ba4d2a70c99311366ae6f39e3700fbe90661",
+  "original_observation_commit": "6dd8c05c12e83f5a3c99859be9ba5bcdfb739187"
+}

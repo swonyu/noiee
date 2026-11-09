@@ -246,7 +246,8 @@
       "version": "1.2.4",
       "license_expression": null,
       "license_metadata": "BSD-3-Clause",
-      "source": "https://pypi.org/pypi/python-dotenv/1.2.4/json"
+      "source": "https://pypi.org/pypi/python-dotenv/1.2.4/json",
+      "requires_python": ">=3.10"
     },
     {
       "name": "python-oxmsg",
@@ -349,5 +350,15 @@
     "Latest dependency metadata is not necessarily a satisfiable selection (e.g. typer 0.28.0 is outside <0.28.0).",
     "Transitive/native bundled libraries and exact wheel notices remain unaudited.",
     "Model weights have separate licences."
-  ]
+  ],
+  "provenance": {
+    "root_metadata_urls": [
+      "https://pypi.org/pypi/docling/2.149.0/json",
+      "https://pypi.org/pypi/docling-slim/2.149.0/json"
+    ],
+    "docling_raw_metadata_sha256": "b35c04065c8c656fcec9b6c4b4509fe8e614d6da2fe1475ab9ce3f9848caaade",
+    "slim_raw_metadata_sha256": "4d4fca4549a00197a8f32e76db24ccaf5c492402cadf8b8199dbb713b73f1782",
+    "superseded_by": "evidence/resolved-inventory.json for actual selected versions",
+    "license_field_note": "license_metadata is a raw excerpt capped at 300 characters in initial inventory; do not interpret it as a complete licence. Resolved inventory records normalization and truncation explicitly."
+  }
 }

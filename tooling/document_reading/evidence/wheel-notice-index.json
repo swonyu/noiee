@@ -1,0 +1,2490 @@
+{
+  "notice_archive_decompressed_sha256": "4c9b6e85bd860ff677b0b7777f345b1f5846b5ebba9c64530ed898ad7d283ccb",
+  "completed_pass_range_bytes": 3191292,
+  "artifacts": [
+    {
+      "name": "docling",
+      "version": "2.149.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/38/eb/ddeed663eedcaaa5b469e93ffb107e9ee41687aa45f7c5bf5a6b9e225e21/docling-2.149.0-py3-none-any.whl",
+      "wheel_entries": 4,
+      "notices": []
+    },
+    {
+      "name": "docling-slim",
+      "version": "2.149.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/e2/7b/ca8ede9c20791b145a321b913841da04d0eac73f584e6a9619eed3f6ed90/docling_slim-2.149.0-py3-none-any.whl",
+      "wheel_entries": 342,
+      "notices": [
+        {
+          "path": "docling_slim-2.149.0.dist-info/licenses/LICENSE",
+          "size": 1072,
+          "status": "read",
+          "sha256": "edb765d1e3e60d0c7a7d5fba5f2bb2c3c29f7465cecb5c22cf1185c884954e4c"
+        }
+      ]
+    },
+    {
+      "name": "accelerate",
+      "version": "1.15.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/8a/4c/34f0450479d01195027260da68d8a3880683f1640c3ca5adf64acb3185f1/accelerate-1.15.0-py3-none-any.whl",
+      "wheel_entries": 90,
+      "notices": [
+        {
+          "path": "accelerate-1.15.0.dist-info/licenses/LICENSE",
+          "size": 11357,
+          "status": "read",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        }
+      ]
+    },
+    {
+      "name": "beautifulsoup4",
+      "version": "4.15.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/88/c6/92fcd42f1ba33e1184263f25bfabf3d27c383410470f169e4b8163bf9c17/beautifulsoup4-4.15.0-py3-none-any.whl",
+      "wheel_entries": 21,
+      "notices": [
+        {
+          "path": "beautifulsoup4-4.15.0.dist-info/licenses/LICENSE",
+          "size": 1441,
+          "status": "read",
+          "sha256": "55b4d8d4b1e5bc86d10efac91b74c87bcb77526b0f5b9edaf8b9cd2adc7397b2"
+        }
+      ]
+    },
+    {
+      "name": "defusedxml",
+      "version": "0.7.1",
+      "wheel_url": "https://files.pythonhosted.org/packages/07/6c/aa3f2f849e01cb6a001cd8554a88d4c77c5c1a31c95bdf1cf9301e6d9ef4/defusedxml-0.7.1-py2.py3-none-any.whl",
+      "wheel_entries": 16,
+      "notices": [
+        {
+          "path": "defusedxml-0.7.1.dist-info/LICENSE",
+          "size": 2409,
+          "status": "read",
+          "sha256": "b80ce9da8c42a1f91079627fbbe2bf27210ae108a0ffe5f077d5b08e076c24c8"
+        }
+      ]
+    },
+    {
+      "name": "docling-core",
+      "version": "2.106.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/96/7e/ef05c64535891da505794ce0f99bc40252e1dee8f78ee0029553b2005271/docling_core-2.106.0-py3-none-any.whl",
+      "wheel_entries": 112,
+      "notices": [
+        {
+          "path": "docling_core-2.106.0.dist-info/licenses/LICENSE",
+          "size": 1087,
+          "status": "read",
+          "sha256": "d8cf7ee84a10d6cc45ced4ce917180b7050326f9d66801dd07d058595c06908c"
+        }
+      ]
+    },
+    {
+      "name": "doclang",
+      "version": "0.9.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/14/ec/d5270f059d99ce20c83736ba4bb1d7ae21f19c2e988355c603df381c87f6/doclang-0.9.0-py3-none-any.whl",
+      "wheel_entries": 40,
+      "notices": [
+        {
+          "path": "doclang-0.9.0.dist-info/licenses/LICENSE",
+          "size": 11357,
+          "status": "read",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        }
+      ]
+    },
+    {
+      "name": "docling-ibm-models",
+      "version": "4.0.4",
+      "wheel_url": "https://files.pythonhosted.org/packages/c4/69/b0f364a2906952a5741b5261659689bc8387f447db54cb3c26d411223ba1/docling_ibm_models-4.0.4-py3-none-any.whl",
+      "wheel_entries": 31,
+      "notices": [
+        {
+          "path": "docling_ibm_models-4.0.4.dist-info/licenses/LICENSE",
+          "size": 1088,
+          "status": "read",
+          "sha256": "9816fb12b11c33c552f4e8621879d0da493be47c0f86be785b53a2cf7f7ae4c6"
+        }
+      ]
+    },
+    {
+      "name": "docling-parse",
+      "version": "7.25.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/f6/ed/c54177832cabda0b980c4adfae7f1c4f613f703d4abcdca33e31dd506996/docling_parse-7.25.0-cp314-cp314-macosx_14_0_arm64.whl",
+      "wheel_entries": 508,
+      "notices": [
+        {
+          "path": "docling_parse/pdf_resources/cmap-resources/LICENSE.md",
+          "size": 1453,
+          "status": "read",
+          "sha256": "feb8b068a417681821823ef2e8995072aa111121fa11f8664038f78717f4497c"
+        },
+        {
+          "path": "docling_parse-7.25.0.dist-info/licenses/LICENSE",
+          "size": 1069,
+          "status": "read",
+          "sha256": "002c2696d92b5c8cf956c11072baa58eaf9f6ade995c031ea635c6a1ee342ad1"
+        }
+      ]
+    },
+    {
+      "name": "filetype",
+      "version": "1.2.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/18/79/1b8fa1bb3568781e84c9200f951c735f3f157429f44be0495da55894d620/filetype-1.2.0-py2.py3-none-any.whl",
+      "wheel_entries": 23,
+      "notices": [
+        {
+          "path": "filetype-1.2.0.dist-info/LICENSE",
+          "size": 1082,
+          "status": "read",
+          "sha256": "8e44e2aa35b371bdcc856bcf0d2442a410dd55fde66b0dfc2fcdf076d97946ac"
+        }
+      ]
+    },
+    {
+      "name": "httpx",
+      "version": "0.28.1",
+      "wheel_url": "https://files.pythonhosted.org/packages/2a/39/e50c7c3a983047577ee07d2a9e53faf5a69493943ec3f6a384bdc792deb2/httpx-0.28.1-py3-none-any.whl",
+      "wheel_entries": 29,
+      "notices": [
+        {
+          "path": "httpx-0.28.1.dist-info/licenses/LICENSE.md",
+          "size": 1508,
+          "status": "read",
+          "sha256": "4ec59d544f12b5f539a3a716fd321ac58ccd8030b465221f2c880200cdf28d8d"
+        }
+      ]
+    },
+    {
+      "name": "httpcore",
+      "version": "1.0.9",
+      "wheel_url": "https://files.pythonhosted.org/packages/7e/f5/f66802a942d491edb555dd61e3a9961140fd64c90bce1eafd741609d334d/httpcore-1.0.9-py3-none-any.whl",
+      "wheel_entries": 36,
+      "notices": [
+        {
+          "path": "httpcore-1.0.9.dist-info/licenses/LICENSE.md",
+          "size": 1518,
+          "status": "read",
+          "sha256": "fdcb59154c74cbaba16a11242f7740bea9f23d6feb5547917d8c5f94a80392a5"
+        }
+      ]
+    },
+    {
+      "name": "huggingface_hub",
+      "version": "1.33.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/fc/16/963096d224b80909432dc16561a615fd33d2d13beef3ce4c63fa25e40867/huggingface_hub-1.33.0-py3-none-any.whl",
+      "wheel_entries": 194,
+      "notices": [
+        {
+          "path": "huggingface_hub-1.33.0.dist-info/licenses/LICENSE",
+          "size": 11357,
+          "status": "read",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        }
+      ]
+    },
+    {
+      "name": "click",
+      "version": "8.5.1",
+      "wheel_url": "https://files.pythonhosted.org/packages/31/7d/164b7ffc8624fe9efb4221bf9af485d5c1e41b9ae118045d2b6dc5457d8b/click-8.5.1-py3-none-any.whl",
+      "wheel_entries": 22,
+      "notices": [
+        {
+          "path": "click-8.5.1.dist-info/licenses/LICENSE.txt",
+          "size": 1475,
+          "status": "read",
+          "sha256": "9a8ad106a394e853bfe21f42f4e72d592819a22805d991b5f3275029292b658d"
+        }
+      ]
+    },
+    {
+      "name": "hf-xet",
+      "version": "1.8.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/d4/f2/ef25e2085e92dcaeaa675331e443923aed2006f6fe2d984e15d8b8d40766/hf_xet-1.8.0-cp38-abi3-macosx_11_0_arm64.whl",
+      "wheel_entries": 7,
+      "notices": [
+        {
+          "path": "hf_xet-1.8.0.dist-info/licenses/LICENSE",
+          "size": 11357,
+          "status": "read",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        }
+      ]
+    },
+    {
+      "name": "jsonref",
+      "version": "1.1.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/0c/ec/e1db9922bceb168197a558a2b8c03a7963f1afe93517ddd3cf99f202f996/jsonref-1.1.0-py3-none-any.whl",
+      "wheel_entries": 6,
+      "notices": [
+        {
+          "path": "jsonref-1.1.0.dist-info/licenses/LICENSE",
+          "size": 1074,
+          "status": "read",
+          "sha256": "c93d594f97a1bc45d04908cd47c707cd7ff078f038a011443e0049ed28da3f31"
+        }
+      ]
+    },
+    {
+      "name": "jsonschema",
+      "version": "4.26.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/69/90/f63fb5873511e014207a475e2bb4e8b2e570d655b00ac19a9a0ca0a385ee/jsonschema-4.26.0-py3-none-any.whl",
+      "wheel_entries": 43,
+      "notices": [
+        {
+          "path": "jsonschema-4.26.0.dist-info/licenses/COPYING",
+          "size": 1057,
+          "status": "read",
+          "sha256": "4f92a015a13c4d1a040bef018aa13430b4f1bc73b41b16bb846c346766de7439"
+        }
+      ]
+    },
+    {
+      "name": "langcodes",
+      "version": "3.5.1",
+      "wheel_url": "https://files.pythonhosted.org/packages/dd/c1/d10b371bcba7abce05e2b33910e39c33cfa496a53f13640b7b8e10bb4d2b/langcodes-3.5.1-py3-none-any.whl",
+      "wheel_entries": 21,
+      "notices": [
+        {
+          "path": "langcodes-3.5.1.dist-info/licenses/LICENSE.txt",
+          "size": 1090,
+          "status": "read",
+          "sha256": "a0cceca169e5eed22f00f4c001c3851026e56cb60632904548889eb79a3c226d"
+        }
+      ]
+    },
+    {
+      "name": "latex2mathml",
+      "version": "3.81.1",
+      "wheel_url": "https://files.pythonhosted.org/packages/07/30/b8bcfb01a2514cb7554a048ed52883de276e66d757c3cc535a3c29eb9e98/latex2mathml-3.81.1-py3-none-any.whl",
+      "wheel_entries": 15,
+      "notices": []
+    },
+    {
+      "name": "mail-parser",
+      "version": "4.10.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/45/c4/21ff43fe0a950c4886830bbffe5071e512dc6e42693ed2a80e8d27c77227/mail_parser-4.10.0-py3-none-any.whl",
+      "wheel_entries": 17,
+      "notices": [
+        {
+          "path": "mail_parser-4.10.0.dist-info/licenses/LICENSE.txt",
+          "size": 11358,
+          "status": "read",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "mail_parser-4.10.0.dist-info/licenses/NOTICE.txt",
+          "size": 593,
+          "status": "read",
+          "sha256": "60fa93b2ebffb599093388aa9fd81c989d42446368944ed07df7ea033bf9a79f"
+        }
+      ]
+    },
+    {
+      "name": "marko",
+      "version": "2.2.5",
+      "wheel_url": "https://files.pythonhosted.org/packages/63/67/be743617363627442717c2b865993eba99d17f2d1e0ad814bf703f190afb/marko-2.2.5-py3-none-any.whl",
+      "wheel_entries": 30,
+      "notices": [
+        {
+          "path": "marko-2.2.5.dist-info/licenses/LICENSE",
+          "size": 1067,
+          "status": "read",
+          "sha256": "1da058ed0440fea5df1765b19a1418800439b18fd6f1c13c7d429cb81e9c6d47"
+        }
+      ]
+    },
+    {
+      "name": "numpy",
+      "version": "2.5.4",
+      "wheel_url": "https://files.pythonhosted.org/packages/d5/b2/c6ce165acffceb15a82c07b9cc77d391f86b3f379ba62911908ae5d34b91/numpy-2.5.4-cp314-cp314-macosx_14_0_arm64.whl",
+      "wheel_entries": 1040,
+      "notices": [
+        {
+          "path": "numpy-2.5.4.dist-info/licenses/LICENSE.txt",
+          "size": 46826,
+          "status": "read",
+          "sha256": "649a589ab31076e79e9ce62ba24eae9959598124176640dbc95f87bd10f34fcf"
+        },
+        {
+          "path": "numpy-2.5.4.dist-info/licenses/numpy/linalg/lapack_lite/LICENSE.txt",
+          "size": 2266,
+          "status": "read",
+          "sha256": "a14cc25e10d40a3aa705b7de2fb764a6535d8ee9b2db4e1724900585457dfd55"
+        },
+        {
+          "path": "numpy-2.5.4.dist-info/licenses/numpy/ma/LICENSE",
+          "size": 1593,
+          "status": "read",
+          "sha256": "05f3b88351988ecfad10abe92c0c50e5875c6452d5009a0084cc291551ffcca6"
+        },
+        {
+          "path": "numpy-2.5.4.dist-info/licenses/numpy/_core/include/numpy/libdivide/LICENSE.txt",
+          "size": 1018,
+          "status": "read",
+          "sha256": "fbc539f47d0cf83bc61378080fb873d5c14630126cacbfe754035c3926daa5ec"
+        },
+        {
+          "path": "numpy-2.5.4.dist-info/licenses/numpy/_core/src/npysort/x86-simd-sort/LICENSE.md",
+          "size": 1514,
+          "status": "read",
+          "sha256": "211e7d737d6179a08f791ebb0a99897ce7cd2457410c542876d125576edfe910"
+        },
+        {
+          "path": "numpy-2.5.4.dist-info/licenses/numpy/_core/src/highway/LICENSE",
+          "size": 20785,
+          "status": "read",
+          "sha256": "e340270d4f64384569a91d546acb5b094d69ce47f0c015db77abb74dc6f815af"
+        },
+        {
+          "path": "numpy-2.5.4.dist-info/licenses/numpy/_core/src/multiarray/dragon4_LICENSE.txt",
+          "size": 1414,
+          "status": "read",
+          "sha256": "f7b14309e5f54e5022b26448eefd419988ada2aec01d3c1162d84a0ea8f21f2c"
+        },
+        {
+          "path": "numpy-2.5.4.dist-info/licenses/numpy/_core/src/common/pythoncapi-compat/COPYING",
+          "size": 690,
+          "status": "read",
+          "sha256": "3f2c1ffa76383a55ae0aac01c9737cd70050dff63e1f026694fbe9d662573c98"
+        },
+        {
+          "path": "numpy-2.5.4.dist-info/licenses/numpy/_core/src/umath/svml/LICENSE",
+          "size": 1543,
+          "status": "read",
+          "sha256": "c17011467b4fe6e20fbfbeda4df09e58c2bca5480a063e55735a4000a379aad9"
+        },
+        {
+          "path": "numpy-2.5.4.dist-info/licenses/numpy/fft/pocketfft/LICENSE.md",
+          "size": 1498,
+          "status": "read",
+          "sha256": "a85ca13fdf90160b64a0698215868c13b74d835ad0a4e2ba44713b8c5058a056"
+        },
+        {
+          "path": "numpy-2.5.4.dist-info/licenses/numpy/random/LICENSE.md",
+          "size": 3511,
+          "status": "read",
+          "sha256": "103166b62b80443afb9eb3488e052ea06be0cff566b908f199e561fde49af19f"
+        },
+        {
+          "path": "numpy-2.5.4.dist-info/licenses/numpy/random/src/mt19937/LICENSE.md",
+          "size": 2926,
+          "status": "read",
+          "sha256": "0e111337b25494a773106695f0e799f642b8567aaacca4f116a74a8177179156"
+        },
+        {
+          "path": "numpy-2.5.4.dist-info/licenses/numpy/random/src/sfc64/LICENSE.md",
+          "size": 1226,
+          "status": "read",
+          "sha256": "9d4098846018319cd68e228ee6220361787f73bccbf00237a85e4fc9621b998f"
+        },
+        {
+          "path": "numpy-2.5.4.dist-info/licenses/numpy/random/src/pcg64/LICENSE.md",
+          "size": 1154,
+          "status": "read",
+          "sha256": "e7d4f4fb20358f314210a892ae17351e04993813646f697ec387385ca2a36918"
+        },
+        {
+          "path": "numpy-2.5.4.dist-info/licenses/numpy/random/src/philox/LICENSE.md",
+          "size": 1509,
+          "status": "read",
+          "sha256": "6f5828a57223d4cc7f8ea505a2623e7b978b242752c1515e355f46ba2cec1800"
+        },
+        {
+          "path": "numpy-2.5.4.dist-info/licenses/numpy/random/src/splitmix64/LICENSE.md",
+          "size": 332,
+          "status": "read",
+          "sha256": "268b0ca06759d31ea3ca68dd35f20e877916e927b1c2a835e4592a3c4354b1f9"
+        },
+        {
+          "path": "numpy-2.5.4.dist-info/licenses/numpy/random/src/distributions/LICENSE.md",
+          "size": 2745,
+          "status": "read",
+          "sha256": "469778be8f33d54e1bcaab28c281cc472916d2d273f835e55bc487d30503face"
+        },
+        {
+          "path": "numpy/ma/LICENSE",
+          "size": 1593,
+          "status": "read",
+          "sha256": "05f3b88351988ecfad10abe92c0c50e5875c6452d5009a0084cc291551ffcca6"
+        },
+        {
+          "path": "numpy/_core/include/numpy/random/LICENSE.txt",
+          "size": 1018,
+          "status": "read",
+          "sha256": "fbc539f47d0cf83bc61378080fb873d5c14630126cacbfe754035c3926daa5ec"
+        },
+        {
+          "path": "numpy/random/LICENSE.md",
+          "size": 3511,
+          "status": "read",
+          "sha256": "103166b62b80443afb9eb3488e052ea06be0cff566b908f199e561fde49af19f"
+        }
+      ]
+    },
+    {
+      "name": "openpyxl",
+      "version": "3.1.5",
+      "wheel_url": "https://files.pythonhosted.org/packages/c0/da/977ded879c29cbd04de313843e76868e6e13408a94ed6b987245dc7c8506/openpyxl-3.1.5-py2.py3-none-any.whl",
+      "wheel_entries": 195,
+      "notices": [
+        {
+          "path": "openpyxl-3.1.5.dist-info/LICENCE.rst",
+          "size": 1131,
+          "status": "read",
+          "sha256": "0c84bb42f5d367e5ebf9fc2dde35b16141df5ee0fdc189250858bc6c5560f69e"
+        }
+      ]
+    },
+    {
+      "name": "pandas",
+      "version": "3.1.1",
+      "wheel_url": "https://files.pythonhosted.org/packages/0a/da/a1077d57b531ab1123119d4117ddb78b6e039119b2ff7658cc53c6196636/pandas-3.1.1-cp314-cp314-macosx_11_0_arm64.whl",
+      "wheel_entries": 1720,
+      "notices": [
+        {
+          "path": "pandas-3.1.1.dist-info/licenses/LICENSE",
+          "size": 1634,
+          "status": "read",
+          "sha256": "9850f6b5bdef7346503065807b878deb8058b976c5c329f4c4d23bf4796ce9ae"
+        },
+        {
+          "path": "pandas-3.1.1.dist-info/licenses/LICENSES/ULTRAJSON_LICENSE",
+          "size": 5974,
+          "status": "read",
+          "sha256": "2bfbb5bb8ec66d136ec62d836ddc0c0019d44ef4d9389f1f6cab1c1109d774a2"
+        },
+        {
+          "path": "pandas-3.1.1.dist-info/licenses/LICENSES/DATEUTIL_LICENSE",
+          "size": 2889,
+          "status": "read",
+          "sha256": "ba00f51a0d92823b5a1cde27d8b5b9d2321e67ed8da9bc163eff96d5e17e577e"
+        },
+        {
+          "path": "pandas-3.1.1.dist-info/licenses/LICENSES/PSF_LICENSE",
+          "size": 13936,
+          "status": "read",
+          "sha256": "3b2f81fe21d181c499c59a256c8e1968455d6689d269aa85373bfb6af41da3bf"
+        },
+        {
+          "path": "pandas-3.1.1.dist-info/licenses/LICENSES/NUMPY_LICENSE",
+          "size": 1542,
+          "status": "read",
+          "sha256": "81d42da02a56b611c35abc83d2241564b46bec3a5b1960b395d55cebca68fb6f"
+        },
+        {
+          "path": "pandas-3.1.1.dist-info/licenses/LICENSES/MUSL_LICENSE",
+          "size": 6203,
+          "status": "read",
+          "sha256": "50a343c1ce9e27cd6c58023f13b91d2cd679861fe7fb6bbbbfbec3dcafc3583f"
+        },
+        {
+          "path": "pandas-3.1.1.dist-info/licenses/LICENSES/BOTTLENECK_LICENCE",
+          "size": 1360,
+          "status": "read",
+          "sha256": "053a90e30580f5d9d79817add1567f88b4a3eeb11bcded9ecf74619d17768066"
+        },
+        {
+          "path": "pandas-3.1.1.dist-info/licenses/LICENSES/PYPERCLIP_LICENSE",
+          "size": 1486,
+          "status": "read",
+          "sha256": "eafcd440e3570c6bc7b77dcec15dec398d13bc9b5e897336b221ff81ff19f345"
+        },
+        {
+          "path": "pandas-3.1.1.dist-info/licenses/LICENSES/HAVEN_LICENSE",
+          "size": 1099,
+          "status": "read",
+          "sha256": "48216b40b3d1b19452923dd6fd74655bf5c0df9d76b51eb0efade7e0b88bfbcc"
+        },
+        {
+          "path": "pandas-3.1.1.dist-info/licenses/LICENSES/STATSBASE_JL_LICENSE",
+          "size": 1249,
+          "status": "read",
+          "sha256": "f371ccf0fb892a4cd9f2e550c4b8cf4362793d17028dc642ad55c1e01a41dfe1"
+        },
+        {
+          "path": "pandas-3.1.1.dist-info/licenses/LICENSES/PYUPGRADE_LICENSE",
+          "size": 1058,
+          "status": "read",
+          "sha256": "70aedcd6928272bd176e4fdc3384af22ee759d006fb15105d994756e4f2d1b7a"
+        },
+        {
+          "path": "pandas-3.1.1.dist-info/licenses/LICENSES/KLIB_LICENSE",
+          "size": 1104,
+          "status": "read",
+          "sha256": "7463172c3a23321c1838896eba437f70a6de80ac5a840b2960966c8c5444abf1"
+        },
+        {
+          "path": "pandas-3.1.1.dist-info/licenses/LICENSES/SAS7BDAT_LICENSE",
+          "size": 1059,
+          "status": "read",
+          "sha256": "458d5fd4175825440ad32d6bf6af45d1a19d4adb316b557d869c6560b6692e00"
+        },
+        {
+          "path": "pandas-3.1.1.dist-info/licenses/LICENSES/XSIMD_LICENSE",
+          "size": 1606,
+          "status": "read",
+          "sha256": "501352acba62cc54e8e3d293754d606f919c9b425b962193c211f9fa29cd9940"
+        },
+        {
+          "path": "pandas-3.1.1.dist-info/licenses/LICENSES/PACKAGING_LICENSE",
+          "size": 11519,
+          "status": "read",
+          "sha256": "1871330068a18f1f07c3f147a41c008e59f367f217041ca6eb20b0298639a128"
+        },
+        {
+          "path": "pandas-3.1.1.dist-info/licenses/subprojects/fast_float-8.2.10/LICENSE-APACHE",
+          "size": 10767,
+          "status": "read",
+          "sha256": "097a889aa954d04e088b790b10a4014d6189561d0a6013935a73ce3d4ddaaf06"
+        },
+        {
+          "path": "pandas-3.1.1.dist-info/licenses/subprojects/fast_float-8.2.10/LICENSE-BOOST",
+          "size": 1337,
+          "status": "read",
+          "sha256": "8d8291caf1cee26d23acf3eb67c9f9a2d58f1c681b16a4fbe8cbfb9e3c0b5a9b"
+        },
+        {
+          "path": "pandas-3.1.1.dist-info/licenses/subprojects/fast_float-8.2.10/LICENSE-MIT",
+          "size": 1079,
+          "status": "read",
+          "sha256": "e562f3f974ced7e69dd1db77b820b36bcf8f30377f1aa105723fba449c53c4e6"
+        }
+      ]
+    },
+    {
+      "name": "pillow",
+      "version": "13.0.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/b5/f4/0bf6f1ac9ba7ee2ffe9914aeb410a1035a0c1a3c42f122388d7fc950bc4b/pillow-13.0.0-cp314-cp314-macosx_11_0_arm64.whl",
+      "wheel_entries": 142,
+      "notices": [
+        {
+          "path": "pillow-13.0.0.dist-info/licenses/LICENSE",
+          "size": 70307,
+          "status": "read",
+          "sha256": "dda12a98c1979cf3d94df1cff45d27a4cb3f04a60c76f76902ac54cac03ec0ce"
+        }
+      ]
+    },
+    {
+      "name": "pluggy",
+      "version": "1.7.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/40/9e/2b38731e0fc536806f16490e1a12d7f0dc2a1235aa8cc07bcc75416a7daa/pluggy-1.7.0-py3-none-any.whl",
+      "wheel_entries": 19,
+      "notices": [
+        {
+          "path": "pluggy-1.7.0.dist-info/licenses/LICENSE",
+          "size": 1110,
+          "status": "read",
+          "sha256": "d6b65e6c213a5d0b577911d34d6e5949b9f59d76c238c5071a2f3fc16cfb2606"
+        }
+      ]
+    },
+    {
+      "name": "pydantic",
+      "version": "2.14.3",
+      "wheel_url": "https://files.pythonhosted.org/packages/72/b8/b864503789ef5c58597d2a7b4adbee62c26440ab1e682581fc6838df8947/pydantic-2.14.3-py3-none-any.whl",
+      "wheel_entries": 112,
+      "notices": [
+        {
+          "path": "pydantic-2.14.3.dist-info/licenses/LICENSE",
+          "size": 1129,
+          "status": "read",
+          "sha256": "a9e186f3ca16b5eef84318e7a701721351a00cb7b8ae3a4394b67b49e3529ef3"
+        }
+      ]
+    },
+    {
+      "name": "pydantic_core",
+      "version": "2.50.4",
+      "wheel_url": "https://files.pythonhosted.org/packages/56/32/92c174c17bfc5fc52d0c064e6a7969a727731e25829ede752fba8bacce0f/pydantic_core-2.50.4-cp314-cp314-macosx_11_0_arm64.whl",
+      "wheel_entries": 11,
+      "notices": [
+        {
+          "path": "pydantic_core-2.50.4.dist-info/licenses/LICENSE",
+          "size": 1080,
+          "status": "read",
+          "sha256": "2afdd30d54b4d62b6f488a6bcc1546e84ec5061f13f4209c03d012348783795a"
+        }
+      ]
+    },
+    {
+      "name": "pydantic-settings",
+      "version": "2.16.2",
+      "wheel_url": "https://files.pythonhosted.org/packages/39/88/4131c51ff87b7cd7f82a1194d0c0a2b7ca68c72d9da04c3b7e69ab91a79f/pydantic_settings-2.16.2-py3-none-any.whl",
+      "wheel_entries": 27,
+      "notices": [
+        {
+          "path": "pydantic_settings-2.16.2.dist-info/licenses/LICENSE",
+          "size": 1103,
+          "status": "read",
+          "sha256": "eb355a753e020346d33d83bf9769135b89fc610568ac531a01c295bcee7fd998"
+        }
+      ]
+    },
+    {
+      "name": "pylatexenc",
+      "version": "2.11",
+      "wheel_url": "https://files.pythonhosted.org/packages/e7/06/3d67bd912ef337aa4856b466121d03f304aa1bb4d804f9298b6227cd227e/pylatexenc-2.11-py2.py3-none-any.whl",
+      "wheel_entries": 23,
+      "notices": [
+        {
+          "path": "pylatexenc-2.11.dist-info/licenses/LICENSE.txt",
+          "size": 1086,
+          "status": "read",
+          "sha256": "90b6f8fc23cb0328a9678562627fb2ebc5f9c871712fad698d781869eb02862c"
+        }
+      ]
+    },
+    {
+      "name": "pypdfium2",
+      "version": "5.15.1",
+      "wheel_url": "https://files.pythonhosted.org/packages/33/c6/9d118ffda2612d65471ccc598c1a0fc4c17222c751fba47f0351d5ba580c/pypdfium2-5.15.1-py3-none-macosx_13_0_arm64.whl",
+      "wheel_entries": 90,
+      "notices": [
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/abseil.txt",
+          "size": 33,
+          "status": "read",
+          "sha256": "3ab0ee0d54e7b043f8713da57dc7f716bb348b298ce17f7094b70cb5172c6f81"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/agg23.txt",
+          "size": 725,
+          "status": "read",
+          "sha256": "c110d3ea2ad77467ce0dcff7d3337e6c8be8049a5103f4b9bd5fd911a77972e5"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/dragonbox-Apache2-LLVM.txt",
+          "size": 916,
+          "status": "read",
+          "sha256": "dc2acb202527597ebe9f292d695bd484018193a7dffa39e7648950649ff4fbe6"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/dragonbox-Boost.txt",
+          "size": 1338,
+          "status": "read",
+          "sha256": "c9bff75738922193e67fa726fa225535870d2aa1059f91452c411736284ad566"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/fast_float.txt",
+          "size": 1079,
+          "status": "read",
+          "sha256": "e562f3f974ced7e69dd1db77b820b36bcf8f30377f1aa105723fba449c53c4e6"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/freetype.txt",
+          "size": 6741,
+          "status": "read",
+          "sha256": "f4b133e25df1f86ad3ffea453aa0e613f0474f34778dbbb3e437e7b2724937d8"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/harfbuzz.txt",
+          "size": 1971,
+          "status": "read",
+          "sha256": "ba8f810f2455c2f08e2d56bb49b72f37fcf68f1f4fade38977cfd7372050ad64"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/highway.txt",
+          "size": 32,
+          "status": "read",
+          "sha256": "a4e3fb11044d78e2a9464e6dd9357834fe35a6ded21157f73a8c370207629630"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/icu.txt",
+          "size": 25185,
+          "status": "read",
+          "sha256": "17510cf7a58b4879b887ec05a45d72cf1b73544dd9ec7e72f20110ed104229ee"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/lcms.txt",
+          "size": 1354,
+          "status": "read",
+          "sha256": "5132b7530ae5acab7058634da86470d3d38bb01d70c2b67ba10c96bc62ced1af"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/libjpeg_turbo.ijg",
+          "size": 12799,
+          "status": "read",
+          "sha256": "75815e3bf6484201a3c3d17a1bbf10f2e8e3237f84df10a2357ea896db2a81d6"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/libjpeg_turbo.md",
+          "size": 5620,
+          "status": "read",
+          "sha256": "96f5b328adbb78eeaaec6980d73fd558cb1e4d62560ed615646bc3cf5e532430"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/libopenjpeg.txt",
+          "size": 1794,
+          "status": "read",
+          "sha256": "c5ab0890a737c2dfa7ba675036554f6d17741d98629b0c2a145354d00617e6b2"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/libpng.txt",
+          "size": 5345,
+          "status": "read",
+          "sha256": "bf5e22b9dce8464064ae17a48ea1133c3369ac9e1d80ef9e320e5219aa14ea9b"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/libtiff.txt",
+          "size": 1139,
+          "status": "read",
+          "sha256": "92b72ba97e6c2749c2a94bc0ef646b47080217f1e772a482b33cf5a5f98a6506"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/pdfium-binaries.txt",
+          "size": 1177,
+          "status": "read",
+          "sha256": "18f922f766364a25a6327e7b1b8287d7c36cf8bbea80767d014fb453e2fe4a50"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/pdfium.txt",
+          "size": 1568,
+          "status": "read",
+          "sha256": "6aed20af4e54f0213331890ca677eb4a2dcd199ad1f8c8bd35e878e0c91a0233"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/simdutf.txt",
+          "size": 1059,
+          "status": "read",
+          "sha256": "fc8dbc04e03ad4efc08a647ffe7f995b811a95bc04c0e85a56d5277c6593fa5f"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/zlib.txt",
+          "size": 1328,
+          "status": "read",
+          "sha256": "02421fcfbfb1d656ef0b6ff4cd3c39f2946f08c3219fa42db482add7ce1f53ea"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/SHARED/Apache-2.0.txt",
+          "size": 11360,
+          "status": "read",
+          "sha256": "aac73b3148f6d1d7111dbca32099f68d26c644c6813ae1e4f05f6579aa2663fe"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/all_except_musl/llvm-libc.txt",
+          "size": 3795,
+          "status": "read",
+          "sha256": "e6e818a28a6f1889a0f9510929f832887d027ff8c28e9a6e835c591576859d80"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/android/catapult.txt",
+          "size": 1483,
+          "status": "read",
+          "sha256": "f0df289ba9d03d857ad1c2f5918861376b1510b71588ffc60eff5c7a7bfedb09"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/android/cpu_features.txt",
+          "size": 1552,
+          "status": "read",
+          "sha256": "7f980508916771e6bd20c2fbae4ac90bc22a5bec844414c4e0972d539c8a5e82"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/android/libunwind.txt",
+          "size": 5361,
+          "status": "read",
+          "sha256": "8e0ce4a528f6d0a47e249128df35d432ef862995347f81788d721f813fbf66f4"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/cibw_musl/libgcc_and_libstdc++.txt",
+          "size": 35867,
+          "status": "read",
+          "sha256": "b3eeac3d6760b1d49f0f9de1f1004015453d3c5e9671b9ca5b307f2d22cf8bc5"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/pbin_and_sbuild/brotli.txt",
+          "size": 1084,
+          "status": "read",
+          "sha256": "3d180008e36922a4e8daec11c34c7af264fed5962d07924aea928c38e8663c94"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/pbin_and_sbuild/libyuv.txt",
+          "size": 1506,
+          "status": "read",
+          "sha256": "2b2cc1180c7e6988328ad2033b04b80117419db9c4c584918bbb3cfec7e9364f"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/pbin_musl/musl.txt",
+          "size": 6196,
+          "status": "read",
+          "sha256": "b870108ec5e7790e9f9919064f1b9421d62d5f9b0e6c230c6adf7ea2da62e97b"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/v8_xfa/bigint.txt",
+          "size": 3367,
+          "status": "read",
+          "sha256": "32759d1397d8f7b9e15ece146e4038b22b90e93b4935b5a840bcef4d2ba5ea55"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/v8_xfa/fdlibm.txt",
+          "size": 250,
+          "status": "read",
+          "sha256": "e7115e18444dae09d17f361ddc365fb1d342640fe500796209c63f7c80dfae10"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/v8_xfa/fp16.txt",
+          "size": 1158,
+          "status": "read",
+          "sha256": "c91377adafa2f498211a4fe017788e20c38892124673860f068f2919c289193d"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/v8_xfa/inspector_protocol.txt",
+          "size": 1537,
+          "status": "read",
+          "sha256": "450ebb9e9e50c2809d9ca581931fc8946d8d5aa0c8c35aae9ac471342fe4a88e"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/v8_xfa/strongtalk.txt",
+          "size": 1482,
+          "status": "read",
+          "sha256": "6a585a9f466654abc8fc0829d56b1bc987e3a073d31faa03bba37d33640a23cd"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/v8_xfa/v8.txt",
+          "size": 1527,
+          "status": "read",
+          "sha256": "4af93c12062c58058378de2397dc1c92bbff9ddfb1d583a01c84127557ce97ca"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/LICENSES/Apache-2.0.txt",
+          "size": 11358,
+          "status": "read",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/LICENSES/BSD-3-Clause.txt",
+          "size": 1459,
+          "status": "read",
+          "sha256": "a6d11f0694c0137e9b02924b9d33a159f6c72f220fa4655bb2e1ea3654377d39"
+        },
+        {
+          "path": "pypdfium2-5.15.1.dist-info/licenses/LICENSES/CC-BY-4.0.txt",
+          "size": 14527,
+          "status": "read",
+          "sha256": "419896aea50c15d6e40c5b4baf4bd346f78223b9a354c7357ad00262afdc08ec"
+        }
+      ]
+    },
+    {
+      "name": "python-docx",
+      "version": "1.2.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/d0/00/1e03a4989fa5795da308cd774f05b704ace555a70f9bf9d3be057b680bcf/python_docx-1.2.0-py3-none-any.whl",
+      "wheel_entries": 124,
+      "notices": [
+        {
+          "path": "python_docx-1.2.0.dist-info/licenses/LICENSE",
+          "size": 1104,
+          "status": "read",
+          "sha256": "7652f271e46d0d533e9dc463f3b5fcbdcacf4d6a9c8d6b554d15efd0f37f6132"
+        }
+      ]
+    },
+    {
+      "name": "python-dotenv",
+      "version": "1.2.4",
+      "wheel_url": "https://files.pythonhosted.org/packages/60/d1/38f3a3405989a89ac18390803e70c6ad7c7760da4f9b83cbeca0c44a0c72/python_dotenv-1.2.4-py3-none-any.whl",
+      "wheel_entries": 15,
+      "notices": [
+        {
+          "path": "python_dotenv-1.2.4.dist-info/licenses/LICENSE",
+          "size": 1556,
+          "status": "read",
+          "sha256": "80619b7049f08c81683ad0e01f08f257a840652dd71ee83146d36658c7d2c2b9"
+        }
+      ]
+    },
+    {
+      "name": "python-oxmsg",
+      "version": "0.0.2",
+      "wheel_url": "https://files.pythonhosted.org/packages/53/67/f56c69a98c7eb244025845506387d0f961681657c9fcd8b2d2edd148f9d2/python_oxmsg-0.0.2-py3-none-any.whl",
+      "wheel_entries": 20,
+      "notices": [
+        {
+          "path": "python_oxmsg-0.0.2.dist-info/LICENSE.txt",
+          "size": 1104,
+          "status": "read",
+          "sha256": "c2458afc527e978a8f12eb4b5776cab74faede98e09c57684d54735e1439e08c"
+        }
+      ]
+    },
+    {
+      "name": "python-pptx",
+      "version": "1.0.2",
+      "wheel_url": "https://files.pythonhosted.org/packages/d9/4f/00be2196329ebbff56ce564aa94efb0fbc828d00de250b1980de1a34ab49/python_pptx-1.0.2-py3-none-any.whl",
+      "wheel_entries": 115,
+      "notices": [
+        {
+          "path": "python_pptx-1.0.2.dist-info/LICENSE",
+          "size": 1104,
+          "status": "read",
+          "sha256": "7652f271e46d0d533e9dc463f3b5fcbdcacf4d6a9c8d6b554d15efd0f37f6132"
+        }
+      ]
+    },
+    {
+      "name": "PyYAML",
+      "version": "6.0.3",
+      "wheel_url": "https://files.pythonhosted.org/packages/bd/9c/4d95bb87eb2063d20db7b60faa3840c1b18025517ae857371c4dd55a6b3a/pyyaml-6.0.3-cp314-cp314-macosx_11_0_arm64.whl",
+      "wheel_entries": 28,
+      "notices": [
+        {
+          "path": "pyyaml-6.0.3.dist-info/licenses/LICENSE",
+          "size": 1101,
+          "status": "read",
+          "sha256": "8d3928f9dc4490fd635707cb88eb26bd764102a7282954307d3e5167a577e8a4"
+        }
+      ]
+    },
+    {
+      "name": "rapidocr",
+      "version": "3.10.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/59/07/203065283bba0c5e9c10af3602dc25ab3e59ee54dc2d1d22c8faeabf5ed8/rapidocr-3.10.0-py3-none-any.whl",
+      "wheel_entries": 100,
+      "registry_sha256": "90e0159dead16c21adbf000014a46043c981ae097f041d92d8b19a52c2f2ed9a",
+      "notices": [
+        {
+          "path": "rapidocr-3.10.0.dist-info/licenses/LICENSE",
+          "size": 11422,
+          "status": "read",
+          "sha256": "3e0af25fdd06aa9586ae97adb00ea927ebe5a3805ac77d2d3a81ce5f55693333"
+        },
+        {
+          "path": "rapidocr-3.10.0.dist-info/licenses/MODEL_LICENSES.md",
+          "size": 8398,
+          "status": "read",
+          "sha256": "c5fd0e8603d3df743355b546121e6fe0f4ef8ff455c5a85c1681fd3ae520e153"
+        }
+      ]
+    },
+    {
+      "name": "requests",
+      "version": "2.34.2",
+      "wheel_url": "https://files.pythonhosted.org/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl",
+      "wheel_entries": 26,
+      "notices": [
+        {
+          "path": "requests-2.34.2.dist-info/licenses/LICENSE",
+          "size": 10142,
+          "status": "read",
+          "sha256": "09e8a9bcec8067104652c168685ab0931e7868f9c8284b66f5ae6edae5f1130b"
+        },
+        {
+          "path": "requests-2.34.2.dist-info/licenses/NOTICE",
+          "size": 38,
+          "status": "read",
+          "sha256": "f5110972dedad2b4e9d314518daf3b7d72d6e02e499acd802181de6f74571dcc"
+        }
+      ]
+    },
+    {
+      "name": "charset-normalizer",
+      "version": "3.5.2",
+      "wheel_url": "https://files.pythonhosted.org/packages/7c/8a/40db9aa9f5907bb0e6f8b6d64064bf8852fb33d4b813ff9414911df7647c/charset_normalizer-3.5.2-cp314-cp314-macosx_10_15_universal2.whl",
+      "wheel_entries": 25,
+      "notices": [
+        {
+          "path": "charset_normalizer-3.5.2.dist-info/licenses/LICENSE",
+          "size": 1071,
+          "status": "read",
+          "sha256": "6d0d41bfe170ac6c7dc248c9a63e254d0fb45a60d50a8257d0af92c6e249b887"
+        }
+      ]
+    },
+    {
+      "name": "idna",
+      "version": "3.20",
+      "wheel_url": "https://files.pythonhosted.org/packages/58/a2/bb081bab032533a855d44de1d56f8e8426114ff1ba5d1f07a438a0a654f8/idna-3.20-py3-none-any.whl",
+      "wheel_entries": 16,
+      "notices": [
+        {
+          "path": "idna-3.20.dist-info/licenses/LICENSE.md",
+          "size": 1541,
+          "status": "read",
+          "sha256": "1a9a4f0e3d479a27240ddd59a9137a66ab4a0f9dfdc8ca6188cc0bfd85187f04"
+        }
+      ]
+    },
+    {
+      "name": "rtree",
+      "version": "1.4.1",
+      "wheel_url": "https://files.pythonhosted.org/packages/f3/cf/2710b6fd6b07ea0aef317b29f335790ba6adf06a28ac236078ed9bd8a91d/rtree-1.4.1-py3-none-macosx_11_0_arm64.whl",
+      "wheel_entries": 44,
+      "notices": [
+        {
+          "path": "rtree-1.4.1.dist-info/licenses/LICENSE.txt",
+          "size": 1115,
+          "status": "read",
+          "sha256": "2e3e6e756da9258484bdd0e81dcd57c9094a58ca23c37c79b14cc23eeb6b7b21"
+        }
+      ]
+    },
+    {
+      "name": "safetensors",
+      "version": "0.8.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/f5/b1/fa7c600e7dceae12e9606c7578cbc9ff1e1ed55844883ee5c92205e86226/safetensors-0.8.0-cp310-abi3-macosx_11_0_arm64.whl",
+      "wheel_entries": 15,
+      "notices": [
+        {
+          "path": "safetensors-0.8.0.dist-info/licenses/LICENSE",
+          "size": 11357,
+          "status": "read",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        }
+      ]
+    },
+    {
+      "name": "scipy",
+      "version": "1.18.1",
+      "wheel_url": "https://files.pythonhosted.org/packages/70/e8/6b0c288c50942d78193696c9f15f9a0874f5178aa0ddf40f83d9924b3e8d/scipy-1.18.1-cp314-cp314-macosx_14_0_arm64.whl",
+      "wheel_entries": 1551,
+      "notices": [
+        {
+          "path": "scipy/integrate/LICENSE_DOP",
+          "size": 3572,
+          "status": "read",
+          "sha256": "ed9bf58c6d74d3fad9d92d1d67d9bff8141d8ab60de784516b0711364fd43357"
+        },
+        {
+          "path": "scipy/_lib/_uarray/LICENSE",
+          "size": 1514,
+          "status": "read",
+          "sha256": "c80c39b5fce06ba4897e14e0b0a88b54458334d951eb1361402ffad2cfb863b4"
+        },
+        {
+          "path": "scipy/fft/_duccfft/LICENSE.md",
+          "size": 1498,
+          "status": "read",
+          "sha256": "c254b2b5fd30ae3c89d36ba061730563b9760fca04f1b746a1b2c3157da2c789"
+        },
+        {
+          "path": "scipy/spatial/qhull_src/COPYING_QHULL.txt",
+          "size": 1720,
+          "status": "read",
+          "sha256": "106d55c931fd6a84822e5345d900273d059f1c27310d02567ccb313c5d18c55d"
+        },
+        {
+          "path": "scipy-1.18.1.dist-info/LICENSE.txt",
+          "size": 46848,
+          "status": "read",
+          "sha256": "09a1b9e19573045b0784a181cc4bef677039d4f2111631c747bf72b7f19017d4"
+        }
+      ]
+    },
+    {
+      "name": "semchunk",
+      "version": "3.2.5",
+      "wheel_url": "https://files.pythonhosted.org/packages/f8/95/12d226ee4d207cb1f77a216baa7e1a8bae2639733c140abe8d0316d23a18/semchunk-3.2.5-py3-none-any.whl",
+      "wheel_entries": 7,
+      "notices": [
+        {
+          "path": "semchunk-3.2.5.dist-info/licenses/LICENCE",
+          "size": 1079,
+          "status": "read",
+          "sha256": "cd3e4ebfa715a1e79e7f9514fce1891db178cc7e9370959f916146649f1869e4"
+        }
+      ]
+    },
+    {
+      "name": "tabulate",
+      "version": "0.10.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/99/55/db07de81b5c630da5cbf5c7df646580ca26dfaefa593667fc6f2fe016d2e/tabulate-0.10.0-py3-none-any.whl",
+      "wheel_entries": 7,
+      "notices": [
+        {
+          "path": "tabulate-0.10.0.dist-info/licenses/LICENSE",
+          "size": 1080,
+          "status": "read",
+          "sha256": "cdfab50d37d8ead06468fb76a3abafcd05c16749ec8a18eebfa50fd48c7cb2d2"
+        }
+      ]
+    },
+    {
+      "name": "torch",
+      "version": "2.15.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/8a/04/ff26bb464e61f83e0176deca01e72fffa779190bbb476011e89c45791589/torch-2.15.0-cp314-cp314-macosx_14_0_arm64.whl",
+      "wheel_entries": 13062,
+      "notices": [
+        {
+          "path": "torch/_vendor/packaging/LICENSE",
+          "size": 197,
+          "status": "read",
+          "sha256": "cad1ef5bd340d73e074ba614d26f7deaca5c7940c3d8c34852e65c4909686c48"
+        },
+        {
+          "path": "torch/_vendor/packaging/LICENSE.APACHE",
+          "size": 10174,
+          "status": "read",
+          "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+        },
+        {
+          "path": "torch/_vendor/packaging/LICENSE.BSD",
+          "size": 1344,
+          "status": "read",
+          "sha256": "b70e7e9b742f1cc6f948b34c16aa39ffece94196364bc88ff0d2180f0028fac5"
+        },
+        {
+          "path": "torch/_vendor/quack/LICENSE",
+          "size": 11357,
+          "status": "read",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/LICENSE",
+          "size": 3464,
+          "status": "read",
+          "sha256": "bd018feef8825e88181c84eb7e3aa4eafb8f08a20d9fd6ef948569610c4a3e43"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/composable_kernel/LICENSE",
+          "size": 1726,
+          "status": "read",
+          "sha256": "20f3b83dfda01bd18d285e0edbb9d044be6dde04cdf76a1ec18d9fc7127936bf"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/NNPACK/LICENSE",
+          "size": 1352,
+          "status": "read",
+          "sha256": "ab09e33621f513ebdd1ef685b324f39c1f6bee9221d15600bafd958322df1231"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/concurrentqueue/moodycamel/LICENSE.md",
+          "size": 3266,
+          "status": "read",
+          "sha256": "22331571e5e3dbe4c79ad715e23127bdf3beabd75052c953ddabf191ef799e14"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/miniz-3.0.2/LICENSE",
+          "size": 1184,
+          "status": "read",
+          "sha256": "0115478d567121238cf6cc1c0c361926cf07a49d9e4c9e66da97fac6a01646b3"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/perfetto/LICENSE",
+          "size": 14990,
+          "status": "read",
+          "sha256": "9a682a56cffc9524dfa9b0b1c0dca9cb81a19e96d5bd0793aaf02c08a95ee7ca"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/pthreadpool/LICENSE",
+          "size": 1378,
+          "status": "read",
+          "sha256": "57814a606b4d0fb087d9a534919084b6c11b58a4174cb5a4aef200187780dc3a"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/ideep/LICENSE",
+          "size": 1062,
+          "status": "read",
+          "sha256": "a26add03107a53a605a89711b9b7dbd4f5dd668ae193a912e01a879366a23b0e"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/ideep/mkl-dnn/LICENSE",
+          "size": 11607,
+          "status": "read",
+          "sha256": "e9fc874fc09801b9acf3411ba72394098473704d832d713404b6c4861a086318"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/ideep/mkl-dnn/third_party/opencl/LICENSE",
+          "size": 11358,
+          "status": "read",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/ideep/mkl-dnn/third_party/ittnotify/LICENSE.BSD",
+          "size": 1503,
+          "status": "read",
+          "sha256": "51e80f0261cdc1962e9b9a1c80f9aa6a7adf0b05f0f217caf59141f59b2ad1c1"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/onnx/LICENSE",
+          "size": 11358,
+          "status": "read",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/gemmlowp/gemmlowp/LICENSE",
+          "size": 11358,
+          "status": "read",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/pybind11/LICENSE",
+          "size": 1684,
+          "status": "read",
+          "sha256": "83965b843b98f670d3a85bd041ed4b372c8ec50d7b4a5995a83ac697ba675dcb"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/fmt/LICENSE",
+          "size": 1094,
+          "status": "read",
+          "sha256": "a65fcc5a1095fc33cc37e4fff69366e49d7e92f613558a2b95ed1b70e33758b4"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/gloo/LICENSE",
+          "size": 1525,
+          "status": "read",
+          "sha256": "2afbc572cf7f60888159bc2ca48ba58f8adec06682ae5de820d61449d1eeea81"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/gloo/gloo/transport/uv/LICENSE.uvw",
+          "size": 1081,
+          "status": "read",
+          "sha256": "ea786619b4d1b2ba0a188e923111122dfefea1d01c86e37f9e8c80bdbc3ea400"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/pocketfft/LICENSE.md",
+          "size": 1498,
+          "status": "read",
+          "sha256": "a85ca13fdf90160b64a0698215868c13b74d835ad0a4e2ba44713b8c5058a056"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/tensorpipe/LICENSE.txt",
+          "size": 1535,
+          "status": "read",
+          "sha256": "f4dcef0d1f0520b414d5bfaeed8df02f188e4ec05c0a17bf1c18f25f6cc66245"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/tensorpipe/third_party/libuv/LICENSE",
+          "size": 1079,
+          "status": "read",
+          "sha256": "16de0c32b265cb7d46a6d3bd614f259dd4d693a5e26b3407b04aae8d73041f0c"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/tensorpipe/third_party/libuv/LICENSE-extra",
+          "size": 1603,
+          "status": "read",
+          "sha256": "262c44bd2cdba037e6d2a82fba15f5800d292bc993a6f5d6b6ea487744d02836"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/tensorpipe/third_party/libnop/LICENSE",
+          "size": 577,
+          "status": "read",
+          "sha256": "876e8f7432440974ee5543a2aa1344370ef1f2f7949ad98a1f3899cf722d5631"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/mimalloc/LICENSE",
+          "size": 1096,
+          "status": "read",
+          "sha256": "82ade5d7d9b029044b5fbbc326207fc47c2d44ee4dd71e8a559c36d728217de9"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/fbgemm/LICENSE",
+          "size": 1535,
+          "status": "read",
+          "sha256": "12c2370ec32e78115dcd71ba22cdcb1297320fdc4ade81f798136d42357c58b8"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/fbgemm/external/composable_kernel/LICENSE",
+          "size": 1726,
+          "status": "read",
+          "sha256": "20f3b83dfda01bd18d285e0edbb9d044be6dde04cdf76a1ec18d9fc7127936bf"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/fbgemm/external/asmjit/LICENSE.md",
+          "size": 862,
+          "status": "read",
+          "sha256": "8fc74133788bc8a7aa94168e9913a2d0b0e3f0a6064a0e72a0f1206d5ce9189e"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/fbgemm/external/cutlass/LICENSE.txt",
+          "size": 1854,
+          "status": "read",
+          "sha256": "80a7a18b73d41f64dd9ca881af35938f8de88b18c728703251f4c94d1299884d"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/fbgemm/external/cpuinfo/LICENSE",
+          "size": 1424,
+          "status": "read",
+          "sha256": "8e7e60636c3aa0cb03571a1a841ce5697f9551ff92b3c426c2561613d15ade70"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/fbgemm/external/cpuinfo/deps/clog/LICENSE",
+          "size": 1384,
+          "status": "read",
+          "sha256": "68a14c3e79add023eecd83d611e73f05b8bf1d16852efeb7eb4033a96736da9e"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/kineto/LICENSE",
+          "size": 1609,
+          "status": "read",
+          "sha256": "6f3d59b9103e72e5c977eecf61b261c2e1546a9be2995847e3ee2d31021fd39b"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/kineto/libkineto/third_party/dynolog_headers/LICENSE",
+          "size": 1086,
+          "status": "read",
+          "sha256": "52412d7bc7ce4157ea628bbaacb8829e0a9cb3c58f57f99176126bc8cf2bfc85"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/VulkanMemoryAllocator/LICENSE.txt",
+          "size": 1099,
+          "status": "read",
+          "sha256": "8d70e4cf2a9941f6454da71cd60e38484dd3e34810c824760d550e982af6d97a"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/FXdiv/LICENSE",
+          "size": 1117,
+          "status": "read",
+          "sha256": "7cac00006125b1486a27e4801ed66357236e984c540bd323945ab7b66b078ec3"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/nlohmann/LICENSE.MIT",
+          "size": 1076,
+          "status": "read",
+          "sha256": "46a65cffd1ea955132d95a8dd921640714a8d6b537d2e4e482d31145ae95b603"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/aiter/LICENSE",
+          "size": 1100,
+          "status": "read",
+          "sha256": "0baca809927cad448401b252ce3bae12687c2987597ad7088cf3423f872d5bcd"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/aiter/3rdparty/composable_kernel/LICENSE",
+          "size": 1726,
+          "status": "read",
+          "sha256": "20f3b83dfda01bd18d285e0edbb9d044be6dde04cdf76a1ec18d9fc7127936bf"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/XNNPACK/LICENSE",
+          "size": 1560,
+          "status": "read",
+          "sha256": "63f519e15726f4c4f830bd958f694c84fecb4e0a4cacc527d2696bb71ef95ada"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/cudnn_frontend/LICENSE-MIT.txt",
+          "size": 1116,
+          "status": "read",
+          "sha256": "6a1e5992580aadeeea1023b2594d415a87457a4af12162c4eb7e5e1168fd92af"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/cudnn_frontend/LICENSE.txt",
+          "size": 11438,
+          "status": "read",
+          "sha256": "a58e7a5653d57f4907c73b6ed3bde05119cd9fb96a985bc944b4239a22d8f7ea"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/cudnn_frontend/python/cudnn/moe_ep/_megamoe_backend/cutedsl_src/LICENSE.Apache-2.0",
+          "size": 11357,
+          "status": "read",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/sleef/LICENSE.txt",
+          "size": 1338,
+          "status": "read",
+          "sha256": "c9bff75738922193e67fa726fa225535870d2aa1059f91452c411736284ad566"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/flatbuffers/LICENSE",
+          "size": 11358,
+          "status": "read",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/psimd/LICENSE",
+          "size": 1162,
+          "status": "read",
+          "sha256": "984ce1e0b8ee89d234e28b960381f240e03a07a8031f35012f9c3256f56964e2"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/flash-attention/LICENSE",
+          "size": 1558,
+          "status": "read",
+          "sha256": "8c9ccb96c065e706135b6cbad279b721da6156e51f3a5f27c6b3329af9416d73"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/flash-attention/csrc/composable_kernel/LICENSE",
+          "size": 1726,
+          "status": "read",
+          "sha256": "20f3b83dfda01bd18d285e0edbb9d044be6dde04cdf76a1ec18d9fc7127936bf"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/flash-attention/csrc/cutlass/LICENSE.txt",
+          "size": 1854,
+          "status": "read",
+          "sha256": "80a7a18b73d41f64dd9ca881af35938f8de88b18c728703251f4c94d1299884d"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/flash-attention/third_party/aiter/LICENSE",
+          "size": 1100,
+          "status": "read",
+          "sha256": "0baca809927cad448401b252ce3bae12687c2987597ad7088cf3423f872d5bcd"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/flash-attention/third_party/aiter/3rdparty/composable_kernel/LICENSE",
+          "size": 1726,
+          "status": "read",
+          "sha256": "20f3b83dfda01bd18d285e0edbb9d044be6dde04cdf76a1ec18d9fc7127936bf"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/flash-attention/flash_attn/cute/LICENSE",
+          "size": 1558,
+          "status": "read",
+          "sha256": "8c9ccb96c065e706135b6cbad279b721da6156e51f3a5f27c6b3329af9416d73"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/cutlass/LICENSE.txt",
+          "size": 1861,
+          "status": "read",
+          "sha256": "ad1513ca983da737a6843364ad19e8424a56d860736c2da773b8c5be527e1475"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/cpp-httplib/LICENSE",
+          "size": 1075,
+          "status": "read",
+          "sha256": "4b45cbe16d7b71b89ae6127e26e0d90a029198ca5e958ad8e3d0b8bbed364d8b"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/llvm-openmp/LICENSE.txt",
+          "size": 17003,
+          "status": "read",
+          "sha256": "68395143f21a9aa29b8232168c71892af5ec4f1ae2529571cd250a71c9e37a03"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/cpuinfo/LICENSE",
+          "size": 1424,
+          "status": "read",
+          "sha256": "8e7e60636c3aa0cb03571a1a841ce5697f9551ff92b3c426c2561613d15ade70"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/cpuinfo/deps/clog/LICENSE",
+          "size": 1384,
+          "status": "read",
+          "sha256": "68a14c3e79add023eecd83d611e73f05b8bf1d16852efeb7eb4033a96736da9e"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/FP16/LICENSE",
+          "size": 1157,
+          "status": "read",
+          "sha256": "17e4f539024be2749ee729d1e2f01d24cef12ece8c9bf18e91a4349be29c80bf"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/mslk/LICENSE",
+          "size": 1533,
+          "status": "read",
+          "sha256": "44519cbe722d7bf092cd7e0fa26558b9e3905b88fca4c0c278e2733a9f6b4cf9"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/mslk/external/composable_kernel/LICENSE",
+          "size": 1726,
+          "status": "read",
+          "sha256": "20f3b83dfda01bd18d285e0edbb9d044be6dde04cdf76a1ec18d9fc7127936bf"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/mslk/external/cutlass/LICENSE.txt",
+          "size": 1854,
+          "status": "read",
+          "sha256": "80a7a18b73d41f64dd9ca881af35938f8de88b18c728703251f4c94d1299884d"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/mslk/mslk/attention/flash_attn/LICENSE",
+          "size": 1558,
+          "status": "read",
+          "sha256": "8c9ccb96c065e706135b6cbad279b721da6156e51f3a5f27c6b3329af9416d73"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/protobuf/LICENSE",
+          "size": 1732,
+          "status": "read",
+          "sha256": "6e5e117324afd944dcf67f36cf329843bc1a92229a8cd9bb573d7a83130fea7d"
+        },
+        {
+          "path": "torch-2.15.0.dist-info/licenses/third_party/NVTX/LICENSE.txt",
+          "size": 12483,
+          "status": "read",
+          "sha256": "abdfd8a6738b27cd1504e091f77b682dbae928339f040b8a6f59a548245991a0"
+        }
+      ]
+    },
+    {
+      "name": "torchvision",
+      "version": "0.29.2",
+      "wheel_url": "https://files.pythonhosted.org/packages/60/ec/ce97c46e5322b588b95be388f2c21878d014ca20838478e7aab59edd128a/torchvision-0.29.2-py3-none-macosx_14_0_arm64.whl",
+      "wheel_entries": 215,
+      "notices": [
+        {
+          "path": "torchvision-0.29.2.dist-info/LICENSE",
+          "size": 1517,
+          "status": "read",
+          "sha256": "6502f676851cfe25f8af75531dfb32375b7325b73c37e7b43741fa422893e71d"
+        }
+      ]
+    },
+    {
+      "name": "tqdm",
+      "version": "4.70.1",
+      "wheel_url": "https://files.pythonhosted.org/packages/a7/03/921a3d3c75785aca9ebfbfcabfbc3a1be12e2ab5265deb026d55a5a3f83e/tqdm-4.70.1-py3-none-any.whl",
+      "wheel_entries": 39,
+      "notices": [
+        {
+          "path": "tqdm-4.70.1.dist-info/licenses/LICENCE",
+          "size": 1985,
+          "status": "read",
+          "sha256": "fcff87c3a47ce8028a8512aa182d4fcf0ad1c90544ee75cf9b343684cac194de"
+        }
+      ]
+    },
+    {
+      "name": "transformers",
+      "version": "5.22.2",
+      "wheel_url": "https://files.pythonhosted.org/packages/ff/bb/cc0b27a3000ddcf4903d3a26983c8b4c9a36050bbaf05675f353e8bcb08c/transformers-5.22.2-py3-none-any.whl",
+      "wheel_entries": 2816,
+      "notices": [
+        {
+          "path": "transformers-5.22.2.dist-info/licenses/LICENSE",
+          "size": 11418,
+          "status": "read",
+          "sha256": "77fd4710def9ec3c0f6225800e0235f15a425abd4a8b03559127fcd782612049"
+        }
+      ]
+    },
+    {
+      "name": "tokenizers",
+      "version": "0.23.3",
+      "wheel_url": "https://files.pythonhosted.org/packages/b2/72/01e49f032bb346e5aaf06c10c74fe8aeec847173adbadd66eb7c53054bf2/tokenizers-0.23.3-cp310-abi3-macosx_11_0_arm64.whl",
+      "wheel_entries": 31,
+      "notices": []
+    },
+    {
+      "name": "tree-sitter",
+      "version": "0.26.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/b0/d9/efe62ec65dc9d096e834d27b8c058127e2146e42ff3380b822a233f016a6/tree_sitter-0.26.0-cp314-cp314-macosx_11_0_arm64.whl",
+      "wheel_entries": 12,
+      "notices": [
+        {
+          "path": "tree_sitter-0.26.0.dist-info/licenses/LICENSE",
+          "size": 1088,
+          "status": "read",
+          "sha256": "1af0790543fffac99dd3bd290bf83ca963f4f8029065eb6f35638f4df863ae8e"
+        }
+      ]
+    },
+    {
+      "name": "typer",
+      "version": "0.27.3",
+      "wheel_url": "https://files.pythonhosted.org/packages/07/ea/2e31b67051e91a133189e9c000c222502ddc6969856416de0d095de4c0b0/typer-0.27.3-py3-none-any.whl",
+      "wheel_entries": 41,
+      "notices": [
+        {
+          "path": "typer-0.27.3.dist-info/licenses/LICENSE",
+          "size": 1086,
+          "status": "read",
+          "sha256": "58992cebcf8dfb6e40c4e2112ed12126c243666dca3912a3d78b7ecac4859d49"
+        },
+        {
+          "path": "typer/_click/LICENSE.txt",
+          "size": 1475,
+          "status": "read",
+          "sha256": "9a8ad106a394e853bfe21f42f4e72d592819a22805d991b5f3275029292b658d"
+        }
+      ]
+    },
+    {
+      "name": "typing_extensions",
+      "version": "4.16.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl",
+      "wheel_entries": 5,
+      "notices": [
+        {
+          "path": "typing_extensions-4.16.0.dist-info/licenses/LICENSE",
+          "size": 13936,
+          "status": "read",
+          "sha256": "3b2f81fe21d181c499c59a256c8e1968455d6689d269aa85373bfb6af41da3bf"
+        }
+      ]
+    },
+    {
+      "name": "urllib3",
+      "version": "2.8.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl",
+      "wheel_entries": 42,
+      "notices": [
+        {
+          "path": "urllib3-2.8.0.dist-info/licenses/LICENSE.txt",
+          "size": 1093,
+          "status": "read",
+          "sha256": "130e3a64d5fdd5d096a752694634a7d9df284469de86e5732100268041e3d686"
+        }
+      ]
+    },
+    {
+      "name": "websockets",
+      "version": "17.4",
+      "wheel_url": "https://files.pythonhosted.org/packages/df/73/eb8544367c13cd87df39d41b74853741fb7182e2a4bb659ad7d36f9066c8/websockets-17.4-cp314-cp314-macosx_11_0_arm64.whl",
+      "wheel_entries": 70,
+      "notices": [
+        {
+          "path": "websockets-17.4.dist-info/licenses/LICENSE",
+          "size": 1514,
+          "status": "read",
+          "sha256": "3d6a0c050d8bec52fabad502e45fb25bd02bcadbd70dea34d447b6a0ff4e6da8"
+        }
+      ]
+    },
+    {
+      "name": "annotated-doc",
+      "version": "0.0.5",
+      "wheel_url": "https://files.pythonhosted.org/packages/3e/30/e900b21425a860e195f32e37657aa1f7c7f2b1bfb26f03ca209b90933c06/annotated_doc-0.0.5-py3-none-any.whl",
+      "wheel_entries": 8,
+      "notices": [
+        {
+          "path": "annotated_doc-0.0.5.dist-info/licenses/LICENSE",
+          "size": 1086,
+          "status": "read",
+          "sha256": "fff170779a6acbf65abdb405c087f1cee1786691e4a96a4034517e4a504a0cdf"
+        }
+      ]
+    },
+    {
+      "name": "annotated-types",
+      "version": "0.8.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/99/91/8acff4f5e50511b911bbccb72b8628a49c68ce14148cd9f6431094859a90/annotated_types-0.8.0-py3-none-any.whl",
+      "wheel_entries": 7,
+      "notices": [
+        {
+          "path": "annotated_types-0.8.0.dist-info/licenses/LICENSE",
+          "size": 1083,
+          "status": "read",
+          "sha256": "fe1049884b1a0d9342901e88e07f32925d24b3121d9972b6a6805fb9824b095d"
+        }
+      ]
+    },
+    {
+      "name": "attrs",
+      "version": "26.1.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/64/b4/17d4b0b2a2dc85a6df63d1157e028ed19f90d4cd97c36717afef2bc2f395/attrs-26.1.0-py3-none-any.whl",
+      "wheel_entries": 35,
+      "notices": [
+        {
+          "path": "attrs-26.1.0.dist-info/licenses/LICENSE",
+          "size": 1109,
+          "status": "read",
+          "sha256": "882115c95dfc2af1eeb6714f8ec6d5cbcabf667caff8729f42420da63f714e9f"
+        }
+      ]
+    },
+    {
+      "name": "certifi",
+      "version": "2026.10.23",
+      "wheel_url": "https://files.pythonhosted.org/packages/32/d1/a3652fe2c19134d0d15922177821d863cbd7e842d53a21bbe7e8e3a1b5ac/certifi-2026.10.23-py3-none-any.whl",
+      "wheel_entries": 12,
+      "notices": [
+        {
+          "path": "certifi-2026.10.23.dist-info/licenses/LICENSE",
+          "size": 989,
+          "status": "read",
+          "sha256": "e93716da6b9c0d5a4a1df60fe695b370f0695603d21f6f83f053e42cfc10caf7"
+        }
+      ]
+    },
+    {
+      "name": "filelock",
+      "version": "4.2.9",
+      "wheel_url": "https://files.pythonhosted.org/packages/00/05/76184fe08339723d643ab47887a8e4de8f2921ca4e008617ab7490af7857/filelock-4.2.9-py3-none-any.whl",
+      "wheel_entries": 28,
+      "notices": [
+        {
+          "path": "filelock-4.2.9.dist-info/licenses/LICENSE",
+          "size": 1088,
+          "status": "read",
+          "sha256": "608c89d5060ae9921adccf3236695bc654a9946e12323ef6c021dfa04e294d48"
+        }
+      ]
+    },
+    {
+      "name": "fsspec",
+      "version": "2026.9.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/6c/c0/a98505f18594f1bce828bb159cec0fcf9860562f1a2c85913409fc8f3d9e/fsspec-2026.9.0-py3-none-any.whl",
+      "wheel_entries": 62,
+      "notices": [
+        {
+          "path": "fsspec-2026.9.0.dist-info/licenses/LICENSE",
+          "size": 1513,
+          "status": "read",
+          "sha256": "2dc35496ce53a7307915c008a844aad53e772b49b34cdd00445067691407ec94"
+        }
+      ]
+    },
+    {
+      "name": "h11",
+      "version": "0.16.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl",
+      "wheel_entries": 17,
+      "notices": [
+        {
+          "path": "h11-0.16.0.dist-info/licenses/LICENSE.txt",
+          "size": 1124,
+          "status": "read",
+          "sha256": "37db5bb85926db28a427a25867f10b1232003aea1be69ccb851138adb8e6f361"
+        }
+      ]
+    },
+    {
+      "name": "jsonschema-specifications",
+      "version": "2025.9.1",
+      "wheel_url": "https://files.pythonhosted.org/packages/41/45/1a4ed80516f02155c51f51e8cedb3c1902296743db0bbc66608a0db2814f/jsonschema_specifications-2025.9.1-py3-none-any.whl",
+      "wheel_entries": 28,
+      "notices": [
+        {
+          "path": "jsonschema_specifications-2025.9.1.dist-info/licenses/COPYING",
+          "size": 1057,
+          "status": "read",
+          "sha256": "42dcd63495f87b4eb7c7757afa379bb55a53f94afd7a5f657d9adf57236e515c"
+        }
+      ]
+    },
+    {
+      "name": "lxml",
+      "version": "6.1.3",
+      "wheel_url": "https://files.pythonhosted.org/packages/0c/15/fc75a70b0af6021d0ea16811f1fc71cc42cd06ce90fe10f007a69b2eed84/lxml-6.1.3-cp314-cp314-macosx_10_15_universal2.whl",
+      "wheel_entries": 188,
+      "notices": [
+        {
+          "path": "lxml-6.1.3.dist-info/licenses/LICENSE.txt",
+          "size": 1507,
+          "status": "read",
+          "sha256": "8fc2b568133516e46845d2147917adeee1648e70ae9ab5ed6c5417afef4ce855"
+        },
+        {
+          "path": "lxml-6.1.3.dist-info/licenses/LICENSES.txt",
+          "size": 6221,
+          "status": "read",
+          "sha256": "388fa99f3bde4447cd5a4cbb114037be026854db6cfe89e112691c1d8abdcf3c"
+        }
+      ]
+    },
+    {
+      "name": "networkx",
+      "version": "3.7",
+      "wheel_url": "https://files.pythonhosted.org/packages/7e/cd/fe58041e9011f307c490e3e17dd48cc516448f7c698a3f2d9d9d65d7e6a8/networkx-3.7-py3-none-any.whl",
+      "wheel_entries": 604,
+      "notices": [
+        {
+          "path": "networkx-3.7.dist-info/licenses/LICENSE.txt",
+          "size": 1763,
+          "status": "read",
+          "sha256": "6025f323ea29dc2f0ee0abd9523bf910186f55b0e148e6ebf646c55566278e2e"
+        }
+      ]
+    },
+    {
+      "name": "omegaconf",
+      "version": "2.4.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/4f/bd/0d9f8247b0819385213d09564eda5c52d3673313c2414d51f72883ec24cd/omegaconf-2.4.0-py3-none-any.whl",
+      "wheel_entries": 94,
+      "notices": [
+        {
+          "path": "omegaconf-2.4.0.dist-info/licenses/LICENSE",
+          "size": 1518,
+          "status": "read",
+          "sha256": "b31375ed5d5cbe7ec2d0c4c14df8afa7a8e5501bbe25f70b6cbc461685f4b91a"
+        },
+        {
+          "path": "omegaconf-2.4.0.dist-info/licenses/ATTRIBUTION/LICENSE-antlr4",
+          "size": 1480,
+          "status": "read",
+          "sha256": "3db1fb3ee79a4b4f9918fc4d0f6133bf18a3cf787f126cd22f8aa9b862281c0c"
+        }
+      ]
+    },
+    {
+      "name": "opencv-python-headless",
+      "version": "5.0.0.93",
+      "wheel_url": "https://files.pythonhosted.org/packages/53/7c/8c8097891c509d98cd128493835c95631c80be6a8f37ed9d25716c2e16f1/opencv_python_headless-5.0.0.93-cp37-abi3-macosx_13_0_arm64.whl",
+      "wheel_entries": 173,
+      "notices": [
+        {
+          "path": "cv2/LICENSE-3RD-PARTY.txt",
+          "size": 179634,
+          "status": "read",
+          "sha256": "2537f5653345db7231ff12f307bcfa4c89807d45ed1c4bb8ebfb6f26f61b160a"
+        },
+        {
+          "path": "cv2/LICENSE.txt",
+          "size": 1070,
+          "status": "read",
+          "sha256": "09d719058e782ac7bc71ba21c944e1136cde2bb957c0e888121f0218d6b5f02c"
+        },
+        {
+          "path": "opencv_python_headless-5.0.0.93.dist-info/LICENSE-3RD-PARTY.txt",
+          "size": 179634,
+          "status": "read",
+          "sha256": "2537f5653345db7231ff12f307bcfa4c89807d45ed1c4bb8ebfb6f26f61b160a"
+        },
+        {
+          "path": "opencv_python_headless-5.0.0.93.dist-info/LICENSE.txt",
+          "size": 1070,
+          "status": "read",
+          "sha256": "09d719058e782ac7bc71ba21c944e1136cde2bb957c0e888121f0218d6b5f02c"
+        }
+      ]
+    },
+    {
+      "name": "packaging",
+      "version": "26.3",
+      "wheel_url": "https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl",
+      "wheel_entries": 29,
+      "notices": [
+        {
+          "path": "packaging-26.3.dist-info/licenses/LICENSE",
+          "size": 197,
+          "status": "read",
+          "sha256": "cad1ef5bd340d73e074ba614d26f7deaca5c7940c3d8c34852e65c4909686c48"
+        },
+        {
+          "path": "packaging-26.3.dist-info/licenses/LICENSE.APACHE",
+          "size": 10174,
+          "status": "read",
+          "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+        },
+        {
+          "path": "packaging-26.3.dist-info/licenses/LICENSE.BSD",
+          "size": 1344,
+          "status": "read",
+          "sha256": "b70e7e9b742f1cc6f948b34c16aa39ffece94196364bc88ff0d2180f0028fac5"
+        }
+      ]
+    },
+    {
+      "name": "polyfactory",
+      "version": "3.5.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/d6/bb/8667413181bfac2fee81b6f80710356222bf438df1eff6b3c12ab39480a8/polyfactory-3.5.0-py3-none-any.whl",
+      "wheel_entries": 43,
+      "notices": [
+        {
+          "path": "polyfactory-3.5.0.dist-info/licenses/LICENSE",
+          "size": 1092,
+          "status": "read",
+          "sha256": "34443055757c82025d9e6f9ae810849823fd664a8fa5a0ac05cd6252c3e164f6"
+        }
+      ]
+    },
+    {
+      "name": "Faker",
+      "version": "40.44.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/58/9e/3da962809aefa00ddf457d1b11bba41d7766373a0ad9e537fa0804604361/faker-40.44.0-py3-none-any.whl",
+      "wheel_entries": 760,
+      "notices": [
+        {
+          "path": "faker-40.44.0.dist-info/licenses/LICENSE.txt",
+          "size": 1060,
+          "status": "read",
+          "sha256": "cd5a5fbc8bacca52b88158ca562ac5f7c2e9adb27371cead51aaf4e61a657928"
+        }
+      ]
+    },
+    {
+      "name": "pyclipper",
+      "version": "1.4.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/1a/20/04d58c70f3ccd404f179f8dd81d16722a05a3bf1ab61445ee64e8218c1f8/pyclipper-1.4.0-cp314-cp314-macosx_10_15_universal2.whl",
+      "wheel_entries": 11,
+      "notices": [
+        {
+          "path": "pyclipper-1.4.0.dist-info/licenses/LICENSE",
+          "size": 1110,
+          "status": "read",
+          "sha256": "32ee7398e3123736fd14e9f08287edc2d97ace102ab54d8dc4edc8d31c651fa8"
+        }
+      ]
+    },
+    {
+      "name": "python-dateutil",
+      "version": "4.0.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/2f/a9/52b89563d154433d79b51ed1eb4842bf7334cb2696891a7fe135618853d7/python_dateutil-4.0.0-py3-none-any.whl",
+      "wheel_entries": 26,
+      "notices": [
+        {
+          "path": "python_dateutil-4.0.0.dist-info/licenses/LICENSE",
+          "size": 2889,
+          "status": "read",
+          "sha256": "ba00f51a0d92823b5a1cde27d8b5b9d2321e67ed8da9bc163eff96d5e17e577e"
+        }
+      ]
+    },
+    {
+      "name": "referencing",
+      "version": "0.37.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/2c/58/ca301544e1fa93ed4f80d724bf5b194f6e4b945841c5bfd555878eea9fcb/referencing-0.37.0-py3-none-any.whl",
+      "wheel_entries": 19,
+      "notices": [
+        {
+          "path": "referencing-0.37.0.dist-info/licenses/COPYING",
+          "size": 1057,
+          "status": "read",
+          "sha256": "42dcd63495f87b4eb7c7757afa379bb55a53f94afd7a5f657d9adf57236e515c"
+        }
+      ]
+    },
+    {
+      "name": "regex",
+      "version": "2026.11.9",
+      "wheel_url": "https://files.pythonhosted.org/packages/e4/bc/8d2e21baca091b2f2bba7b6127cb60395018579736d41958d7398f381e5f/regex-2026.11.9-cp314-cp314-macosx_11_0_arm64.whl",
+      "wheel_entries": 14,
+      "notices": [
+        {
+          "path": "regex-2026.11.9.dist-info/licenses/LICENSE.txt",
+          "size": 11584,
+          "status": "read",
+          "sha256": "bff55ef4cdcc8c14ce259f8e8ab60e264418440d6335f4dc138273fbd506144d"
+        }
+      ]
+    },
+    {
+      "name": "rich",
+      "version": "15.0.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/82/3b/64d4899d73f91ba49a8c18a8ff3f0ea8f1c1d75481760df8c68ef5235bf5/rich-15.0.0-py3-none-any.whl",
+      "wheel_entries": 105,
+      "notices": [
+        {
+          "path": "rich-15.0.0.dist-info/licenses/LICENSE",
+          "size": 1056,
+          "status": "read",
+          "sha256": "deed7c17a4318158190a3ea239cc879a5a50271cebb98ae7025f48fbe58dca15"
+        }
+      ]
+    },
+    {
+      "name": "Pygments",
+      "version": "2.21.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/71/46/17f022dd3e953bf20a04a028a21ec746d942f8d2af30fa0f124fa0e6a684/pygments-2.21.0-py3-none-any.whl",
+      "wheel_entries": 349,
+      "notices": [
+        {
+          "path": "pygments-2.21.0.dist-info/licenses/LICENSE",
+          "size": 1331,
+          "status": "read",
+          "sha256": "a9d66f1d526df02e29dce73436d34e56e8632f46c275bbdffc70569e882f9f17"
+        }
+      ]
+    },
+    {
+      "name": "markdown-it-py",
+      "version": "4.2.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/b3/81/4da04ced5a082363ecfa159c010d200ecbd959ae410c10c0264a38cac0f5/markdown_it_py-4.2.0-py3-none-any.whl",
+      "wheel_entries": 74,
+      "notices": [
+        {
+          "path": "markdown_it_py-4.2.0.dist-info/licenses/LICENSE",
+          "size": 1078,
+          "status": "read",
+          "sha256": "4a2260d6e2cd0f5a151a1e86dbfe7d3ed552b1e2beabf9941c1ba5c49cbce484"
+        },
+        {
+          "path": "markdown_it_py-4.2.0.dist-info/licenses/LICENSE.markdown-it",
+          "size": 1073,
+          "status": "read",
+          "sha256": "792c48c5a849a15fdf9e37e8bcf9e6d1dd13b32b46c642a748a0a46a9919d473"
+        }
+      ]
+    },
+    {
+      "name": "mdurl",
+      "version": "0.1.2",
+      "wheel_url": "https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl",
+      "wheel_entries": 11,
+      "notices": [
+        {
+          "path": "mdurl-0.1.2.dist-info/LICENSE",
+          "size": 2338,
+          "status": "read",
+          "sha256": "7c605df6e28667a9603118e98274f64a49ce3eed0d26fccce9534a345e0ef955"
+        }
+      ]
+    },
+    {
+      "name": "rpds-py",
+      "version": "2026.9.1",
+      "wheel_url": "https://files.pythonhosted.org/packages/04/37/b751de2b59b0197a1d92a5dd491de88e8a5e928c2e6562581974f1e85263/rpds_py-2026.9.1-cp314-cp314-macosx_11_0_arm64.whl",
+      "wheel_entries": 9,
+      "notices": [
+        {
+          "path": "rpds_py-2026.9.1.dist-info/licenses/LICENSE",
+          "size": 1057,
+          "status": "read",
+          "sha256": "314e4e91be3baa93c0fb4bccc9e4e97cd643eb839b065af921782c2175fe9909"
+        }
+      ]
+    },
+    {
+      "name": "setuptools",
+      "version": "84.2.1",
+      "wheel_url": "https://files.pythonhosted.org/packages/ef/55/6dc6d6bb953bdfc52519a0059592c52b6e3b8ad51cf8256dffceb55b0610/setuptools-84.2.1-py3-none-any.whl",
+      "wheel_entries": 348,
+      "notices": [
+        {
+          "path": "setuptools/_vendor/importlib_metadata-8.7.1.dist-info/licenses/LICENSE",
+          "size": 10278,
+          "status": "read",
+          "sha256": "458502e12d97bbf64438606a20044aa85eb05fb0a8a807bb35dbec253fd1fc04"
+        },
+        {
+          "path": "setuptools/_vendor/jaraco_context-6.1.0.dist-info/licenses/LICENSE",
+          "size": 1076,
+          "status": "read",
+          "sha256": "9755a18519666e5f0f4cae3daad3d7012bcae48a600b31237d75e9fe134e6683"
+        },
+        {
+          "path": "setuptools/_vendor/jaraco_functools-4.4.0.dist-info/licenses/LICENSE",
+          "size": 1076,
+          "status": "read",
+          "sha256": "5a57cb4db85e2a2dd88c290628908add57e3451449e0a9a71fdfb38776fd759d"
+        },
+        {
+          "path": "setuptools/_vendor/more_itertools-10.8.0.dist-info/licenses/LICENSE",
+          "size": 1053,
+          "status": "read",
+          "sha256": "09f1c8c9e941af3e584d59641ea9b87d83c0cb0fd007eb5ef391a7e2643c1a46"
+        },
+        {
+          "path": "setuptools/_vendor/packaging-26.3.dist-info/licenses/LICENSE",
+          "size": 197,
+          "status": "read",
+          "sha256": "cad1ef5bd340d73e074ba614d26f7deaca5c7940c3d8c34852e65c4909686c48"
+        },
+        {
+          "path": "setuptools/_vendor/packaging-26.3.dist-info/licenses/LICENSE.APACHE",
+          "size": 10174,
+          "status": "read",
+          "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+        },
+        {
+          "path": "setuptools/_vendor/packaging-26.3.dist-info/licenses/LICENSE.BSD",
+          "size": 1344,
+          "status": "read",
+          "sha256": "b70e7e9b742f1cc6f948b34c16aa39ffece94196364bc88ff0d2180f0028fac5"
+        },
+        {
+          "path": "setuptools/_vendor/platformdirs-4.4.0.dist-info/licenses/LICENSE",
+          "size": 1089,
+          "status": "read",
+          "sha256": "29e0fd62e929850e86eb28c3fdccf0cefdf4fa94879011cffb3d0d4bed6d4db6"
+        },
+        {
+          "path": "setuptools/_vendor/tomli-2.4.0.dist-info/licenses/LICENSE",
+          "size": 1072,
+          "status": "read",
+          "sha256": "b80816b0d530b8accb4c2211783790984a6e3b61922c2b5ee92f3372ab2742fe"
+        },
+        {
+          "path": "setuptools/_vendor/wheel-0.46.3.dist-info/licenses/LICENSE.txt",
+          "size": 1107,
+          "status": "read",
+          "sha256": "30c23618679108f3e8ea1d2a658c7ca417bdfc891c98ef1a89fa4ff0c9828654"
+        },
+        {
+          "path": "setuptools/_vendor/zipp-3.23.0.dist-info/licenses/LICENSE",
+          "size": 1076,
+          "status": "read",
+          "sha256": "5a57cb4db85e2a2dd88c290628908add57e3451449e0a9a71fdfb38776fd759d"
+        },
+        {
+          "path": "setuptools/config/NOTICE",
+          "size": 493,
+          "status": "read",
+          "sha256": "2dddf08818297a3b89d43d95ff659d8da85741108c9136dfa3a4d856c0623bd8"
+        },
+        {
+          "path": "setuptools/config/_validate_pyproject/NOTICE",
+          "size": 18737,
+          "status": "read",
+          "sha256": "09c9bcea95ca086f8bc5bed174e40bc835b297d40fb5f86bbbb570fe0a5581a7"
+        },
+        {
+          "path": "setuptools-84.2.1.dist-info/licenses/LICENSE",
+          "size": 1023,
+          "status": "read",
+          "sha256": "86da0f01aeae46348a3c3d465195dc1ceccde79f79e87769a64b8da04b2a4741"
+        },
+        {
+          "path": "setuptools/_vendor/autocommand-2.2.2.dist-info/LICENSE",
+          "size": 7634,
+          "status": "read",
+          "sha256": "ade78d04982d69972d444a8e14a94f87a2334dd3855cc80348ea8e240aa0df2d"
+        },
+        {
+          "path": "setuptools/_vendor/backports.tarfile-1.2.0.dist-info/LICENSE",
+          "size": 1023,
+          "status": "read",
+          "sha256": "86da0f01aeae46348a3c3d465195dc1ceccde79f79e87769a64b8da04b2a4741"
+        },
+        {
+          "path": "setuptools/_vendor/jaraco.text-4.0.0.dist-info/LICENSE",
+          "size": 1023,
+          "status": "read",
+          "sha256": "86da0f01aeae46348a3c3d465195dc1ceccde79f79e87769a64b8da04b2a4741"
+        }
+      ]
+    },
+    {
+      "name": "shapely",
+      "version": "2.2.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/a2/c8/e8117528eb96feafcd5fced50a939ecfdc6242b3782959d202755536bb9e/shapely-2.2.0-cp314-cp314-macosx_11_0_arm64.whl",
+      "wheel_entries": 160,
+      "notices": [
+        {
+          "path": "shapely-2.2.0.dist-info/licenses/LICENSE_GEOS",
+          "size": 26787,
+          "status": "read",
+          "sha256": "81d9aaf9ab7e3e6184568a70f27ee3e138d8d1e543b46dad5af88cff61cf1b36"
+        },
+        {
+          "path": "shapely-2.2.0.dist-info/licenses/LICENSE.txt",
+          "size": 1583,
+          "status": "read",
+          "sha256": "4a207eac9bf257ed286e1c6f0fce253d1abfdb134fc61ec855e37f5692a3f754"
+        }
+      ]
+    },
+    {
+      "name": "shellingham",
+      "version": "1.5.4",
+      "wheel_url": "https://files.pythonhosted.org/packages/e0/f9/0595336914c5619e5f28a1fb793285925a8cd4b432c9da0a987836c7f822/shellingham-1.5.4-py2.py3-none-any.whl",
+      "wheel_entries": 13,
+      "notices": [
+        {
+          "path": "shellingham-1.5.4.dist-info/LICENSE",
+          "size": 751,
+          "status": "read",
+          "sha256": "f388fd38cad13112c1dc0f669bbe80e7f84541edbafb72f3030d2ca7642c3c9d"
+        }
+      ]
+    },
+    {
+      "name": "six",
+      "version": "1.17.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl",
+      "wheel_entries": 6,
+      "notices": [
+        {
+          "path": "six-1.17.0.dist-info/LICENSE",
+          "size": 1066,
+          "status": "read",
+          "sha256": "4375ba20e2b9c6c4e7cad2940a628fd90e95cc3d50ee92aae755715d8ba1fbd0"
+        }
+      ]
+    },
+    {
+      "name": "soupsieve",
+      "version": "4.0.1",
+      "wheel_url": "https://files.pythonhosted.org/packages/2c/5c/4f68370847b561a389dd9a2d7eb3d19fd8cbb8acbae543a0c6b8d0d9700b/soupsieve-4.0.1-py3-none-any.whl",
+      "wheel_entries": 13,
+      "notices": [
+        {
+          "path": "soupsieve-4.0.1.dist-info/licenses/LICENSE.md",
+          "size": 1096,
+          "status": "read",
+          "sha256": "76a0acdb98c3a63681e20b6f096699ef8cad5fb35d56eef8387e0fa71d797a9a"
+        }
+      ]
+    },
+    {
+      "name": "sympy",
+      "version": "1.14.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl",
+      "wheel_entries": 1570,
+      "notices": [
+        {
+          "path": "sympy/parsing/latex/LICENSE.txt",
+          "size": 1075,
+          "status": "read",
+          "sha256": "007bc30a58fa40a996e772047120de4eaf31f5110e4f9c3b5f93fcdfbe2eaca1"
+        },
+        {
+          "path": "sympy-1.14.0.dist-info/licenses/LICENSE",
+          "size": 7885,
+          "status": "read",
+          "sha256": "07a5e9819f727b4986ad2829c7a29a6320d42575f720eb24d71b7fef573a0286"
+        }
+      ]
+    },
+    {
+      "name": "mpmath",
+      "version": "1.3.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/43/e3/7d92a15f894aa0c9c4b49b8ee9ac9850d6e63b03c9c32c0367a13ae62209/mpmath-1.3.0-py3-none-any.whl",
+      "wheel_entries": 92,
+      "notices": [
+        {
+          "path": "mpmath-1.3.0.dist-info/LICENSE",
+          "size": 1537,
+          "status": "read",
+          "sha256": "c26cae81da4508e5e249985777a33821f183223ebb74d7f8cfbf90fe7eef2fb7"
+        }
+      ]
+    },
+    {
+      "name": "tree-sitter-c",
+      "version": "0.24.2",
+      "wheel_url": "https://files.pythonhosted.org/packages/c1/1c/1140db75e7e375cda3c68792a33826c4fd40b5b98c3259d93c75f6c8368f/tree_sitter_c-0.24.2-cp310-abi3-macosx_11_0_arm64.whl",
+      "wheel_entries": 16,
+      "notices": [
+        {
+          "path": "tree_sitter_c-0.24.2.dist-info/licenses/LICENSE",
+          "size": 1080,
+          "status": "read",
+          "sha256": "2e0110e07abef7c2548b26ec9d6969775617ca539a0dc8dbeeb14d6452c711d1"
+        }
+      ]
+    },
+    {
+      "name": "tree-sitter-javascript",
+      "version": "0.25.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/b1/8f/6b4b2bc90d8ab3955856ce852cc9d1e82c81d7ab9646385f0e75ffd5b5d3/tree_sitter_javascript-0.25.0-cp310-abi3-macosx_11_0_arm64.whl",
+      "wheel_entries": 20,
+      "notices": [
+        {
+          "path": "tree_sitter_javascript-0.25.0.dist-info/licenses/LICENSE",
+          "size": 1080,
+          "status": "read",
+          "sha256": "2e0110e07abef7c2548b26ec9d6969775617ca539a0dc8dbeeb14d6452c711d1"
+        }
+      ]
+    },
+    {
+      "name": "tree-sitter-python",
+      "version": "0.25.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/e6/1d/60d8c2a0cc63d6ec4ba4e99ce61b802d2e39ef9db799bdf2a8f932a6cd4b/tree_sitter_python-0.25.0-cp310-abi3-macosx_11_0_arm64.whl",
+      "wheel_entries": 16,
+      "notices": [
+        {
+          "path": "tree_sitter_python-0.25.0.dist-info/licenses/LICENSE",
+          "size": 1080,
+          "status": "read",
+          "sha256": "d724405ce238a22c0d35769c5a36b386ad5958192efe8bbb304fb2896254575f"
+        }
+      ]
+    },
+    {
+      "name": "tree-sitter-typescript",
+      "version": "0.23.2",
+      "wheel_url": "https://files.pythonhosted.org/packages/8f/2f/1f36fda564518d84593f2740d5905ac127d590baf5c5753cef2a88a89c15/tree_sitter_typescript-0.23.2-cp39-abi3-macosx_11_0_arm64.whl",
+      "wheel_entries": 16,
+      "notices": [
+        {
+          "path": "tree_sitter_typescript-0.23.2.dist-info/LICENSE",
+          "size": 1080,
+          "status": "read",
+          "sha256": "49bf33cf78ef5897e4e161ce1517df7de1ae5042a65b6bcfd44401e0fc606559"
+        }
+      ]
+    },
+    {
+      "name": "typing-inspection",
+      "version": "0.4.5",
+      "wheel_url": "https://files.pythonhosted.org/packages/de/0c/ea2544850a7c135e15033a5c7a8e7211136184b7ae63e2239d557c2b3019/typing_inspection-0.4.5-py3-none-any.whl",
+      "wheel_entries": 9,
+      "notices": [
+        {
+          "path": "typing_inspection-0.4.5.dist-info/licenses/LICENSE",
+          "size": 1090,
+          "status": "read",
+          "sha256": "804b59b25f2c31bd278f9202a19ae49a3945aa2664387e2d0a128c7cacc61ec3"
+        }
+      ]
+    },
+    {
+      "name": "xlsxwriter",
+      "version": "3.3.1",
+      "wheel_url": "https://files.pythonhosted.org/packages/88/eb/1e6af9959a567901a7e7c7cef2e75883e487df223ed67f9a8977ff863bd8/xlsxwriter-3.3.1-py3-none-any.whl",
+      "wheel_entries": 48,
+      "notices": [
+        {
+          "path": "xlsxwriter-3.3.1.dist-info/licenses/LICENSE.txt",
+          "size": 1349,
+          "status": "read",
+          "sha256": "79cd3a88b65ecd9996f4bbfb7f3adf0a75df366aa1d3bbb7fe150b9e43d5b4c7"
+        }
+      ]
+    },
+    {
+      "name": "anyio",
+      "version": "4.16.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/a9/16/7757fb84c819accc7d7e9af5291b261e4abb8627ee040f99e7d35ef2457a/anyio-4.16.0-py3-none-any.whl",
+      "wheel_entries": 53,
+      "notices": [
+        {
+          "path": "anyio-4.16.0.dist-info/licenses/LICENSE",
+          "size": 1081,
+          "status": "read",
+          "sha256": "5361ac9dc58f2ef5fd2e9b09c68297c17f04950909bbc8023bdb82eacf22c2b0"
+        }
+      ]
+    },
+    {
+      "name": "colorlog",
+      "version": "6.12.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/d4/19/0b6647bf5e331521e55d2b63bfbdc210bd9cd605189273f03614a05f702d/colorlog-6.12.0-py3-none-any.whl",
+      "wheel_entries": 10,
+      "notices": [
+        {
+          "path": "colorlog-6.12.0.dist-info/licenses/LICENSE",
+          "size": 1107,
+          "status": "read",
+          "sha256": "b1d9082bc483623fd59fc7279b457f0e40d942a76426cde257239e04dfe4125a"
+        }
+      ]
+    },
+    {
+      "name": "et_xmlfile",
+      "version": "2.0.0",
+      "wheel_url": "https://files.pythonhosted.org/packages/c1/8b/5fe2cc11fee489817272089c4203e679c63b570a5aaeb18d852ae3cbba6a/et_xmlfile-2.0.0-py3-none-any.whl",
+      "wheel_entries": 10,
+      "notices": [
+        {
+          "path": "et_xmlfile-2.0.0.dist-info/LICENCE.python",
+          "size": 14688,
+          "status": "read",
+          "sha256": "4ccdaaebc0f44b83720ec0399bb7ab329adce067dd62f73c5535a2dc05628ab2"
+        },
+        {
+          "path": "et_xmlfile-2.0.0.dist-info/LICENCE.rst",
+          "size": 1131,
+          "status": "read",
+          "sha256": "0c84bb42f5d367e5ebf9fc2dde35b16141df5ee0fdc189250858bc6c5560f69e"
+        }
+      ]
+    },
+    {
+      "name": "Jinja2",
+      "version": "3.1.6",
+      "wheel_url": "https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl",
+      "wheel_entries": 31,
+      "notices": [
+        {
+          "path": "jinja2-3.1.6.dist-info/licenses/LICENSE.txt",
+          "size": 1475,
+          "status": "read",
+          "sha256": "3b49dcee4105eb37bac10faf1be260408fe85d252b8e9df2e0979fc1e094437b"
+        }
+      ]
+    },
+    {
+      "name": "MarkupSafe",
+      "version": "3.0.4",
+      "wheel_url": "https://files.pythonhosted.org/packages/ad/40/e2d117b048d47282ade906fbfd92814cbee5647afc13fda88a3406039372/markupsafe-3.0.4-cp314-cp314-macosx_11_0_arm64.whl",
+      "wheel_entries": 14,
+      "notices": [
+        {
+          "path": "markupsafe-3.0.4.dist-info/licenses/LICENSE.txt",
+          "size": 1475,
+          "status": "read",
+          "sha256": "489a8e1108509ed98a37bb983e11e0f7e1d31f0bd8f99a79c8448e7ff37d07ea"
+        }
+      ]
+    },
+    {
+      "name": "mpire",
+      "version": "2.10.2",
+      "wheel_url": "https://files.pythonhosted.org/packages/20/14/1db1729ad6db4999c3a16c47937d601fcb909aaa4224f5eca5a2f145a605/mpire-2.10.2-py3-none-any.whl",
+      "wheel_entries": 42,
+      "notices": [
+        {
+          "path": "mpire-2.10.2.dist-info/LICENSE",
+          "size": 1070,
+          "status": "read",
+          "sha256": "7234781681ef4f84b27f5d9da017bca154d597249d63e7706cd06d7cbdc94cce"
+        }
+      ]
+    },
+    {
+      "name": "multiprocess",
+      "version": "0.70.19",
+      "wheel_url": "https://files.pythonhosted.org/packages/a0/61/af9115673a5870fd885247e2f1b68c4f1197737da315b520a91c757a861a/multiprocess-0.70.19-py314-none-any.whl",
+      "wheel_entries": 53,
+      "notices": [
+        {
+          "path": "multiprocess-0.70.19.dist-info/COPYING",
+          "size": 1493,
+          "status": "read",
+          "sha256": "9f7ff27cb930d2c3202ee07e3d2d6146f4de676d069a33da3166c98cdba83a95"
+        },
+        {
+          "path": "multiprocess-0.70.19.dist-info/LICENSE",
+          "size": 1930,
+          "status": "read",
+          "sha256": "4e693e45d442befb87c1f9d27e8d6b1566ee8ddac083d6f5c7c6829ba40878c9"
+        }
+      ]
+    },
+    {
+      "name": "dill",
+      "version": "0.4.1",
+      "wheel_url": "https://files.pythonhosted.org/packages/1e/77/dc8c558f7593132cf8fefec57c4f60c83b16941c574ac5f619abb3ae7933/dill-0.4.1-py3-none-any.whl",
+      "wheel_entries": 54,
+      "notices": [
+        {
+          "path": "dill-0.4.1.dist-info/LICENSE",
+          "size": 1790,
+          "status": "read",
+          "sha256": "f669d63bebf765baaa0b20d8b0c1193296a7e0ea0c22c50a308b74d76ab3939c"
+        }
+      ]
+    },
+    {
+      "name": "olefile",
+      "version": "0.47",
+      "wheel_url": "https://files.pythonhosted.org/packages/17/d3/b64c356a907242d719fc668b71befd73324e47ab46c8ebbbede252c154b2/olefile-0.47-py2.py3-none-any.whl",
+      "wheel_entries": 28,
+      "notices": [
+        {
+          "path": "olefile/LICENSE.txt",
+          "size": 2915,
+          "status": "read",
+          "sha256": "0c349bed31cd2af10983a8d95e7455e2d15744b98585b55941ca35bd70f5bcd7"
+        },
+        {
+          "path": "olefile/doc/License.html",
+          "size": 3833,
+          "status": "read",
+          "sha256": "0dbceed92e36dbdc11d21154b2b4c40b7e0d766c0c12d6e704df3edca8974ff9"
+        },
+        {
+          "path": "olefile/doc/License.md",
+          "size": 3191,
+          "status": "read",
+          "sha256": "17cc0185ea7dac964e318ad80b7000bd65c09485c3fdec8617c7422ea54a9105"
+        },
+        {
+          "path": "olefile-0.47.dist-info/LICENSE.txt",
+          "size": 2846,
+          "status": "read",
+          "sha256": "cf1498d5b834b3758a89d06d224a1502c54a28b3a852f46130b761deaa4890d1"
+        }
+      ]
+    },
+    {
+      "name": "psutil",
+      "version": "7.2.2",
+      "wheel_url": "https://files.pythonhosted.org/packages/80/c4/f5af4c1ca8c1eeb2e92ccca14ce8effdeec651d5ab6053c589b074eda6e1/psutil-7.2.2-cp36-abi3-macosx_11_0_arm64.whl",
+      "wheel_entries": 18,
+      "notices": [
+        {
+          "path": "psutil-7.2.2.dist-info/LICENSE",
+          "size": 1548,
+          "status": "read",
+          "sha256": "b89c063b3786e28e0c0a38f1931db61fed35e69dd2a2966fbecffee0f46c8d10"
+        }
+      ]
+    },
+    {
+      "name": "tzdata",
+      "version": "2026.6",
+      "wheel_url": "https://files.pythonhosted.org/packages/0a/66/9a06c2227fedfd4919f0eaaa8b94377d9730882a7e4f95823c9a331ab5e1/tzdata-2026.6-py2.py3-none-any.whl",
+      "wheel_entries": 633,
+      "notices": [
+        {
+          "path": "tzdata-2026.6.dist-info/licenses/LICENSE",
+          "size": 625,
+          "status": "read",
+          "sha256": "df58f69ea88683035d720b5375bcef0cf5aeaa98a1d098d572e0992c378deb46"
+        },
+        {
+          "path": "tzdata-2026.6.dist-info/licenses/licenses/LICENSE_APACHE",
+          "size": 11357,
+          "status": "read",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        }
+      ]
+    }
+  ]
+}

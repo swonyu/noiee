@@ -1,0 +1,70 @@
+{
+  "observed_date": "2026-11-09",
+  "files": [
+    {
+      "path": "evidence/evidence-quality.json",
+      "sha256": "ccf6315d27f113cb53e2b3c5961aeef092e18950dc2749616a5fc8698f2f25c9",
+      "bytes": 13569
+    },
+    {
+      "path": "evidence/model-source-observations.json",
+      "sha256": "adeb4a3f581154402e5049384da15bf97daea2bd689c765ca6441f4d7e3cad78",
+      "bytes": 106242
+    },
+    {
+      "path": "evidence/notice-inspection.log",
+      "sha256": "6ee0b957f5aee22ff550142811726512022c165512f4c7beb76b723133a69f5b",
+      "bytes": 1420
+    },
+    {
+      "path": "evidence/pip-report.json.gz",
+      "sha256": "f732380055ce604b0792bee77f37258a74ad0c6cb887cad285d7672f9b990dd2",
+      "bytes": 402252
+    },
+    {
+      "path": "evidence/pip-resolve.log",
+      "sha256": "bb7568d1e98f93613ab297b9b3d675d22d3094fd252caf4c50ab2aa3b5ad7280",
+      "bytes": 21358
+    },
+    {
+      "path": "evidence/resolve-observation.json",
+      "sha256": "1324a2ee04ab61d8e8201744871a3668114b54380efcbcb48064cc1d29c91781",
+      "bytes": 1030
+    },
+    {
+      "path": "evidence/resolved-inventory.json",
+      "sha256": "b1e3294b81405e7ebface73fc9910953b01bf1f89cd7fbba87db14eea2323dd0",
+      "bytes": 94197
+    },
+    {
+      "path": "evidence/wheel-notice-index.json",
+      "sha256": "0bf850fb99cd1e5828aa10569055d6f1ab94811f3fa7a7de0d6ee80ac754b4bb",
+      "bytes": 95560
+    },
+    {
+      "path": "evidence/wheel-notices.json.gz",
+      "sha256": "2a92f6d14dcfecb36026d90c335d1bff83a40a6daca536ffeaf1a00bdb975407",
+      "bytes": 317578
+    },
+    {
+      "path": "research/inspect_wheel_notices.py",
+      "sha256": "b7c9830ad07e42a69a89dc44e1c060a16c26de7671957b45c7b7826ce5e30c77",
+      "bytes": 6163
+    },
+    {
+      "path": "research/summarize_report.py",
+      "sha256": "b01dec5ef0bfe586ef852d6de5829a926ef0088556f193e354f970c9f4c229f7",
+      "bytes": 1732
+    },
+    {
+      "path": "test_preflight.py",
+      "sha256": "0884b1713757decbac4d4984bfbb1aca54924952c30df46c0fd02ae521cab7f1",
+      "bytes": 3231
+    },
+    {
+      "path": "test_range_reader.py",
+      "sha256": "42edd1924f8d4f45e9ba1264b29b31f59c3ab63919b2a9b03535d90216ac4acd",
+      "bytes": 6388
+    }
+  ]
+}

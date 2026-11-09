@@ -1,0 +1,582 @@
+{
+  "historical_commit": "6dd8c05c12e83f5a3c99859be9ba5bcdfb739187",
+  "historical_archives_unchanged": true,
+  "historical_notice_encoding": "All text was decoded with UTF-8 errors=replace. gzip losslessly preserves that JSON, not necessarily the original notice bytes.",
+  "lossy_notice_previews": [
+    {
+      "package": "pypdfium2",
+      "version": "5.15.1",
+      "path": "pypdfium2-5.15.1.dist-info/licenses/BUILD_LICENSES/freetype.txt",
+      "sha256_of_original_bytes": "f4b133e25df1f86ad3ffea453aa0e613f0474f34778dbbb3e437e7b2724937d8",
+      "utf8_preview_sha256": "832e75434619e56c81ca252fecd7c50711fda68b7208df37000a7c4370f70e8c",
+      "preview_encoding": "UTF-8 replacement decoding; lossy",
+      "raw_bytes_retained": false,
+      "limitation": "The original-byte hash cannot be reproduced from the retained text. Historical archive preserved unchanged."
+    }
+  ],
+  "inspection_log_scope": "notice-inspection.log is the initial completed parallel pass only. It records torch failure and zero pypdfium2 notices before the targeted repair. It is not the final merged outcome.",
+  "pass_provenance": [
+    {
+      "label": "initial completed parallel pass",
+      "source_report_sha256": "11ed32905e4ba243fe5508b97ca7f805088d3354521edae56120660ea43d2d6b",
+      "range_bytes": 1754766,
+      "rows": [
+        {
+          "name": "docling",
+          "notice_count": 0,
+          "error": null
+        },
+        {
+          "name": "docling-slim",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "accelerate",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "beautifulsoup4",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "defusedxml",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "docling-core",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "doclang",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "docling-ibm-models",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "docling-parse",
+          "notice_count": 2,
+          "error": null
+        },
+        {
+          "name": "filetype",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "httpx",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "httpcore",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "huggingface_hub",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "click",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "hf-xet",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "jsonref",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "jsonschema",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "langcodes",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "latex2mathml",
+          "notice_count": 0,
+          "error": null
+        },
+        {
+          "name": "mail-parser",
+          "notice_count": 2,
+          "error": null
+        },
+        {
+          "name": "marko",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "numpy",
+          "notice_count": 20,
+          "error": null
+        },
+        {
+          "name": "openpyxl",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "pandas",
+          "notice_count": 18,
+          "error": null
+        },
+        {
+          "name": "pillow",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "pluggy",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "pydantic",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "pydantic_core",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "pydantic-settings",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "pylatexenc",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "pypdfium2",
+          "notice_count": 0,
+          "error": null
+        },
+        {
+          "name": "python-docx",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "python-dotenv",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "python-oxmsg",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "python-pptx",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "PyYAML",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "rapidocr",
+          "notice_count": 2,
+          "error": null
+        },
+        {
+          "name": "requests",
+          "notice_count": 2,
+          "error": null
+        },
+        {
+          "name": "charset-normalizer",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "idna",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "rtree",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "safetensors",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "scipy",
+          "notice_count": 5,
+          "error": null
+        },
+        {
+          "name": "semchunk",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "tabulate",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "torch",
+          "notice_count": 0,
+          "error": "Research transfer budget exceeded"
+        },
+        {
+          "name": "torchvision",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "tqdm",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "transformers",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "tokenizers",
+          "notice_count": 0,
+          "error": null
+        },
+        {
+          "name": "tree-sitter",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "typer",
+          "notice_count": 2,
+          "error": null
+        },
+        {
+          "name": "typing_extensions",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "urllib3",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "websockets",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "annotated-doc",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "annotated-types",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "attrs",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "certifi",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "filelock",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "fsspec",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "h11",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "jsonschema-specifications",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "lxml",
+          "notice_count": 2,
+          "error": null
+        },
+        {
+          "name": "networkx",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "omegaconf",
+          "notice_count": 2,
+          "error": null
+        },
+        {
+          "name": "opencv-python-headless",
+          "notice_count": 4,
+          "error": null
+        },
+        {
+          "name": "packaging",
+          "notice_count": 3,
+          "error": null
+        },
+        {
+          "name": "polyfactory",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "Faker",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "pyclipper",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "python-dateutil",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "referencing",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "regex",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "rich",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "Pygments",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "markdown-it-py",
+          "notice_count": 2,
+          "error": null
+        },
+        {
+          "name": "mdurl",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "rpds-py",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "setuptools",
+          "notice_count": 17,
+          "error": null
+        },
+        {
+          "name": "shapely",
+          "notice_count": 2,
+          "error": null
+        },
+        {
+          "name": "shellingham",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "six",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "soupsieve",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "sympy",
+          "notice_count": 2,
+          "error": null
+        },
+        {
+          "name": "mpmath",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "tree-sitter-c",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "tree-sitter-javascript",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "tree-sitter-python",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "tree-sitter-typescript",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "typing-inspection",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "xlsxwriter",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "anyio",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "colorlog",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "et_xmlfile",
+          "notice_count": 2,
+          "error": null
+        },
+        {
+          "name": "Jinja2",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "MarkupSafe",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "mpire",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "multiprocess",
+          "notice_count": 2,
+          "error": null
+        },
+        {
+          "name": "dill",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "olefile",
+          "notice_count": 4,
+          "error": null
+        },
+        {
+          "name": "psutil",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "tzdata",
+          "notice_count": 2,
+          "error": null
+        }
+      ]
+    },
+    {
+      "label": "targeted repaired pass",
+      "source_report_sha256": "04a583dcd51dc7e039fedc5fdac22ed6ee77211bdb7e1051d4900439ac22e17d",
+      "range_bytes": 1436526,
+      "rows": [
+        {
+          "name": "docling",
+          "notice_count": 0,
+          "error": null
+        },
+        {
+          "name": "latex2mathml",
+          "notice_count": 0,
+          "error": null
+        },
+        {
+          "name": "pypdfium2",
+          "notice_count": 37,
+          "error": null
+        },
+        {
+          "name": "rtree",
+          "notice_count": 1,
+          "error": null
+        },
+        {
+          "name": "torch",
+          "notice_count": 65,
+          "error": null
+        },
+        {
+          "name": "tokenizers",
+          "notice_count": 0,
+          "error": null
+        }
+      ]
+    }
+  ],
+  "final_merge": "For docling, latex2mathml, tokenizers, rtree, pypdfium2 and torch, final archive rows were replaced by the targeted repaired pass. Other rows came from the first completed parallel pass.",
+  "historical_whitespace": "notice-inspection.log retains 102 trailing-whitespace lines. Whole-range git diff --check does not pass; logs have not been normalized.",
+  "current_reader_verification": "Hardened reader tested offline only; historical HTTP responses were not retroactively validated."
+}
