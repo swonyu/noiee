@@ -11,6 +11,8 @@ export const isMetadataGitOperation=kind=>['stage','unstage','commit','createBra
 const isRemote=kind=>['publishBranch','createPR'].includes(kind);
 export const isReviewedGitOperation=kind=>isMetadataGitOperation(kind)||kind==='switchBranch'||isRemote(kind);
 const sha=x=>createHash('sha256').update(x).digest('hex'),decode=b=>new TextDecoder('utf-8',{fatal:true}).decode(b),line=s=>s.endsWith('\n')?s.slice(0,-1):s;
+// Git alternate paths use C quoting, including octal bytes for controls and UTF-8.
+const alternatePath=s=>'"'+[...Buffer.from(s)].map(n=>n>=32&&n<127&&n!==34&&n!==92?String.fromCharCode(n):'\\'+n.toString(8).padStart(3,'0')).join('')+'"';
 const inside=(root,p)=>p===root||p.startsWith(root+sep);
 const stale=message=>Object.assign(new Error(message),{code:'STALE'});
 function shape(x,keys){if(!x||typeof x!=='object'||Array.isArray(x)||Object.keys(x).length!==keys.length||keys.some(k=>!Object.hasOwn(x,k)))throw new Error('Invalid Git request fields.');}
@@ -191,7 +193,7 @@ export class GitWorkflow {
     const observation={id:randomUUID(),requestId:input.requestId,intentSHA256:receipt.remoteIntentSHA256,expiresAt:this.now()+TTL,headOID:data.oldOID,baseOID:data.baseOID,matches};if(this.remoteObservations.size>=8)this.remoteObservations.delete(this.remoteObservations.keys().next().value);this.remoteObservations.set(observation.id,observation);return {observation};
   }
   async candidate(s,request,dir,epoch){
-    const file=join(dir,'index'),objects=join(dir,'objects');await mkdir(objects);if(s.index)await writeFile(file,s.index,{flag:'wx',mode:0o600});const env={GIT_INDEX_FILE:file,GIT_OBJECT_DIRECTORY:objects,GIT_ALTERNATE_OBJECT_DIRECTORIES:s.r.commonDir+'/objects'},scope={dirs:[dir]};if(!s.index)await this.run(s.r,['read-tree','--empty'],epoch,{env,scope});
+    const file=join(dir,'index'),objects=join(dir,'objects');await mkdir(objects);if(s.index)await writeFile(file,s.index,{flag:'wx',mode:0o600});const env={GIT_INDEX_FILE:file,GIT_OBJECT_DIRECTORY:objects,GIT_ALTERNATE_OBJECT_DIRECTORIES:alternatePath(s.r.commonDir+'/objects')},scope={dirs:[dir]};if(!s.index)await this.run(s.r,['read-tree','--empty'],epoch,{env,scope});
     const selected=[];if(request.entryIds)for(const id of request.entryIds){const e=s.entries.find(e=>e.id===id);if(!e||!e[request.kind==='stage'?'canStage':'canUnstage'])throw stale('Selection no longer belongs to this snapshot.');let v;
       if(request.kind==='stage'){const f=s.files.get(e.path);v={path:e.path,mode:f.mode,oid:f.data?(await this.run(s.r,['hash-object','-w','--stdin','--no-filters'],epoch,{env,scope,input:f.data})).stdout.trim():ZERO,data:f.data};}
       else {let row='';if(s.head)row=(await this.run(s.r,['ls-tree','-z',s.head,'--',e.path],epoch)).stdout;const m=/^(100644|100755|120000) blob ([0-9a-f]{40})\t/.exec(row);v={path:e.path,mode:m?.[1]??'0',oid:m?.[2]??ZERO};}selected.push(v);
