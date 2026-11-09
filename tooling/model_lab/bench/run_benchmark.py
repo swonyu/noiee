@@ -197,6 +197,14 @@ def run_case(api, args, case, system_prompt, run_deadline, out_dir):
             if finish == "length":
                 result = {"status": "output_limit", "reason": "generation reached max_tokens; no correctness score assigned"}
                 break
+            # A plausible answer is not proof of a completed generation. Validate
+            # the terminal contract before grading text or dispatching mock tools.
+            if finish not in ("stop", "tool_calls"):
+                raise TransportError("missing or unsupported completion finish reason")
+            if finish == "tool_calls" and not calls:
+                raise TransportError("tool-call finish without tool calls")
+            if finish == "stop" and calls:
+                raise TransportError("tool calls without a tool-call finish")
             if calls:
                 if not mock:
                     result = grade(case, assistant["content"], unexpected_tool_calls=True)

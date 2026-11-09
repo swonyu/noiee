@@ -249,6 +249,34 @@ class RunnerTests(unittest.TestCase):
             result = run_case(api, self.args(tmp), CASES[0], DEFAULT_SYSTEM, time.monotonic() + 60, Path(tmp))
             self.assertEqual(result["status"], "output_limit")
 
+    def test_invalid_terminal_status_cannot_score_correct_answer(self):
+        case = CASES[5]
+        for finish in (None, "", "content_filter", "unknown", "tool_calls", 0):
+            with self.subTest(finish=finish), tempfile.TemporaryDirectory() as tmp:
+                api = FakeAPI([response(json.dumps(case["expected"]), finish=finish)])
+                result = run_case(api, self.args(tmp), case, DEFAULT_SYSTEM, time.monotonic() + 60, Path(tmp))
+                self.assertEqual(result["status"], "transport_error")
+                receipt = json.loads((Path(tmp) / (case["id"] + ".json")).read_text())
+                self.assertEqual(receipt["tool_trace"], [])
+
+    def test_invalid_tool_terminal_status_does_not_dispatch(self):
+        case = CASES[2]
+        calls = [native_call(1, "search_tools", {"query": "read file"})]
+        for finish in (None, "stop", "content_filter", "unknown"):
+            with self.subTest(finish=finish), tempfile.TemporaryDirectory() as tmp:
+                api = FakeAPI([response(calls=calls, finish=finish)])
+                result = run_case(api, self.args(tmp), case, DEFAULT_SYSTEM, time.monotonic() + 60, Path(tmp))
+                self.assertEqual(result["status"], "transport_error")
+                receipt = json.loads((Path(tmp) / (case["id"] + ".json")).read_text())
+                self.assertEqual(receipt["tool_trace"], [])
+
+    def test_stop_scores_complete_answer(self):
+        case = CASES[5]
+        with tempfile.TemporaryDirectory() as tmp:
+            api = FakeAPI([response(json.dumps(case["expected"]), finish="stop")])
+            result = run_case(api, self.args(tmp), case, DEFAULT_SYSTEM, time.monotonic() + 60, Path(tmp))
+            self.assertEqual(result["status"], "pass")
+
     def test_multiple_native_calls_are_not_dispatched(self):
         with tempfile.TemporaryDirectory() as tmp:
             calls = [native_call(1, "search_tools", {"query": "read"}), native_call(2, "search_tools", {"query": "file"})]
